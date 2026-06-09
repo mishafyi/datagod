@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Secrets / local env
+.env
+.env.*
+
+# Local agent / editor state
+.claude/
+.DS_Store
+
+# Large local artifacts — NOT part of the runtime image
+# (Dockerfile only copies app/ + requirements.txt)
+data/
+research/
+docs/obsidian-help/
+
+# Test run outputs
+tests/reports/

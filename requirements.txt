@@ -1,0 +1,7 @@
+fastapi>=0.115
+uvicorn>=0.34
+httpx>=0.28
+python-dotenv>=1.0
+tenacity>=8.2
+yfinance>=0.2.40
+selectolax>=0.3.21
