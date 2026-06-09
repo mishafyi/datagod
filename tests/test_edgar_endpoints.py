@@ -2,12 +2,20 @@
 """Comprehensive test suite for all EDGAR endpoints."""
 
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
+
 import httpx
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 BASE_URL = "http://localhost:8000"
+API_KEY = os.getenv("DATAGOD_API_KEY", "")
+# DataGod gates every endpoint behind the X-API-Key header (see app/auth.py).
+HEADERS = {"X-API-Key": API_KEY}
 
 # Test results storage
 results = []
@@ -30,7 +38,7 @@ def log_test(endpoint, params, status, check):
 async def test_edgar_company():
     """Test GET /edgar/company/{cik}"""
     print("\n=== Testing GET /edgar/company/{cik} ===")
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, headers=HEADERS) as client:
 
         # Valid ticker tests
         for ticker in ["AAPL", "MSFT", "TSLA", "GOOG", "AMZN"]:
@@ -74,7 +82,7 @@ async def test_edgar_company():
 async def test_edgar_financials():
     """Test GET /edgar/financials/{cik}"""
     print("\n=== Testing GET /edgar/financials/{cik} ===")
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=60, headers=HEADERS) as client:
 
         for ticker in ["AAPL", "MSFT"]:
             try:
@@ -91,7 +99,7 @@ async def test_edgar_financials():
 async def test_edgar_concept():
     """Test GET /edgar/concept/{cik}/{concept}"""
     print("\n=== Testing GET /edgar/concept/{cik}/{concept} ===")
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, headers=HEADERS) as client:
 
         # Valid concept tests
         for cik, concept in [("AAPL", "Revenues"), ("AAPL", "NetIncomeLoss"), ("AAPL", "Assets")]:
@@ -131,7 +139,7 @@ async def test_edgar_concept():
 async def test_edgar_frames():
     """Test GET /edgar/frames/{concept}"""
     print("\n=== Testing GET /edgar/frames/{concept} ===")
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=60, headers=HEADERS) as client:
 
         # Valid frames tests
         for concept in ["Revenues", "Assets", "NetIncomeLoss"]:
@@ -172,7 +180,7 @@ async def test_edgar_frames():
 async def test_edgar_search():
     """Test GET /edgar/search"""
     print("\n=== Testing GET /edgar/search ===")
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, headers=HEADERS) as client:
 
         # Valid search tests
         for query, forms in [

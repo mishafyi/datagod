@@ -1,0 +1,59 @@
+# DataGod
+
+A unified, async HTTP API over **21 free US‑government and markets data sources** plus a cross‑reference aggregator — thin pass‑throughs behind one consistent response envelope.
+
+**Live:** https://datagod.example.com · **Interactive docs:** [`/docs`](https://datagod.example.com/docs) (Swagger UI) and `/redoc`
+
+## Authentication
+
+Every data endpoint requires your API key in the **`X-API-Key`** header:
+
+```bash
+curl -H "X-API-Key: $DATAGOD_API_KEY" https://datagod.example.com/fred/GDP
+```
+
+- `GET /health` is the only public route (no key).
+- A missing or wrong key returns **401**.
+- The interactive docs (`/docs`, `/redoc`, `/openapi.json`) are protected by **HTTP Basic** — username `datagod`, password = your `DATAGOD_API_KEY` (or set dedicated `DATAGOD_DOCS_USER` / `DATAGOD_DOCS_PASSWORD`).
+
+## Response envelope
+
+Every response is wrapped; `data` is the upstream payload, unchanged:
+
+```json
+{
+  "meta": { "source": "fred", "endpoint": "/fred/GDP", "timestamp": "…Z", "status": "success" },
+  "data": { "…": "upstream JSON" },
+  "error": null
+}
+```
+
+On failure `meta.status` is `"error"`, `error` holds the message, and the HTTP status mirrors the upstream (4xx pass through; 5xx / timeouts / connect errors → **502**).
+
+## Run locally
+
+```bash
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env   # then fill in keys (at minimum DATAGOD_API_KEY)
+.venv/bin/uvicorn app.main:app --reload --port 8000
+open http://localhost:8000/docs
+```
+
+Only `DATAGOD_API_KEY` is required to start; per‑source upstream keys (`FRED_API_KEY`, `SEC_USER_AGENT`, …) unlock the sources that need them. See `app/config.py`.
+
+## Sources
+
+FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · JEFS (judicial disclosures) · NARA · National Security Archive · Smithsonian Open Access · Wilson Center Digital Archive · Nasdaq.com · Yahoo Finance — plus `/cross-reference/*` aggregators.
+
+## Project layout
+
+- `app/main.py` — every route (grouped by source, tagged for Swagger).
+- `app/clients/` — one async module per upstream.
+- `app/auth.py` — API‑key (data) + HTTP Basic (docs) auth.
+- `app/middleware.py` — the response envelope.
+- `docs/` — per‑source deep‑dives on upstream quirks (not an endpoint catalog — `/docs` is).
+- `CLAUDE.md` — architecture and conventions.
+
+## Deploy
+
+Dockerfile + [Coolify](https://coolify.io) with auto‑deploy on push to `main`. See `DEPLOY-NEW-PROJECT-COOLIFY.md`.

@@ -11,6 +11,11 @@ class Config:
     # DataGod — this service's own API key (gates every endpoint; set in env / Coolify)
     DATAGOD_API_KEY = os.getenv("DATAGOD_API_KEY", "")
 
+    # Interactive docs (/docs, /redoc, /openapi.json) — HTTP Basic auth.
+    # Password falls back to DATAGOD_API_KEY when DATAGOD_DOCS_PASSWORD is unset.
+    DATAGOD_DOCS_USER = os.getenv("DATAGOD_DOCS_USER", "datagod")
+    DATAGOD_DOCS_PASSWORD = os.getenv("DATAGOD_DOCS_PASSWORD", "")
+
     # SEC EDGAR
     SEC_USER_AGENT = os.getenv("SEC_USER_AGENT", "")
 

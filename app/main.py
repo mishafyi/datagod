@@ -5,9 +5,10 @@ One API, all the data. Free.
 """
 
 from fastapi import Depends, FastAPI, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.responses import HTMLResponse, JSONResponse
 
-from .auth import UnauthorizedError, require_api_key
+from .auth import UnauthorizedError, require_api_key, require_docs_auth
 from .cache import clear_cache
 from .clients import (
     bls,
@@ -35,14 +36,105 @@ from .clients import (
 )
 from .middleware import ResponseEnvelopeMiddleware
 
+API_DESCRIPTION = """\
+**DataGod** unifies 21 free US-government and markets data sources (plus a
+cross-reference aggregator) behind one HTTP API. Routes are thin pass-throughs —
+each returns the upstream's JSON unchanged, wrapped in a standard envelope.
+
+## Authentication
+Every data endpoint requires your API key in the **`X-API-Key`** header:
+
+```bash
+curl -H "X-API-Key: <your-key>" https://datagod.example.com/fred/GDP
+```
+
+A missing or wrong key returns **401**. `GET /health` is the only public route.
+These interactive docs are protected separately by HTTP Basic auth.
+
+## Response envelope
+Every response is wrapped:
+
+```json
+{
+  "meta": { "source": "fred", "endpoint": "/fred/GDP", "timestamp": "...Z", "status": "success" },
+  "data": { "...": "upstream payload, unchanged" },
+  "error": null
+}
+```
+
+On failure `meta.status` is `"error"`, `error` carries the message, and the HTTP
+status mirrors the upstream: 4xx pass through, while 5xx / timeouts / connect
+errors become **502**.
+
+## Tip
+Click **Authorize** (top right), paste your key once, and every "Try it out" call
+sends the `X-API-Key` header for you.
+"""
+
+API_TAGS = [
+    {"name": "Health", "description": "Liveness probe. `GET /health` is public (no key required)."},
+    {"name": "FRED", "description": "Federal Reserve Economic Data — 800K+ economic time series."},
+    {"name": "EDGAR", "description": "SEC EDGAR — corporate filings, XBRL financials, full-text search. The Frames endpoint compares one concept across all filers in a single call."},
+    {"name": "Nasdaq", "description": "Nasdaq.com (unofficial) — quote, price, history, dividends."},
+    {"name": "yfinance", "description": "Yahoo Finance via the yfinance library — fundamentals, news, options, holders."},
+    {"name": "USAspending", "description": "USAspending.gov — federal contracts and grants ($6T+/yr)."},
+    {"name": "Census", "description": "US Census Bureau — population, income, and raw ACS queries."},
+    {"name": "BLS", "description": "Bureau of Labor Statistics — employment, wages, CPI."},
+    {"name": "Treasury", "description": "Treasury Fiscal Data — debt, interest rates, exchange rates."},
+    {"name": "FEC", "description": "Federal Election Commission — candidates, contributions, totals."},
+    {"name": "Congress", "description": "Congress.gov — bills, members, votes."},
+    {"name": "FDA", "description": "openFDA — drug adverse events, drug recalls, food recalls."},
+    {"name": "Clinical Trials", "description": "ClinicalTrials.gov — 500K+ registered trials."},
+    {"name": "EIA", "description": "Energy Information Administration — gas prices, electricity, and generic dataset queries."},
+    {"name": "FEMA", "description": "OpenFEMA — disaster declarations, grants, flood claims."},
+    {"name": "Federal Register", "description": "Federal Register — rules, notices, executive orders."},
+    {"name": "JEFS", "description": "Judicial Financial Disclosures — session-based; needs Playwright registration + reCAPTCHA first."},
+    {"name": "House Disclosures", "description": "US House financial disclosures (member/candidate stock trades)."},
+    {"name": "NARA", "description": "US National Archives Catalog — all record groups plus the 14 presidential libraries."},
+    {"name": "NSArchive", "description": "National Security Archive (GWU NGO, not NARA) — Virtual Reading Room declassified docs (HTML scrape)."},
+    {"name": "Smithsonian", "description": "Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records."},
+    {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},
+    {"name": "Cross-Reference", "description": "Aggregators that join several sources for one company or politician."},
+    {"name": "Admin", "description": "Operational endpoints (cache management)."},
+]
+
 app = FastAPI(
     title="DataGod",
-    description="Unified API for 15 US Government data sources + Nasdaq quotes",
-    version="0.1.0",
+    description=API_DESCRIPTION,
+    version="1.0.0",
+    openapi_tags=API_TAGS,
+    contact={"name": "DataGod (source)", "url": "https://github.com/mishafyi/datagod"},
     dependencies=[Depends(require_api_key)],
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.add_middleware(ResponseEnvelopeMiddleware)
+
+
+# ── Interactive docs — re-served behind HTTP Basic (see app/auth.py) ──────
+# The built-in docs are disabled above (docs_url/redoc_url/openapi_url=None) and
+# re-served here behind require_docs_auth so the API surface isn't public. The
+# X-API-Key check skips these paths (auth.DOCS_PATHS); Basic auth guards them.
+
+@app.get("/openapi.json", include_in_schema=False, dependencies=[Depends(require_docs_auth)])
+async def protected_openapi() -> JSONResponse:
+    return JSONResponse(app.openapi())
+
+
+@app.get("/docs", include_in_schema=False, dependencies=[Depends(require_docs_auth)])
+async def protected_swagger() -> HTMLResponse:
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="DataGod API — Swagger UI",
+        oauth2_redirect_url=None,
+    )
+
+
+@app.get("/redoc", include_in_schema=False, dependencies=[Depends(require_docs_auth)])
+async def protected_redoc() -> HTMLResponse:
+    return get_redoc_html(openapi_url="/openapi.json", title="DataGod API — ReDoc")
 
 
 @app.exception_handler(UnauthorizedError)
@@ -60,8 +152,8 @@ async def unauthorized_handler(request: Request, exc: UnauthorizedError) -> JSON
 async def root():
     return {
         "name": "DataGod",
-        "version": "0.1.0",
-        "sources": 19,
+        "version": "1.0.0",
+        "sources": 21,
         "endpoints": {
             "economy": ["/fred", "/bls", "/treasury"],
             "markets": ["/edgar", "/nasdaq", "/yfinance"],

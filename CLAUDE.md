@@ -24,7 +24,7 @@ docker run -p 8000:8000 --env-file .env datagod
 .venv/bin/python tests/test_nsarchive_search.py   # no server; needs network to nsarchive.gwu.edu
 
 # Interactive API exploration (server must be running)
-open http://localhost:8000/docs
+open http://localhost:8000/docs   # HTTP Basic prompt: user "datagod", password = your DATAGOD_API_KEY
 ```
 
 Two test files (no unit-test runner, linter, or type-checker is configured):
@@ -60,7 +60,7 @@ Two test files (no unit-test runner, linter, or type-checker is configured):
 | **`wilson.py`** | Wilson Center Digital Archive — LOCAL mirror of 16,756 declassified documents (SQLite + FTS5; live site is DNS-dead) | `/wilson/documents`, `/wilson/document/{slug}` | `docs/WILSON_DIGITAL_ARCHIVE_API.md` | none (local data) |
 | **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
 
-**Total**: 21 upstream data sources + 1 cross-reference aggregator = **22 client modules, 59+ routes**. See Swagger UI at `/docs` for full interactive reference.
+**Total**: 21 upstream data sources + 1 cross-reference aggregator = **22 client modules, 72 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
 
 ## Reference documentation in `docs/`
 
@@ -145,7 +145,7 @@ async def some_endpoint(arg: str) -> UpstreamJSON:
 
 `.env` is loaded from the project root by `app/config.py`. Keys are listed there; `FEC_API_KEY`, `CONGRESS_API_KEY`, and `EIA_API_KEY` fall back to `"DEMO_KEY"` (works with low rate limits), the rest default to empty strings. `SEC_USER_AGENT` is required by the SEC and must be a real `"Name email"` string — EDGAR returns 403 without it.
 
-**API-key auth (DataGod's own endpoints).** `DATAGOD_API_KEY` gates every route: requests must send an `X-API-Key: <key>` header. Enforced by `app/auth.py` (FastAPI's built-in `APIKeyHeader`) wired as an app-level dependency in `main.py`. Exempt: `/health` (`auth.PUBLIC_PATHS`) and the docs routes (`/docs`, `/redoc`, `/openapi.json`). A missing/invalid key returns **401** in the standard error envelope. Set it in `.env` locally and as a Coolify env var in production; the service fails **closed** if the key is unset. The `.env` file is git-ignored — never commit it.
+**API-key auth (DataGod's own endpoints).** `DATAGOD_API_KEY` gates every route: requests must send an `X-API-Key: <key>` header. Enforced by `app/auth.py` (FastAPI's built-in `APIKeyHeader`) wired as an app-level dependency in `main.py`. Public (no auth): `/health` (`auth.PUBLIC_PATHS`). The interactive docs (`/docs`, `/redoc`, `/openapi.json`) are custom routes protected by **HTTP Basic** (`auth.require_docs_auth`: user `DATAGOD_DOCS_USER`, password `DATAGOD_DOCS_PASSWORD` — both fall back to `datagod` / `DATAGOD_API_KEY`), and are exempt from the `X-API-Key` check (`auth.DOCS_PATHS`). A missing/invalid key returns **401** in the standard error envelope. Set it in `.env` locally and as a Coolify env var in production; the service fails **closed** if the key is unset. The `.env` file is git-ignored — never commit it.
 
 **Known latent bug**: `census.py` never references `cfg.CENSUS_API_KEY`. Census now redirects keyless requests to a "Missing Key" HTML page (the JSON parser then errors with "Expecting value"). Was silent for years; began returning errors in 2026.
 
