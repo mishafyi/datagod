@@ -1,73 +1,73 @@
-source,method,path,summary
-Health,GET,/,API index: sources and endpoint map
-Health,GET,/health,"Liveness probe (public, no API key)"
-FRED,GET,/fred,Search FRED series by keyword
-FRED,GET,/fred/{series_id},Fetch a FRED economic time series
-EDGAR,GET,/edgar/company/{cik},Company profile and filing history (CIK or ticker)
-EDGAR,GET,/edgar/concept/{cik}/{concept},One XBRL concept's history for a company
-EDGAR,GET,/edgar/financials/{cik},All XBRL financial facts for a company
-EDGAR,GET,/edgar/frames/{concept},One concept across all filers (cross-company)
-EDGAR,GET,/edgar/search,Full-text search inside filing documents
-Nasdaq,GET,/nasdaq/dividends/{ticker},Dividend history
-Nasdaq,GET,/nasdaq/history/{ticker},Daily OHLCV between two dates
-Nasdaq,GET,/nasdaq/price/{ticker},"Real-time price, bid/ask, volume, change"
-Nasdaq,GET,/nasdaq/quote/{ticker},"Quote summary: market cap, sector, P/E, 52-week"
-yfinance,GET,/yfinance/dividends/{ticker},Dividend payment history
-yfinance,GET,/yfinance/financials/{ticker},"Income statement, balance sheet, cash flow"
-yfinance,GET,/yfinance/history/{ticker},OHLCV price history
-yfinance,GET,/yfinance/holders/{ticker},"Major, institutional, and fund holders"
-yfinance,GET,/yfinance/info/{ticker},Full ticker fundamentals (~140 fields)
-yfinance,GET,/yfinance/news/{ticker},Recent news headlines
-yfinance,GET,/yfinance/options/{ticker},Options chain (expiries or calls/puts)
-yfinance,GET,/yfinance/recommendations/{ticker},Analyst recommendation history
-USAspending,GET,/usaspending/agencies,List federal agencies
-USAspending,GET,/usaspending/by-agency,Spending totals by agency (fiscal year)
-USAspending,GET,/usaspending/search,Search federal awards by keyword
-Census,GET,/census/acs,Raw ACS query (any variables and geography)
-Census,GET,/census/income,Median household income by state
-Census,GET,/census/population,Population by state
-BLS,GET,/bls/{series_id},"BLS series (CPI, unemployment, wages, PPI)"
-Treasury,GET,/treasury/debt,US public debt (debt to the penny)
-Treasury,GET,/treasury/exchange,Treasury exchange rates
-Treasury,GET,/treasury/rates,Average interest rates on US debt
-FEC,GET,/fec/candidates,Search federal candidates
-FEC,GET,/fec/contributions,Campaign contributions
-FEC,GET,/fec/totals,Candidate financial totals by receipts
-Congress,GET,/congress/bill/{congress_num}/{bill_type}/{number},Single bill detail
-Congress,GET,/congress/bills,Recent bills
-Congress,GET,/congress/members,Members of Congress
-Congress,GET,/congress/votes,Roll-call votes by chamber
-FDA,GET,/fda/drug-events,Drug adverse-event reports
-FDA,GET,/fda/drug-recalls,Drug recall enforcement reports
-FDA,GET,/fda/food-recalls,Food recall enforcement reports
-Clinical Trials,GET,/clinical-trials,Search ClinicalTrials.gov
-Clinical Trials,GET,/clinical-trials/{nct_id},Single trial by NCT ID
-EIA,GET,/eia,List available EIA datasets
-EIA,GET,/eia/electricity,Electricity generation and retail data
-EIA,GET,/eia/gas-prices,Gasoline prices
-EIA,GET,/eia/{route},Generic EIA dataset query by route
-FEMA,GET,/fema/disasters,Disaster declarations
-FEMA,GET,/fema/flood-claims,NFIP flood insurance claims
-FEMA,GET,/fema/grants,FEMA grant awards
-Federal Register,GET,/federal-register,Search the Federal Register
-Federal Register,GET,/federal-register/{doc_number},Single Federal Register document
-JEFS,GET,/jefs/facets,JEFS filter facets (needs session)
-JEFS,POST,/jefs/register,Open a JEFS session (Playwright + reCAPTCHA)
-JEFS,POST,/jefs/reset,Clear the JEFS session
-JEFS,GET,/jefs/search,Search judicial disclosures (needs session)
-House Disclosures,GET,/house-disclosures/candidates,House candidate financial disclosures
-House Disclosures,GET,/house-disclosures/members,House member financial disclosures
-NARA,GET,/nara/record/{na_id},Single catalog record by NAID
-NARA,GET,/nara/search,Search the National Archives Catalog
-NSArchive,GET,/nsarchive/document/{doc_id},Single VRR document by id-slug
-NSArchive,GET,/nsarchive/search,Search the National Security Archive VRR
-Smithsonian,GET,/smithsonian/category/{category}/search,Search within a Smithsonian category
-Smithsonian,GET,/smithsonian/object/{object_id},Full object record by EDAN id
-Smithsonian,GET,/smithsonian/search,Search Smithsonian Open Access
-Smithsonian,GET,/smithsonian/stats,Open Access dataset statistics
-Smithsonian,GET,/smithsonian/terms/{category},Controlled-vocabulary terms
-Wilson Center,GET,/wilson/document/{slug},Single Wilson document by slug
-Wilson Center,GET,/wilson/documents,Search the Wilson Center mirror
-Cross-Reference,GET,/cross-reference/company/{name},Company across EDGAR + USAspending + FEC
-Cross-Reference,GET,/cross-reference/politician/{last_name},Politician across House disclosures + FEC
-Admin,POST,/admin/clear-cache,Clear the in-memory cache
+source,method,path,description,params
+Health,GET,/,Service index: lists every data source and its endpoint groups. Use to discover what is available.,
+Health,GET,/health,"Health / liveness check. Public, no key. Use for uptime monitoring and readiness probes.",
+FRED,GET,/fred,Keyword search across FRED's 800K-series catalog; returns series IDs to fetch above. Use when you don't know the exact series ID.,"q (query, string); limit (query, integer, default 10, max 100)"
+FRED,GET,/fred/{series_id},"One US macroeconomic time series by FRED series ID. Use for: GDP, inflation, consumer prices/CPI (CPIAUCSL), unemployment rate (UNRATE), Fed funds / interest rates (FEDFUNDS), Treasury yields (DGS10), money supply (M2), S&P 500 (SP500), industrial production, recession indicators — any US macro indicator.","series_id (path, string, required); limit (query, integer, default 10, max 1000)"
+EDGAR,GET,/edgar/company/{cik},"SEC company profile and filing history (10-K, 10-Q, 8-K, S-1, etc.) by CIK or ticker (e.g. AAPL). Use for: company metadata, recent filings, fiscal year end, SIC industry, exchange, addresses, former names.","cik (path, string, required)"
+EDGAR,GET,/edgar/concept/{cik}/{concept},"History of one XBRL concept for one company (e.g. Revenues, NetIncomeLoss, Assets, CashAndCashEquivalents). Use to track a single financial metric over time.","cik (path, string, required); concept (path, string, required); taxonomy (query, string, default us-gaap)"
+EDGAR,GET,/edgar/financials/{cik},"All XBRL financial facts for a company across years. Use for: revenue, net income, assets, liabilities, cash, equity, EPS, R&D spend — the full financial-statement dataset.","cik (path, string, required)"
+EDGAR,GET,/edgar/frames/{concept},One financial concept across ALL public companies for a period — cross-company comparison in a single call. Use to rank or compare revenue / assets / net income across thousands of filers.,"concept (path, string, required); unit (query, string, default USD); period (query, string, default CY2023); taxonomy (query, string, default us-gaap)"
+EDGAR,GET,/edgar/search,"Full-text search inside SEC filing documents. Use for: which companies mention a topic (AI, climate risk, layoffs, a competitor, a product) in their filings; filter by form type.","q (query, string, required); forms (query, string); limit (query, integer, default 10, max 100)"
+Nasdaq,GET,/nasdaq/dividends/{ticker},Dividend payment history (ex-date and amount) for a ticker.,"ticker (path, string, required); asset_class (query, string, default stocks)"
+Nasdaq,GET,/nasdaq/history/{ticker},"Daily OHLCV price history (open, high, low, close, volume) between two dates.","ticker (path, string, required); fromdate (query, string, required); todate (query, string, required); limit (query, integer, default 30, max 260); asset_class (query, string, default stocks)"
+Nasdaq,GET,/nasdaq/price/{ticker},"Current price, bid/ask, day volume, and percent change for a ticker.","ticker (path, string, required); asset_class (query, string, default stocks)"
+Nasdaq,GET,/nasdaq/quote/{ticker},"Stock quote summary: market cap, sector, industry, P/E, dividend yield, 52-week high/low. Quick snapshot of a listed company.","ticker (path, string, required); asset_class (query, string, default stocks)"
+yfinance,GET,/yfinance/dividends/{ticker},Dividend payment history (amounts and dates).,"ticker (path, string, required)"
+yfinance,GET,/yfinance/financials/{ticker},"Income statement, balance sheet, and cash-flow statement (annual + quarterly).","ticker (path, string, required)"
+yfinance,GET,/yfinance/history/{ticker},"OHLCV price history with flexible period (1d..max) and interval (1m..1mo). Use for charts, returns, volatility.","ticker (path, string, required); period (query, string, default 1mo); interval (query, string, default 1d)"
+yfinance,GET,/yfinance/holders/{ticker},"Ownership: major holders, institutional holders, and mutual-fund holders.","ticker (path, string, required)"
+yfinance,GET,/yfinance/info/{ticker},"Deepest single-call company profile (~140 fields): market cap, P/E, EPS, beta, profit margins, ROE, debt, free cash flow, analyst price targets, sector, employees, business summary.","ticker (path, string, required)"
+yfinance,GET,/yfinance/news/{ticker},Recent news headlines and article links tied to a ticker.,"ticker (path, string, required)"
+yfinance,GET,/yfinance/options/{ticker},"Options chain: expiry dates, calls and puts, strikes, implied volatility, open interest.","ticker (path, string, required); expiry (query, string)"
+yfinance,GET,/yfinance/recommendations/{ticker},Analyst recommendation history (buy / hold / sell ratings over time).,"ticker (path, string, required)"
+USAspending,GET,/usaspending/agencies,List of federal agencies (names and IDs) for filtering spending queries.,
+USAspending,GET,/usaspending/by-agency,Federal spending totals grouped by agency for a fiscal year / quarter.,"fy (query, string, default 2025); quarter (query, string, default 1)"
+USAspending,GET,/usaspending/search,"Search federal awards (contracts and grants) by keyword. Use for: who received federal money, contractors/recipients, award amounts, defense or agency spending.","q (query, string, required); start_date (query, string); end_date (query, string); limit (query, integer, default 10, max 100)"
+Census,GET,/census/acs,"Raw American Community Survey query — any ACS variables and geography (state / county / tract). Use for: demographics, race, age, sex, education, income, poverty, housing, commute — any ACS table by variable code.","variables (query, string, default NAME,B01001_001E); year (query, integer, default 2022); geo_for (query, string, default state:*); geo_in (query, string)"
+Census,GET,/census/income,Median household income by US state.,"year (query, integer, default 2022)"
+Census,GET,/census/population,Population by US state.,"year (query, integer, default 2022)"
+BLS,GET,/bls/{series_id},"US labor statistics series by ID. Use for: unemployment rate, nonfarm payroll employment, CPI inflation, PPI, average hourly earnings. Shortcut IDs: unemployment, cpi, nonfarm_employment, ppi, hourly_earnings.","series_id (path, string, required); start_year (query, integer, default 2024); end_year (query, integer, default 2026)"
+Treasury,GET,/treasury/debt,"US national / public debt (debt to the penny): total outstanding, debt held by the public, intragovernmental holdings, by date.","limit (query, integer, default 5, max 100)"
+Treasury,GET,/treasury/exchange,US Treasury reporting exchange rates (foreign-currency conversion rates used by the government).,"limit (query, integer, default 5, max 100)"
+Treasury,GET,/treasury/rates,Average interest rates on outstanding US Treasury securities.,"limit (query, integer, default 5, max 100)"
+FEC,GET,/fec/candidates,"Search federal candidates (President, Senate, House) by office and state. Campaign finance.","office (query, string); state (query, string); limit (query, integer, default 10, max 100)"
+FEC,GET,/fec/contributions,Campaign contributions — itemized donations by or for a candidate or donor name.,"name (query, string); candidate_id (query, string); limit (query, integer, default 10, max 100)"
+FEC,GET,/fec/totals,"Candidate financial totals (money raised / receipts), ranked, by office and election year.","office (query, string, default P); year (query, integer, default 2024); limit (query, integer, default 10, max 100)"
+Congress,GET,/congress/bill/{congress_num}/{bill_type}/{number},"Full detail for one bill: sponsors, actions, latest status, summary.","congress_num (path, integer, required); bill_type (path, string, required); number (path, integer, required)"
+Congress,GET,/congress/bills,Recent bills introduced in Congress. Legislation tracking.,"limit (query, integer, default 10, max 250); congress_num (query, integer, default 0)"
+Congress,GET,/congress/members,"Members of Congress (representatives and senators), with party and state.","limit (query, integer, default 10, max 250)"
+Congress,GET,/congress/votes,Roll-call votes by chamber and session.,"chamber (query, string, default house); congress_session (query, integer, default 118); limit (query, integer, default 10, max 250)"
+FDA,GET,/fda/drug-events,"Drug adverse-event reports (side effects, reactions) from openFDA / FAERS.","search (query, string); limit (query, integer, default 10, max 100)"
+FDA,GET,/fda/drug-recalls,"Drug recall enforcement reports — recalled medications, reasons, recall class.","search (query, string); limit (query, integer, default 10, max 100)"
+FDA,GET,/fda/food-recalls,"Food recall enforcement reports — recalled foods, contamination, allergens, reasons.","search (query, string); limit (query, integer, default 10, max 100)"
+Clinical Trials,GET,/clinical-trials,"Search ClinicalTrials.gov by condition, intervention, and status (recruiting, completed). Medical and drug trials.","condition (query, string); intervention (query, string); status (query, string); limit (query, integer, default 10, max 100)"
+Clinical Trials,GET,/clinical-trials/{nct_id},Full record for one clinical trial by its NCT ID.,"nct_id (path, string, required)"
+EIA,GET,/eia,List the EIA energy datasets available to query.,
+EIA,GET,/eia/electricity,"Electricity data: generation, retail sales, and prices.","limit (query, integer, default 10, max 100)"
+EIA,GET,/eia/gas-prices,Gasoline and fuel prices over time.,"limit (query, integer, default 10, max 100)"
+EIA,GET,/eia/{route},"Generic EIA dataset query by route path — any energy series (crude oil, natural gas, coal, renewables, CO2 emissions, consumption).","route (path, string, required); frequency (query, string, default annual); data (query, string, default value); limit (query, integer, default 10, max 1000)"
+FEMA,GET,/fema/disasters,"Federal disaster declarations (hurricanes, floods, wildfires, severe storms) by date and state.","limit (query, integer, default 10, max 1000)"
+FEMA,GET,/fema/flood-claims,NFIP (National Flood Insurance Program) flood insurance claims data.,"limit (query, integer, default 10, max 1000)"
+FEMA,GET,/fema/grants,FEMA grant and assistance awards.,"limit (query, integer, default 10, max 1000)"
+Federal Register,GET,/federal-register,"Search the Federal Register: proposed and final rules, notices, executive orders, and presidential documents; filter by type and agency.","term (query, string); doc_type (query, string); agency (query, string); limit (query, integer, default 10, max 100)"
+Federal Register,GET,/federal-register/{doc_number},One Federal Register document by its document number.,"doc_number (path, string, required)"
+JEFS,GET,/jefs/facets,"Available JEFS filters (years, courts, positions, report types). Requires an active session.",
+JEFS,POST,/jefs/register,"Open a JEFS session for judicial financial disclosures — drives a Playwright browser through registration + reCAPTCHA. Requires a real name, occupation, and address.","name (query, string, required); occupation (query, string, required); address (query, string, required); headed (query, boolean, default True)"
+JEFS,POST,/jefs/reset,Clear the JEFS session; you must re-register before the next call.,
+JEFS,GET,/jefs/search,Search federal judges' financial disclosure reports. Requires an active session (call /jefs/register first).,"q (query, string); year (query, string); court_type (query, string); start (query, integer, default 0)"
+House Disclosures,GET,/house-disclosures/candidates,US House candidates' financial disclosures.,"last_name (query, string); year (query, string); state (query, string); district (query, string)"
+House Disclosures,GET,/house-disclosures/members,US House members' financial disclosures — congressional stock trades and holdings.,"last_name (query, string); year (query, string); state (query, string); district (query, string)"
+NARA,GET,/nara/record/{na_id},One National Archives catalog record by its National Archives Identifier (NAID).,"na_id (path, string, required)"
+NARA,GET,/nara/search,Search the US National Archives Catalog — historical government records across all record groups and the 14 presidential libraries.,"q (query, string); page (query, integer, default 1)"
+NSArchive,GET,/nsarchive/document/{doc_id},One declassified Virtual Reading Room document by its id-slug.,"doc_id (path, string, required)"
+NSArchive,GET,/nsarchive/search,"Search the National Security Archive (GWU NGO) Virtual Reading Room — declassified documents on foreign policy, intelligence, and defense.","q (query, string); page (query, integer, default 1)"
+Smithsonian,GET,/smithsonian/category/{category}/search,"Search within a Smithsonian category: art_design, history_culture, or science_technology.","category (path, string, required); q (query, string); start (query, integer, default 0); rows (query, integer, default 10, max 100)"
+Smithsonian,GET,/smithsonian/object/{object_id},Full metadata record for one Smithsonian object by EDAN id.,"object_id (path, string, required)"
+Smithsonian,GET,/smithsonian/search,"Search Smithsonian Open Access — 11M+ museum, library, and archive objects (art, history, science specimens, photographs).","q (query, string); start (query, integer, default 0); rows (query, integer, default 10, max 100); sort (query, string); obj_type (query, string)"
+Smithsonian,GET,/smithsonian/stats,"Smithsonian Open Access dataset statistics (counts by unit, type, etc.).",
+Smithsonian,GET,/smithsonian/terms/{category},"Controlled-vocabulary terms for a facet: culture, topic, place, object_type, data_source, date, or name.","category (path, string, required)"
+Wilson Center,GET,/wilson/document/{slug},"One Wilson Center document by slug: title, source, subjects, download availability.","slug (path, string, required)"
+Wilson Center,GET,/wilson/documents,"Full-text search the Wilson Center Digital Archive (local mirror) — 16,756 declassified Cold War and international-history documents.","q (query, string); page (query, integer, default 1); items_per_page (query, integer, default 10, max 100)"
+Cross-Reference,GET,/cross-reference/company/{name},Aggregate a company across EDGAR + USAspending + FEC in one call: SEC filings + federal contracts + political contributions.,"name (path, string, required)"
+Cross-Reference,GET,/cross-reference/politician/{last_name},Aggregate a politician across House disclosures + FEC: stock trades + campaign finance.,"last_name (path, string, required); first_name (query, string)"
+Admin,POST,/admin/clear-cache,Clear the in-memory cache (operational endpoint).,

@@ -68,7 +68,7 @@ Each file is a deep-dive on a specific upstream — quirks, undocumented behavio
 
 | Doc | Covers |
 |-----|--------|
-| `docs/API_GUIDE.md` | **Agent-facing API guide** — "which endpoint for which information" routing map + a one-liner per endpoint (no architecture/params). `docs/endpoints.csv` is the same list for tooling. Regenerate with `python -m scripts.gen_api_guide`. |
+| `docs/API_GUIDE.md` | **Agent-facing API guide** — "which endpoint for which information" routing map + a keyword-rich description and the parameters for every endpoint (no app architecture). Curated descriptions live in `scripts/gen_api_guide.py`; `docs/endpoints.csv` is the same data, flat. Regenerate with `python -m scripts.gen_api_guide`. |
 | `docs/REFERENCE.md` | **Complete single-file reference** — architecture, request lifecycle, auth, response envelope, deployment, and every endpoint with its parameters. Regenerate the endpoint section with `python -m scripts.gen_reference_doc`. |
 | `docs/EDGAR_API.md` | SEC EDGAR — submissions, company concepts, XBRL frames, full-text search. The Frames API quirks (period format `CYxxxxQxI`), ticker→CIK resolution, rate limit (10/sec). |
 | `docs/GOV_APIS.md` | Comprehensive reference for the 14 US-government APIs (FRED, BLS, Census, Treasury, FEC, Congress, FDA, ClinicalTrials, EIA, FEMA, Federal Register, USAspending, SAM.gov, PatentsView, etc.) — with verified curl examples. Use this to understand any of the gov APIs. |
