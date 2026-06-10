@@ -27,7 +27,7 @@ Find the right endpoint for the information you need, then call it.
 - **Base URL:** `https://datagod.example.com`
 - **Auth:** every call needs the header `X-API-Key: <your-key>` — only `GET /health` is public.
 - **Response:** read the payload from the `data` field of the `{meta, data, error}` envelope.
-- **Each entry below lists its parameters.** For full response schemas use `GET /openapi.json` (HTTP Basic: user `datagod`, password = your key) or the Swagger UI at `/docs`. `docs/endpoints.csv` has the same list, flat.
+- **Drill down:** each source below has a rich description, its endpoint paths, and a link to its detail doc. Per-endpoint **parameters** live in `docs/endpoints.csv` (flat, greppable); full response **schemas** via `GET /openapi.json` (HTTP Basic: user `datagod`, password = your key) or `/docs`.
 - **Limits:** a valid key has **no per-key usage or rate limit** on DataGod itself. Caveats: each endpoint's `limit` query param caps results **per call** (paginate for more), SEC EDGAR is throttled to ~10 req/sec (SEC's rule, shared across callers), and each upstream enforces its own rate limits (the DEMO_KEY-backed FEC / Congress / EIA / Smithsonian are low) — DataGod passes those through.
 """
 
@@ -163,6 +163,48 @@ DESCRIPTIONS = {
     "/admin/clear-cache": "Clear the in-memory cache (operational endpoint).",
 }
 
+# Keyword-dense per-source descriptions for the router — the recall layer. Pack
+# in synonyms and the concrete things each source covers so an LLM scanning the
+# router recognizes the source exists and when to reach for it.
+SOURCE_DESC = {
+    "Health": "Service utility: API index (`/`) and a public liveness probe (`/health`). Not a data source.",
+    "FRED": "US macroeconomic time series (800K+). GDP, inflation and consumer prices (CPI, PCE), unemployment rate, interest rates (Fed funds, Treasury yields), money supply (M1/M2), exchange rates, housing, industrial production, S&P 500, recession indicators. The default for any national economic indicator over time.",
+    "EDGAR": "SEC corporate filings and financials. 10-K / 10-Q / 8-K filings, full XBRL financial statements (revenue, net income, assets, liabilities, EPS, cash flow), one-metric-across-all-public-companies comparisons, and full-text search inside filings. Use for any public-company financial data, SEC disclosures, or 'which companies mention X'.",
+    "Nasdaq": "Stock-market quotes (Nasdaq.com, unofficial). Price, bid/ask, volume, market cap, sector, industry, P/E, 52-week range, dividends, and daily OHLCV history. Use for a quick quote or price snapshot of a listed ticker.",
+    "yfinance": "Deep equity data (Yahoo Finance). ~140 fundamental fields, full income statement / balance sheet / cash flow, options chains, institutional and fund holders, analyst recommendations, news, and flexible price history. Use for thorough single-ticker analysis beyond a basic quote.",
+    "USAspending": "US federal spending ($6T+/yr). Government contracts and grants, recipients and contractors, award amounts, and agency spending totals. Use for who received federal money, defense/agency contracts, or grant awards.",
+    "Census": "US demographics (Census Bureau / American Community Survey). Population, median household income, and raw ACS queries — race, age, sex, education, poverty, housing, commute — by state, county, or tract. Use for any US demographic or socioeconomic statistic.",
+    "BLS": "US labor statistics (Bureau of Labor Statistics). Unemployment rate, nonfarm payroll jobs, wages and average hourly earnings, CPI inflation, PPI producer prices, productivity. Use for the labor market, employment, or price indexes by series.",
+    "Treasury": "US federal fiscal data (Treasury Fiscal Data). National debt (debt to the penny, debt held by the public, intragovernmental), average interest rates on Treasury securities, and government exchange rates. Use for the size of the national debt or US borrowing costs.",
+    "FEC": "Federal campaign finance (Federal Election Commission). Candidates (President / Senate / House), itemized contributions and donors, and candidate fundraising totals. Use for elections money: who is running, who donated, how much was raised or spent.",
+    "Congress": "US legislation (Congress.gov). Bills with status, sponsors, and actions; members of Congress; and roll-call votes. Use for tracking laws, what Congress is doing, or how members voted.",
+    "FDA": "Drug and food safety (openFDA). Drug adverse-event / side-effect reports (FAERS), drug recalls, and food recalls (contamination, allergens). Use for medication safety, adverse reactions, or recalled products.",
+    "Clinical Trials": "Medical research trials (ClinicalTrials.gov, 500K+ studies). Search by condition or disease, intervention or drug, and status (recruiting, completed). Use for clinical trials on a disease or treatment.",
+    "EIA": "US energy data (Energy Information Administration). Gasoline and fuel prices, electricity generation / sales / prices, and any energy series — crude oil, natural gas, coal, renewables, CO2 emissions, consumption. Use for energy prices or production.",
+    "FEMA": "Disasters and emergency management (OpenFEMA). Federal disaster declarations (hurricanes, floods, wildfires, severe storms), FEMA grants and assistance, and NFIP flood-insurance claims. Use for disaster events or federal disaster aid.",
+    "Federal Register": "US federal regulations (Federal Register). Proposed and final rules, agency notices, executive orders, and presidential documents — searchable by type and agency. Use for rulemaking, regulations, or executive orders.",
+    "JEFS": "Federal judges' financial disclosures (Judicial). Disclosure reports for federal judges — session-based, requires Playwright registration + reCAPTCHA first. Use for the finances or holdings of federal judges.",
+    "House Disclosures": "US House financial disclosures. Representatives' and candidates' stock trades and holdings (congressional trading / periodic transaction reports). Use for politicians' stock transactions in the House.",
+    "NARA": "US National Archives catalog. Historical federal records across all record groups and the 14 presidential libraries. Use for archival US government documents, historical records, or presidential materials.",
+    "NSArchive": "Declassified national-security documents (National Security Archive — a GWU NGO, not NARA). Virtual Reading Room: foreign policy, intelligence, military, declassified cables and memos. Use for declassified Cold War or foreign-policy documents.",
+    "Smithsonian": "Museum and archive collections (Smithsonian Open Access, 11M+ objects). Art, history, science specimens, and photographs with metadata, plus category and controlled-term browsing. Use for museum objects, cultural artifacts, or collection metadata.",
+    "Wilson Center": "Cold War and international-history documents (Wilson Center Digital Archive, local mirror). 16,756 declassified primary-source documents on diplomacy and international relations. Use for primary-source Cold War and foreign-relations documents.",
+    "Cross-Reference": "Aggregators that join several sources in one call. Company -> SEC filings + federal contracts + political contributions; politician -> House stock disclosures + campaign finance. Use to profile a company or politician across sources at once.",
+    "Admin": "Operational endpoints (cache management). Not a data source.",
+}
+
+# Where each source's deep-detail doc lives (empty = no dedicated doc yet).
+SOURCE_DOC = {
+    "FRED": "docs/GOV_APIS.md", "BLS": "docs/GOV_APIS.md", "Census": "docs/GOV_APIS.md",
+    "Treasury": "docs/GOV_APIS.md", "FEC": "docs/GOV_APIS.md", "Congress": "docs/GOV_APIS.md",
+    "FDA": "docs/GOV_APIS.md", "Clinical Trials": "docs/GOV_APIS.md", "EIA": "docs/GOV_APIS.md",
+    "FEMA": "docs/GOV_APIS.md", "Federal Register": "docs/GOV_APIS.md", "USAspending": "docs/GOV_APIS.md",
+    "EDGAR": "docs/EDGAR_API.md", "Nasdaq": "docs/NASDAQ_API.md", "yfinance": "docs/YFINANCE_API.md",
+    "House Disclosures": "docs/HOUSE_FD_API.md", "JEFS": "docs/JEFS_API.md", "NARA": "docs/NARA_API.md",
+    "NSArchive": "docs/NSARCHIVE_API.md", "Smithsonian": "docs/SMITHSONIAN_API.md",
+    "Wilson Center": "docs/WILSON_DIGITAL_ARCHIVE_API.md",
+}
+
 _HTTP_METHODS = ("get", "post", "put", "delete", "patch")
 
 
@@ -214,28 +256,37 @@ def _grouped() -> tuple[list[str], dict[str, str], dict[str, list[tuple[str, str
 
 
 def render_md() -> tuple[str, list[str]]:
-    order, descriptions, grouped = _grouped()
+    """Thin router: header + example + need->source index + a rich description per
+    source (the recall layer) with its endpoint paths and detail-doc link. Per-endpoint
+    params live in endpoints.csv; deep detail in each source's doc."""
+    order, tag_desc, grouped = _grouped()
     missing: list[str] = []
-    out = [HEADER, "", EXAMPLE, "", QUICK_INDEX, "", "## All endpoints by source", ""]
+    out = [
+        HEADER, "", EXAMPLE, "", QUICK_INDEX, "",
+        "## Sources",
+        "",
+        "A keyword-rich description per source, so you can tell at a glance whether a "
+        "source has what you need. Endpoint **parameters** are in `docs/endpoints.csv` "
+        "(flat, greppable); **deep detail and quirks** are in each source's linked doc. "
+        "Load only the source(s) you need.",
+        "",
+    ]
     for tag in order:
         rows = grouped.get(tag)
         if not rows:
             continue
-        out.append(f"### {tag}")
-        if descriptions.get(tag):
-            out += ["", f"_{descriptions[tag]}_"]
-        out.append("")
-        for method, path, op in sorted(rows, key=lambda row: row[1]):
-            desc = DESCRIPTIONS.get(path)
-            if desc is None:
-                missing.append(path)
-                desc = op.get("summary", "")
-            out.append(f"- **`{method} {path}`** — {desc}")
-            params = _params(op)
-            if params:
-                out.append("  - _params:_ " + " · ".join(f"`{n}` ({m})" for n, m in params))
-            else:
-                out.append("  - _params:_ none")
+        desc = SOURCE_DESC.get(tag)
+        if desc is None:
+            missing.append(tag)
+            desc = tag_desc.get(tag, "")
+        paths = " · ".join(f"`{path}`" for _m, path, _op in sorted(rows, key=lambda r: r[1]))
+        doc = SOURCE_DOC.get(tag, "")
+        out += [f"### {tag}", "", desc, ""]
+        out.append(f"- **Endpoints:** {paths}")
+        out.append(
+            f"- **Detail:** `{doc}` · **params:** `docs/endpoints.csv`"
+            if doc else "- **params:** `docs/endpoints.csv`"
+        )
         out.append("")
     return "\n".join(out).rstrip() + "\n", missing
 
@@ -262,7 +313,7 @@ def main() -> None:
     rows = write_csv(docs / "endpoints.csv")
     print(f"wrote docs/API_GUIDE.md and docs/endpoints.csv ({rows} endpoints)")
     if missing:
-        print(f"WARNING: {len(missing)} routes missing curated descriptions: {missing}")
+        print(f"WARNING: {len(missing)} sources missing curated descriptions: {missing}")
 
 
 if __name__ == "__main__":

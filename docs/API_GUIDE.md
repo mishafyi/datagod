@@ -5,7 +5,7 @@ Find the right endpoint for the information you need, then call it.
 - **Base URL:** `https://datagod.example.com`
 - **Auth:** every call needs the header `X-API-Key: <your-key>` — only `GET /health` is public.
 - **Response:** read the payload from the `data` field of the `{meta, data, error}` envelope.
-- **Each entry below lists its parameters.** For full response schemas use `GET /openapi.json` (HTTP Basic: user `datagod`, password = your key) or the Swagger UI at `/docs`. `docs/endpoints.csv` has the same list, flat.
+- **Drill down:** each source below has a rich description, its endpoint paths, and a link to its detail doc. Per-endpoint **parameters** live in `docs/endpoints.csv` (flat, greppable); full response **schemas** via `GET /openapi.json` (HTTP Basic: user `datagod`, password = your key) or `/docs`.
 - **Limits:** a valid key has **no per-key usage or rate limit** on DataGod itself. Caveats: each endpoint's `limit` query param caps results **per call** (paginate for more), SEC EDGAR is throttled to ~10 req/sec (SEC's rule, shared across callers), and each upstream enforces its own rate limits (the DEMO_KEY-backed FEC / Congress / EIA / Smithsonian are low) — DataGod passes those through.
 
 
@@ -62,268 +62,174 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 
 
-## All endpoints by source
+## Sources
+
+A keyword-rich description per source, so you can tell at a glance whether a source has what you need. Endpoint **parameters** are in `docs/endpoints.csv` (flat, greppable); **deep detail and quirks** are in each source's linked doc. Load only the source(s) you need.
 
 ### Health
 
-_Liveness probe. `GET /health` is public (no key required)._
+Service utility: API index (`/`) and a public liveness probe (`/health`). Not a data source.
 
-- **`GET /`** — Service index: lists every data source and its endpoint groups. Use to discover what is available.
-  - _params:_ none
-- **`GET /health`** — Health / liveness check. Public, no key. Use for uptime monitoring and readiness probes.
-  - _params:_ none
+- **Endpoints:** `/` · `/health`
+- **params:** `docs/endpoints.csv`
 
 ### FRED
 
-_Federal Reserve Economic Data — 800K+ economic time series._
+US macroeconomic time series (800K+). GDP, inflation and consumer prices (CPI, PCE), unemployment rate, interest rates (Fed funds, Treasury yields), money supply (M1/M2), exchange rates, housing, industrial production, S&P 500, recession indicators. The default for any national economic indicator over time.
 
-- **`GET /fred`** — Keyword search across FRED's 800K-series catalog; returns series IDs to fetch above. Use when you don't know the exact series ID.
-  - _params:_ `q` (query, string) · `limit` (query, integer, default 10, max 100)
-- **`GET /fred/{series_id}`** — One US macroeconomic time series by FRED series ID. Use for: GDP, inflation, consumer prices/CPI (CPIAUCSL), unemployment rate (UNRATE), Fed funds / interest rates (FEDFUNDS), Treasury yields (DGS10), money supply (M2), S&P 500 (SP500), industrial production, recession indicators — any US macro indicator.
-  - _params:_ `series_id` (path, string, required) · `limit` (query, integer, default 10, max 1000)
+- **Endpoints:** `/fred` · `/fred/{series_id}`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### EDGAR
 
-_SEC EDGAR — corporate filings, XBRL financials, full-text search. The Frames endpoint compares one concept across all filers in a single call._
+SEC corporate filings and financials. 10-K / 10-Q / 8-K filings, full XBRL financial statements (revenue, net income, assets, liabilities, EPS, cash flow), one-metric-across-all-public-companies comparisons, and full-text search inside filings. Use for any public-company financial data, SEC disclosures, or 'which companies mention X'.
 
-- **`GET /edgar/company/{cik}`** — SEC company profile and filing history (10-K, 10-Q, 8-K, S-1, etc.) by CIK or ticker (e.g. AAPL). Use for: company metadata, recent filings, fiscal year end, SIC industry, exchange, addresses, former names.
-  - _params:_ `cik` (path, string, required)
-- **`GET /edgar/concept/{cik}/{concept}`** — History of one XBRL concept for one company (e.g. Revenues, NetIncomeLoss, Assets, CashAndCashEquivalents). Use to track a single financial metric over time.
-  - _params:_ `cik` (path, string, required) · `concept` (path, string, required) · `taxonomy` (query, string, default us-gaap)
-- **`GET /edgar/financials/{cik}`** — All XBRL financial facts for a company across years. Use for: revenue, net income, assets, liabilities, cash, equity, EPS, R&D spend — the full financial-statement dataset.
-  - _params:_ `cik` (path, string, required)
-- **`GET /edgar/frames/{concept}`** — One financial concept across ALL public companies for a period — cross-company comparison in a single call. Use to rank or compare revenue / assets / net income across thousands of filers.
-  - _params:_ `concept` (path, string, required) · `unit` (query, string, default USD) · `period` (query, string, default CY2023) · `taxonomy` (query, string, default us-gaap)
-- **`GET /edgar/search`** — Full-text search inside SEC filing documents. Use for: which companies mention a topic (AI, climate risk, layoffs, a competitor, a product) in their filings; filter by form type.
-  - _params:_ `q` (query, string, required) · `forms` (query, string) · `limit` (query, integer, default 10, max 100)
+- **Endpoints:** `/edgar/company/{cik}` · `/edgar/concept/{cik}/{concept}` · `/edgar/financials/{cik}` · `/edgar/frames/{concept}` · `/edgar/search`
+- **Detail:** `docs/EDGAR_API.md` · **params:** `docs/endpoints.csv`
 
 ### Nasdaq
 
-_Nasdaq.com (unofficial) — quote, price, history, dividends._
+Stock-market quotes (Nasdaq.com, unofficial). Price, bid/ask, volume, market cap, sector, industry, P/E, 52-week range, dividends, and daily OHLCV history. Use for a quick quote or price snapshot of a listed ticker.
 
-- **`GET /nasdaq/dividends/{ticker}`** — Dividend payment history (ex-date and amount) for a ticker.
-  - _params:_ `ticker` (path, string, required) · `asset_class` (query, string, default stocks)
-- **`GET /nasdaq/history/{ticker}`** — Daily OHLCV price history (open, high, low, close, volume) between two dates.
-  - _params:_ `ticker` (path, string, required) · `fromdate` (query, string, required) · `todate` (query, string, required) · `limit` (query, integer, default 30, max 260) · `asset_class` (query, string, default stocks)
-- **`GET /nasdaq/price/{ticker}`** — Current price, bid/ask, day volume, and percent change for a ticker.
-  - _params:_ `ticker` (path, string, required) · `asset_class` (query, string, default stocks)
-- **`GET /nasdaq/quote/{ticker}`** — Stock quote summary: market cap, sector, industry, P/E, dividend yield, 52-week high/low. Quick snapshot of a listed company.
-  - _params:_ `ticker` (path, string, required) · `asset_class` (query, string, default stocks)
+- **Endpoints:** `/nasdaq/dividends/{ticker}` · `/nasdaq/history/{ticker}` · `/nasdaq/price/{ticker}` · `/nasdaq/quote/{ticker}`
+- **Detail:** `docs/NASDAQ_API.md` · **params:** `docs/endpoints.csv`
 
 ### yfinance
 
-_Yahoo Finance via the yfinance library — fundamentals, news, options, holders._
+Deep equity data (Yahoo Finance). ~140 fundamental fields, full income statement / balance sheet / cash flow, options chains, institutional and fund holders, analyst recommendations, news, and flexible price history. Use for thorough single-ticker analysis beyond a basic quote.
 
-- **`GET /yfinance/dividends/{ticker}`** — Dividend payment history (amounts and dates).
-  - _params:_ `ticker` (path, string, required)
-- **`GET /yfinance/financials/{ticker}`** — Income statement, balance sheet, and cash-flow statement (annual + quarterly).
-  - _params:_ `ticker` (path, string, required)
-- **`GET /yfinance/history/{ticker}`** — OHLCV price history with flexible period (1d..max) and interval (1m..1mo). Use for charts, returns, volatility.
-  - _params:_ `ticker` (path, string, required) · `period` (query, string, default 1mo) · `interval` (query, string, default 1d)
-- **`GET /yfinance/holders/{ticker}`** — Ownership: major holders, institutional holders, and mutual-fund holders.
-  - _params:_ `ticker` (path, string, required)
-- **`GET /yfinance/info/{ticker}`** — Deepest single-call company profile (~140 fields): market cap, P/E, EPS, beta, profit margins, ROE, debt, free cash flow, analyst price targets, sector, employees, business summary.
-  - _params:_ `ticker` (path, string, required)
-- **`GET /yfinance/news/{ticker}`** — Recent news headlines and article links tied to a ticker.
-  - _params:_ `ticker` (path, string, required)
-- **`GET /yfinance/options/{ticker}`** — Options chain: expiry dates, calls and puts, strikes, implied volatility, open interest.
-  - _params:_ `ticker` (path, string, required) · `expiry` (query, string)
-- **`GET /yfinance/recommendations/{ticker}`** — Analyst recommendation history (buy / hold / sell ratings over time).
-  - _params:_ `ticker` (path, string, required)
+- **Endpoints:** `/yfinance/dividends/{ticker}` · `/yfinance/financials/{ticker}` · `/yfinance/history/{ticker}` · `/yfinance/holders/{ticker}` · `/yfinance/info/{ticker}` · `/yfinance/news/{ticker}` · `/yfinance/options/{ticker}` · `/yfinance/recommendations/{ticker}`
+- **Detail:** `docs/YFINANCE_API.md` · **params:** `docs/endpoints.csv`
 
 ### USAspending
 
-_USAspending.gov — federal contracts and grants ($6T+/yr)._
+US federal spending ($6T+/yr). Government contracts and grants, recipients and contractors, award amounts, and agency spending totals. Use for who received federal money, defense/agency contracts, or grant awards.
 
-- **`GET /usaspending/agencies`** — List of federal agencies (names and IDs) for filtering spending queries.
-  - _params:_ none
-- **`GET /usaspending/by-agency`** — Federal spending totals grouped by agency for a fiscal year / quarter.
-  - _params:_ `fy` (query, string, default 2025) · `quarter` (query, string, default 1)
-- **`GET /usaspending/search`** — Search federal awards (contracts and grants) by keyword. Use for: who received federal money, contractors/recipients, award amounts, defense or agency spending.
-  - _params:_ `q` (query, string, required) · `start_date` (query, string) · `end_date` (query, string) · `limit` (query, integer, default 10, max 100)
+- **Endpoints:** `/usaspending/agencies` · `/usaspending/by-agency` · `/usaspending/search`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### Census
 
-_US Census Bureau — population, income, and raw ACS queries._
+US demographics (Census Bureau / American Community Survey). Population, median household income, and raw ACS queries — race, age, sex, education, poverty, housing, commute — by state, county, or tract. Use for any US demographic or socioeconomic statistic.
 
-- **`GET /census/acs`** — Raw American Community Survey query — any ACS variables and geography (state / county / tract). Use for: demographics, race, age, sex, education, income, poverty, housing, commute — any ACS table by variable code.
-  - _params:_ `variables` (query, string, default NAME,B01001_001E) · `year` (query, integer, default 2022) · `geo_for` (query, string, default state:*) · `geo_in` (query, string)
-- **`GET /census/income`** — Median household income by US state.
-  - _params:_ `year` (query, integer, default 2022)
-- **`GET /census/population`** — Population by US state.
-  - _params:_ `year` (query, integer, default 2022)
+- **Endpoints:** `/census/acs` · `/census/income` · `/census/population`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### BLS
 
-_Bureau of Labor Statistics — employment, wages, CPI._
+US labor statistics (Bureau of Labor Statistics). Unemployment rate, nonfarm payroll jobs, wages and average hourly earnings, CPI inflation, PPI producer prices, productivity. Use for the labor market, employment, or price indexes by series.
 
-- **`GET /bls/{series_id}`** — US labor statistics series by ID. Use for: unemployment rate, nonfarm payroll employment, CPI inflation, PPI, average hourly earnings. Shortcut IDs: unemployment, cpi, nonfarm_employment, ppi, hourly_earnings.
-  - _params:_ `series_id` (path, string, required) · `start_year` (query, integer, default 2024) · `end_year` (query, integer, default 2026)
+- **Endpoints:** `/bls/{series_id}`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### Treasury
 
-_Treasury Fiscal Data — debt, interest rates, exchange rates._
+US federal fiscal data (Treasury Fiscal Data). National debt (debt to the penny, debt held by the public, intragovernmental), average interest rates on Treasury securities, and government exchange rates. Use for the size of the national debt or US borrowing costs.
 
-- **`GET /treasury/debt`** — US national / public debt (debt to the penny): total outstanding, debt held by the public, intragovernmental holdings, by date.
-  - _params:_ `limit` (query, integer, default 5, max 100)
-- **`GET /treasury/exchange`** — US Treasury reporting exchange rates (foreign-currency conversion rates used by the government).
-  - _params:_ `limit` (query, integer, default 5, max 100)
-- **`GET /treasury/rates`** — Average interest rates on outstanding US Treasury securities.
-  - _params:_ `limit` (query, integer, default 5, max 100)
+- **Endpoints:** `/treasury/debt` · `/treasury/exchange` · `/treasury/rates`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### FEC
 
-_Federal Election Commission — candidates, contributions, totals._
+Federal campaign finance (Federal Election Commission). Candidates (President / Senate / House), itemized contributions and donors, and candidate fundraising totals. Use for elections money: who is running, who donated, how much was raised or spent.
 
-- **`GET /fec/candidates`** — Search federal candidates (President, Senate, House) by office and state. Campaign finance.
-  - _params:_ `office` (query, string) · `state` (query, string) · `limit` (query, integer, default 10, max 100)
-- **`GET /fec/contributions`** — Campaign contributions — itemized donations by or for a candidate or donor name.
-  - _params:_ `name` (query, string) · `candidate_id` (query, string) · `limit` (query, integer, default 10, max 100)
-- **`GET /fec/totals`** — Candidate financial totals (money raised / receipts), ranked, by office and election year.
-  - _params:_ `office` (query, string, default P) · `year` (query, integer, default 2024) · `limit` (query, integer, default 10, max 100)
+- **Endpoints:** `/fec/candidates` · `/fec/contributions` · `/fec/totals`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### Congress
 
-_Congress.gov — bills, members, votes._
+US legislation (Congress.gov). Bills with status, sponsors, and actions; members of Congress; and roll-call votes. Use for tracking laws, what Congress is doing, or how members voted.
 
-- **`GET /congress/bill/{congress_num}/{bill_type}/{number}`** — Full detail for one bill: sponsors, actions, latest status, summary.
-  - _params:_ `congress_num` (path, integer, required) · `bill_type` (path, string, required) · `number` (path, integer, required)
-- **`GET /congress/bills`** — Recent bills introduced in Congress. Legislation tracking.
-  - _params:_ `limit` (query, integer, default 10, max 250) · `congress_num` (query, integer, default 0)
-- **`GET /congress/members`** — Members of Congress (representatives and senators), with party and state.
-  - _params:_ `limit` (query, integer, default 10, max 250)
-- **`GET /congress/votes`** — Roll-call votes by chamber and session.
-  - _params:_ `chamber` (query, string, default house) · `congress_session` (query, integer, default 118) · `limit` (query, integer, default 10, max 250)
+- **Endpoints:** `/congress/bill/{congress_num}/{bill_type}/{number}` · `/congress/bills` · `/congress/members` · `/congress/votes`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### FDA
 
-_openFDA — drug adverse events, drug recalls, food recalls._
+Drug and food safety (openFDA). Drug adverse-event / side-effect reports (FAERS), drug recalls, and food recalls (contamination, allergens). Use for medication safety, adverse reactions, or recalled products.
 
-- **`GET /fda/drug-events`** — Drug adverse-event reports (side effects, reactions) from openFDA / FAERS.
-  - _params:_ `search` (query, string) · `limit` (query, integer, default 10, max 100)
-- **`GET /fda/drug-recalls`** — Drug recall enforcement reports — recalled medications, reasons, recall class.
-  - _params:_ `search` (query, string) · `limit` (query, integer, default 10, max 100)
-- **`GET /fda/food-recalls`** — Food recall enforcement reports — recalled foods, contamination, allergens, reasons.
-  - _params:_ `search` (query, string) · `limit` (query, integer, default 10, max 100)
+- **Endpoints:** `/fda/drug-events` · `/fda/drug-recalls` · `/fda/food-recalls`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### Clinical Trials
 
-_ClinicalTrials.gov — 500K+ registered trials._
+Medical research trials (ClinicalTrials.gov, 500K+ studies). Search by condition or disease, intervention or drug, and status (recruiting, completed). Use for clinical trials on a disease or treatment.
 
-- **`GET /clinical-trials`** — Search ClinicalTrials.gov by condition, intervention, and status (recruiting, completed). Medical and drug trials.
-  - _params:_ `condition` (query, string) · `intervention` (query, string) · `status` (query, string) · `limit` (query, integer, default 10, max 100)
-- **`GET /clinical-trials/{nct_id}`** — Full record for one clinical trial by its NCT ID.
-  - _params:_ `nct_id` (path, string, required)
+- **Endpoints:** `/clinical-trials` · `/clinical-trials/{nct_id}`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### EIA
 
-_Energy Information Administration — gas prices, electricity, and generic dataset queries._
+US energy data (Energy Information Administration). Gasoline and fuel prices, electricity generation / sales / prices, and any energy series — crude oil, natural gas, coal, renewables, CO2 emissions, consumption. Use for energy prices or production.
 
-- **`GET /eia`** — List the EIA energy datasets available to query.
-  - _params:_ none
-- **`GET /eia/electricity`** — Electricity data: generation, retail sales, and prices.
-  - _params:_ `limit` (query, integer, default 10, max 100)
-- **`GET /eia/gas-prices`** — Gasoline and fuel prices over time.
-  - _params:_ `limit` (query, integer, default 10, max 100)
-- **`GET /eia/{route}`** — Generic EIA dataset query by route path — any energy series (crude oil, natural gas, coal, renewables, CO2 emissions, consumption).
-  - _params:_ `route` (path, string, required) · `frequency` (query, string, default annual) · `data` (query, string, default value) · `limit` (query, integer, default 10, max 1000)
+- **Endpoints:** `/eia` · `/eia/electricity` · `/eia/gas-prices` · `/eia/{route}`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### FEMA
 
-_OpenFEMA — disaster declarations, grants, flood claims._
+Disasters and emergency management (OpenFEMA). Federal disaster declarations (hurricanes, floods, wildfires, severe storms), FEMA grants and assistance, and NFIP flood-insurance claims. Use for disaster events or federal disaster aid.
 
-- **`GET /fema/disasters`** — Federal disaster declarations (hurricanes, floods, wildfires, severe storms) by date and state.
-  - _params:_ `limit` (query, integer, default 10, max 1000)
-- **`GET /fema/flood-claims`** — NFIP (National Flood Insurance Program) flood insurance claims data.
-  - _params:_ `limit` (query, integer, default 10, max 1000)
-- **`GET /fema/grants`** — FEMA grant and assistance awards.
-  - _params:_ `limit` (query, integer, default 10, max 1000)
+- **Endpoints:** `/fema/disasters` · `/fema/flood-claims` · `/fema/grants`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### Federal Register
 
-_Federal Register — rules, notices, executive orders._
+US federal regulations (Federal Register). Proposed and final rules, agency notices, executive orders, and presidential documents — searchable by type and agency. Use for rulemaking, regulations, or executive orders.
 
-- **`GET /federal-register`** — Search the Federal Register: proposed and final rules, notices, executive orders, and presidential documents; filter by type and agency.
-  - _params:_ `term` (query, string) · `doc_type` (query, string) · `agency` (query, string) · `limit` (query, integer, default 10, max 100)
-- **`GET /federal-register/{doc_number}`** — One Federal Register document by its document number.
-  - _params:_ `doc_number` (path, string, required)
+- **Endpoints:** `/federal-register` · `/federal-register/{doc_number}`
+- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
 
 ### JEFS
 
-_Judicial Financial Disclosures — session-based; needs Playwright registration + reCAPTCHA first._
+Federal judges' financial disclosures (Judicial). Disclosure reports for federal judges — session-based, requires Playwright registration + reCAPTCHA first. Use for the finances or holdings of federal judges.
 
-- **`GET /jefs/facets`** — Available JEFS filters (years, courts, positions, report types). Requires an active session.
-  - _params:_ none
-- **`POST /jefs/register`** — Open a JEFS session for judicial financial disclosures — drives a Playwright browser through registration + reCAPTCHA. Requires a real name, occupation, and address.
-  - _params:_ `name` (query, string, required) · `occupation` (query, string, required) · `address` (query, string, required) · `headed` (query, boolean, default True)
-- **`POST /jefs/reset`** — Clear the JEFS session; you must re-register before the next call.
-  - _params:_ none
-- **`GET /jefs/search`** — Search federal judges' financial disclosure reports. Requires an active session (call /jefs/register first).
-  - _params:_ `q` (query, string) · `year` (query, string) · `court_type` (query, string) · `start` (query, integer, default 0)
+- **Endpoints:** `/jefs/facets` · `/jefs/register` · `/jefs/reset` · `/jefs/search`
+- **Detail:** `docs/JEFS_API.md` · **params:** `docs/endpoints.csv`
 
 ### House Disclosures
 
-_US House financial disclosures (member/candidate stock trades)._
+US House financial disclosures. Representatives' and candidates' stock trades and holdings (congressional trading / periodic transaction reports). Use for politicians' stock transactions in the House.
 
-- **`GET /house-disclosures/candidates`** — US House candidates' financial disclosures.
-  - _params:_ `last_name` (query, string) · `year` (query, string) · `state` (query, string) · `district` (query, string)
-- **`GET /house-disclosures/members`** — US House members' financial disclosures — congressional stock trades and holdings.
-  - _params:_ `last_name` (query, string) · `year` (query, string) · `state` (query, string) · `district` (query, string)
+- **Endpoints:** `/house-disclosures/candidates` · `/house-disclosures/members`
+- **Detail:** `docs/HOUSE_FD_API.md` · **params:** `docs/endpoints.csv`
 
 ### NARA
 
-_US National Archives Catalog — all record groups plus the 14 presidential libraries._
+US National Archives catalog. Historical federal records across all record groups and the 14 presidential libraries. Use for archival US government documents, historical records, or presidential materials.
 
-- **`GET /nara/record/{na_id}`** — One National Archives catalog record by its National Archives Identifier (NAID).
-  - _params:_ `na_id` (path, string, required)
-- **`GET /nara/search`** — Search the US National Archives Catalog — historical government records across all record groups and the 14 presidential libraries.
-  - _params:_ `q` (query, string) · `page` (query, integer, default 1)
+- **Endpoints:** `/nara/record/{na_id}` · `/nara/search`
+- **Detail:** `docs/NARA_API.md` · **params:** `docs/endpoints.csv`
 
 ### NSArchive
 
-_National Security Archive (GWU NGO, not NARA) — Virtual Reading Room declassified docs (HTML scrape)._
+Declassified national-security documents (National Security Archive — a GWU NGO, not NARA). Virtual Reading Room: foreign policy, intelligence, military, declassified cables and memos. Use for declassified Cold War or foreign-policy documents.
 
-- **`GET /nsarchive/document/{doc_id}`** — One declassified Virtual Reading Room document by its id-slug.
-  - _params:_ `doc_id` (path, string, required)
-- **`GET /nsarchive/search`** — Search the National Security Archive (GWU NGO) Virtual Reading Room — declassified documents on foreign policy, intelligence, and defense.
-  - _params:_ `q` (query, string) · `page` (query, integer, default 1)
+- **Endpoints:** `/nsarchive/document/{doc_id}` · `/nsarchive/search`
+- **Detail:** `docs/NSARCHIVE_API.md` · **params:** `docs/endpoints.csv`
 
 ### Smithsonian
 
-_Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records._
+Museum and archive collections (Smithsonian Open Access, 11M+ objects). Art, history, science specimens, and photographs with metadata, plus category and controlled-term browsing. Use for museum objects, cultural artifacts, or collection metadata.
 
-- **`GET /smithsonian/category/{category}/search`** — Search within a Smithsonian category: art_design, history_culture, or science_technology.
-  - _params:_ `category` (path, string, required) · `q` (query, string) · `start` (query, integer, default 0) · `rows` (query, integer, default 10, max 100)
-- **`GET /smithsonian/object/{object_id}`** — Full metadata record for one Smithsonian object by EDAN id.
-  - _params:_ `object_id` (path, string, required)
-- **`GET /smithsonian/search`** — Search Smithsonian Open Access — 11M+ museum, library, and archive objects (art, history, science specimens, photographs).
-  - _params:_ `q` (query, string) · `start` (query, integer, default 0) · `rows` (query, integer, default 10, max 100) · `sort` (query, string) · `obj_type` (query, string)
-- **`GET /smithsonian/stats`** — Smithsonian Open Access dataset statistics (counts by unit, type, etc.).
-  - _params:_ none
-- **`GET /smithsonian/terms/{category}`** — Controlled-vocabulary terms for a facet: culture, topic, place, object_type, data_source, date, or name.
-  - _params:_ `category` (path, string, required)
+- **Endpoints:** `/smithsonian/category/{category}/search` · `/smithsonian/object/{object_id}` · `/smithsonian/search` · `/smithsonian/stats` · `/smithsonian/terms/{category}`
+- **Detail:** `docs/SMITHSONIAN_API.md` · **params:** `docs/endpoints.csv`
 
 ### Wilson Center
 
-_Wilson Center Digital Archive — local mirror of 16,756 declassified documents._
+Cold War and international-history documents (Wilson Center Digital Archive, local mirror). 16,756 declassified primary-source documents on diplomacy and international relations. Use for primary-source Cold War and foreign-relations documents.
 
-- **`GET /wilson/document/{slug}`** — One Wilson Center document by slug: title, source, subjects, download availability.
-  - _params:_ `slug` (path, string, required)
-- **`GET /wilson/documents`** — Full-text search the Wilson Center Digital Archive (local mirror) — 16,756 declassified Cold War and international-history documents.
-  - _params:_ `q` (query, string) · `page` (query, integer, default 1) · `items_per_page` (query, integer, default 10, max 100)
+- **Endpoints:** `/wilson/document/{slug}` · `/wilson/documents`
+- **Detail:** `docs/WILSON_DIGITAL_ARCHIVE_API.md` · **params:** `docs/endpoints.csv`
 
 ### Cross-Reference
 
-_Aggregators that join several sources for one company or politician._
+Aggregators that join several sources in one call. Company -> SEC filings + federal contracts + political contributions; politician -> House stock disclosures + campaign finance. Use to profile a company or politician across sources at once.
 
-- **`GET /cross-reference/company/{name}`** — Aggregate a company across EDGAR + USAspending + FEC in one call: SEC filings + federal contracts + political contributions.
-  - _params:_ `name` (path, string, required)
-- **`GET /cross-reference/politician/{last_name}`** — Aggregate a politician across House disclosures + FEC: stock trades + campaign finance.
-  - _params:_ `last_name` (path, string, required) · `first_name` (query, string)
+- **Endpoints:** `/cross-reference/company/{name}` · `/cross-reference/politician/{last_name}`
+- **params:** `docs/endpoints.csv`
 
 ### Admin
 
-_Operational endpoints (cache management)._
+Operational endpoints (cache management). Not a data source.
 
-- **`POST /admin/clear-cache`** — Clear the in-memory cache (operational endpoint).
-  - _params:_ none
+- **Endpoints:** `/admin/clear-cache`
+- **params:** `docs/endpoints.csv`
