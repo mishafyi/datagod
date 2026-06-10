@@ -205,6 +205,34 @@ SOURCE_DOC = {
     "Wilson Center": "docs/WILSON_DIGITAL_ARCHIVE_API.md",
 }
 
+# Literal search terms per source — the grep/recall index. Include the obvious
+# words a user would search (e.g. "stocks", not only "equity") plus the names of
+# the main datasets each source returns.
+SOURCE_KEYWORDS = {
+    "FRED": "economy, economic indicators, GDP, inflation, CPI, consumer prices, PCE, deflator, unemployment rate, interest rates, Fed funds rate, Treasury yields, 10-year yield, money supply, M1, M2, exchange rates, housing, industrial production, S&P 500, recession, macroeconomic, time series",
+    "EDGAR": "SEC, public company, corporation, stock filings, 10-K, 10-Q, 8-K, annual report, quarterly report, financial statements, XBRL, revenue, earnings, net income, assets, liabilities, EPS, cash flow, CIK, ticker, full-text filing search, prospectus, IPO",
+    "Nasdaq": "stocks, shares, equities, stock price, quote, ticker, symbol, market cap, sector, industry, P/E ratio, 52-week range, bid, ask, volume, dividends, OHLC, price history, real-time quote",
+    "yfinance": "stocks, shares, equities, ticker, symbol, stock price, fundamentals, market cap, P/E, EPS, beta, profit margin, ROE, income statement, balance sheet, cash flow, financial statements, options, options chain, calls, puts, implied volatility, holders, ownership, institutional holders, analyst ratings, recommendations, price targets, dividends, earnings, news, OHLCV, history",
+    "USAspending": "federal spending, government contracts, grants, awards, contractors, recipients, vendors, procurement, award amount, agency spending, defense spending, federal money, subawards",
+    "Census": "demographics, population, household income, median income, ACS, American Community Survey, race, ethnicity, age, sex, gender, education, poverty, housing, rent, commute, employment, state, county, census tract",
+    "BLS": "jobs, employment, unemployment rate, labor market, nonfarm payrolls, payroll, wages, earnings, hourly earnings, salary, CPI, inflation, consumer prices, PPI, producer prices, productivity, job openings, labor statistics",
+    "Treasury": "national debt, public debt, debt to the penny, federal debt, deficit, Treasury, interest rates, yields, borrowing costs, exchange rates, fiscal data",
+    "FEC": "campaign finance, elections, candidates, presidential candidates, donors, donations, contributions, PAC, super PAC, fundraising, money raised, receipts, disbursements, spending, election money",
+    "Congress": "legislation, bills, laws, Congress, House, Senate, representatives, senators, members of Congress, votes, roll call, sponsors, cosponsors, committees",
+    "FDA": "drugs, medications, adverse events, side effects, reactions, drug safety, drug recalls, food recalls, recalls, contamination, allergens, openFDA, FAERS, pharmaceuticals",
+    "Clinical Trials": "clinical trials, medical trials, studies, drug trials, condition, disease, intervention, treatment, recruiting, NCT, research studies, sponsors",
+    "EIA": "energy, gasoline prices, gas prices, fuel prices, oil, crude oil, petroleum, natural gas, electricity, power, generation, coal, renewables, solar, wind, emissions, CO2, energy consumption",
+    "FEMA": "disasters, disaster declarations, hurricanes, floods, wildfires, fires, storms, earthquakes, emergencies, disaster relief, grants, assistance, flood insurance, NFIP, flood claims",
+    "Federal Register": "regulations, rules, rulemaking, proposed rules, final rules, notices, executive orders, presidential documents, agencies, federal regulations",
+    "House Disclosures": "congressional stock trades, stock trades, politician trading, House members, representatives, financial disclosures, holdings, periodic transaction reports, PTR, congressional trading",
+    "JEFS": "federal judges, judicial, judges financial disclosures, judiciary, court, judge holdings, financial disclosure reports",
+    "NARA": "National Archives, archives, historical records, government records, presidential libraries, primary sources, declassified, catalog, historical documents",
+    "NSArchive": "declassified, national security, intelligence, CIA, foreign policy, Cold War, cables, memos, FOIA, classified documents, diplomacy",
+    "Smithsonian": "museum, museums, art, artwork, paintings, artifacts, collections, history, science, specimens, photographs, images, cultural heritage, open access, objects",
+    "Wilson Center": "Cold War, diplomacy, international relations, foreign policy, declassified documents, primary sources, history, digital archive, telegrams",
+    "Cross-Reference": "company profile, politician profile, aggregate, combined, cross-reference, multi-source",
+}
+
 _HTTP_METHODS = ("get", "post", "put", "delete", "patch")
 
 
@@ -282,6 +310,9 @@ def render_md() -> tuple[str, list[str]]:
         paths = " · ".join(f"`{path}`" for _m, path, _op in sorted(rows, key=lambda r: r[1]))
         doc = SOURCE_DOC.get(tag, "")
         out += [f"### {tag}", "", desc, ""]
+        keywords = SOURCE_KEYWORDS.get(tag)
+        if keywords:
+            out.append(f"- **Keywords:** {keywords}")
         out.append(f"- **Endpoints:** {paths}")
         out.append(
             f"- **Detail:** `{doc}` · **params:** `docs/endpoints.csv`"
