@@ -28,6 +28,33 @@ Find the right endpoint for the information you need, then call it.
 - **Auth:** every call needs the header `X-API-Key: <your-key>` — only `GET /health` is public.
 - **Response:** read the payload from the `data` field of the `{meta, data, error}` envelope.
 - **Each entry below lists its parameters.** For full response schemas use `GET /openapi.json` (HTTP Basic: user `datagod`, password = your key) or the Swagger UI at `/docs`. `docs/endpoints.csv` has the same list, flat.
+- **Limits:** a valid key has **no per-key usage or rate limit** on DataGod itself. Caveats: each endpoint's `limit` query param caps results **per call** (paginate for more), SEC EDGAR is throttled to ~10 req/sec (SEC's rule, shared across callers), and each upstream enforces its own rate limits (the DEMO_KEY-backed FEC / Congress / EIA / Smithsonian are low) — DataGod passes those through.
+"""
+
+EXAMPLE = """\
+## Example call
+
+```bash
+curl -H "X-API-Key: $DATAGOD_API_KEY" "https://datagod.example.com/fred/GDP?limit=2"
+```
+
+Returns the standard envelope — read the payload from `data`:
+
+```json
+{
+  "meta": { "source": "fred", "endpoint": "/fred/GDP", "timestamp": "2026-06-10T12:00:00Z", "status": "success" },
+  "data": {
+    "units": "lin",
+    "observations": [
+      { "date": "2026-01-01", "value": "31819.464" },
+      { "date": "2025-10-01", "value": "31422.526" }
+    ]
+  },
+  "error": null
+}
+```
+
+No key (or a wrong one) returns `401`; an upstream failure returns `meta.status: "error"` with the message in `error` (HTTP 4xx passed through, 5xx/timeout → 502).
 """
 
 QUICK_INDEX = """\
@@ -189,7 +216,7 @@ def _grouped() -> tuple[list[str], dict[str, str], dict[str, list[tuple[str, str
 def render_md() -> tuple[str, list[str]]:
     order, descriptions, grouped = _grouped()
     missing: list[str] = []
-    out = [HEADER, "", QUICK_INDEX, "", "## All endpoints by source", ""]
+    out = [HEADER, "", EXAMPLE, "", QUICK_INDEX, "", "## All endpoints by source", ""]
     for tag in order:
         rows = grouped.get(tag)
         if not rows:
