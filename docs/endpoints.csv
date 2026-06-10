@@ -1,0 +1,73 @@
+source,method,path,summary
+Health,GET,/,API index: sources and endpoint map
+Health,GET,/health,"Liveness probe (public, no API key)"
+FRED,GET,/fred,Search FRED series by keyword
+FRED,GET,/fred/{series_id},Fetch a FRED economic time series
+EDGAR,GET,/edgar/company/{cik},Company profile and filing history (CIK or ticker)
+EDGAR,GET,/edgar/concept/{cik}/{concept},One XBRL concept's history for a company
+EDGAR,GET,/edgar/financials/{cik},All XBRL financial facts for a company
+EDGAR,GET,/edgar/frames/{concept},One concept across all filers (cross-company)
+EDGAR,GET,/edgar/search,Full-text search inside filing documents
+Nasdaq,GET,/nasdaq/dividends/{ticker},Dividend history
+Nasdaq,GET,/nasdaq/history/{ticker},Daily OHLCV between two dates
+Nasdaq,GET,/nasdaq/price/{ticker},"Real-time price, bid/ask, volume, change"
+Nasdaq,GET,/nasdaq/quote/{ticker},"Quote summary: market cap, sector, P/E, 52-week"
+yfinance,GET,/yfinance/dividends/{ticker},Dividend payment history
+yfinance,GET,/yfinance/financials/{ticker},"Income statement, balance sheet, cash flow"
+yfinance,GET,/yfinance/history/{ticker},OHLCV price history
+yfinance,GET,/yfinance/holders/{ticker},"Major, institutional, and fund holders"
+yfinance,GET,/yfinance/info/{ticker},Full ticker fundamentals (~140 fields)
+yfinance,GET,/yfinance/news/{ticker},Recent news headlines
+yfinance,GET,/yfinance/options/{ticker},Options chain (expiries or calls/puts)
+yfinance,GET,/yfinance/recommendations/{ticker},Analyst recommendation history
+USAspending,GET,/usaspending/agencies,List federal agencies
+USAspending,GET,/usaspending/by-agency,Spending totals by agency (fiscal year)
+USAspending,GET,/usaspending/search,Search federal awards by keyword
+Census,GET,/census/acs,Raw ACS query (any variables and geography)
+Census,GET,/census/income,Median household income by state
+Census,GET,/census/population,Population by state
+BLS,GET,/bls/{series_id},"BLS series (CPI, unemployment, wages, PPI)"
+Treasury,GET,/treasury/debt,US public debt (debt to the penny)
+Treasury,GET,/treasury/exchange,Treasury exchange rates
+Treasury,GET,/treasury/rates,Average interest rates on US debt
+FEC,GET,/fec/candidates,Search federal candidates
+FEC,GET,/fec/contributions,Campaign contributions
+FEC,GET,/fec/totals,Candidate financial totals by receipts
+Congress,GET,/congress/bill/{congress_num}/{bill_type}/{number},Single bill detail
+Congress,GET,/congress/bills,Recent bills
+Congress,GET,/congress/members,Members of Congress
+Congress,GET,/congress/votes,Roll-call votes by chamber
+FDA,GET,/fda/drug-events,Drug adverse-event reports
+FDA,GET,/fda/drug-recalls,Drug recall enforcement reports
+FDA,GET,/fda/food-recalls,Food recall enforcement reports
+Clinical Trials,GET,/clinical-trials,Search ClinicalTrials.gov
+Clinical Trials,GET,/clinical-trials/{nct_id},Single trial by NCT ID
+EIA,GET,/eia,List available EIA datasets
+EIA,GET,/eia/electricity,Electricity generation and retail data
+EIA,GET,/eia/gas-prices,Gasoline prices
+EIA,GET,/eia/{route},Generic EIA dataset query by route
+FEMA,GET,/fema/disasters,Disaster declarations
+FEMA,GET,/fema/flood-claims,NFIP flood insurance claims
+FEMA,GET,/fema/grants,FEMA grant awards
+Federal Register,GET,/federal-register,Search the Federal Register
+Federal Register,GET,/federal-register/{doc_number},Single Federal Register document
+JEFS,GET,/jefs/facets,JEFS filter facets (needs session)
+JEFS,POST,/jefs/register,Open a JEFS session (Playwright + reCAPTCHA)
+JEFS,POST,/jefs/reset,Clear the JEFS session
+JEFS,GET,/jefs/search,Search judicial disclosures (needs session)
+House Disclosures,GET,/house-disclosures/candidates,House candidate financial disclosures
+House Disclosures,GET,/house-disclosures/members,House member financial disclosures
+NARA,GET,/nara/record/{na_id},Single catalog record by NAID
+NARA,GET,/nara/search,Search the National Archives Catalog
+NSArchive,GET,/nsarchive/document/{doc_id},Single VRR document by id-slug
+NSArchive,GET,/nsarchive/search,Search the National Security Archive VRR
+Smithsonian,GET,/smithsonian/category/{category}/search,Search within a Smithsonian category
+Smithsonian,GET,/smithsonian/object/{object_id},Full object record by EDAN id
+Smithsonian,GET,/smithsonian/search,Search Smithsonian Open Access
+Smithsonian,GET,/smithsonian/stats,Open Access dataset statistics
+Smithsonian,GET,/smithsonian/terms/{category},Controlled-vocabulary terms
+Wilson Center,GET,/wilson/document/{slug},Single Wilson document by slug
+Wilson Center,GET,/wilson/documents,Search the Wilson Center mirror
+Cross-Reference,GET,/cross-reference/company/{name},Company across EDGAR + USAspending + FEC
+Cross-Reference,GET,/cross-reference/politician/{last_name},Politician across House disclosures + FEC
+Admin,POST,/admin/clear-cache,Clear the in-memory cache
