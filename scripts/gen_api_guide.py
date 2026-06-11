@@ -195,10 +195,10 @@ SOURCE_DESC = {
 
 # Where each source's deep-detail doc lives (empty = no dedicated doc yet).
 SOURCE_DOC = {
-    "FRED": "docs/GOV_APIS.md", "BLS": "docs/GOV_APIS.md", "Census": "docs/GOV_APIS.md",
-    "Treasury": "docs/GOV_APIS.md", "FEC": "docs/GOV_APIS.md", "Congress": "docs/GOV_APIS.md",
-    "FDA": "docs/GOV_APIS.md", "Clinical Trials": "docs/GOV_APIS.md", "EIA": "docs/GOV_APIS.md",
-    "FEMA": "docs/GOV_APIS.md", "Federal Register": "docs/GOV_APIS.md", "USAspending": "docs/GOV_APIS.md",
+    "FRED": "docs/FRED.md", "BLS": "docs/BLS.md", "Census": "docs/CENSUS.md",
+    "Treasury": "docs/TREASURY.md", "FEC": "docs/FEC.md", "Congress": "docs/CONGRESS.md",
+    "FDA": "docs/FDA.md", "Clinical Trials": "docs/CLINICAL_TRIALS.md", "EIA": "docs/EIA.md",
+    "FEMA": "docs/FEMA.md", "Federal Register": "docs/FEDERAL_REGISTER.md", "USAspending": "docs/USASPENDING.md",
     "EDGAR": "docs/EDGAR_API.md", "Nasdaq": "docs/NASDAQ_API.md", "yfinance": "docs/YFINANCE_API.md",
     "House Disclosures": "docs/HOUSE_FD_API.md", "JEFS": "docs/JEFS_API.md", "NARA": "docs/NARA_API.md",
     "NSArchive": "docs/NSARCHIVE_API.md", "Smithsonian": "docs/SMITHSONIAN_API.md",

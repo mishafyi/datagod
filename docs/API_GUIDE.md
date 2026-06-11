@@ -78,7 +78,7 @@ Service utility: API index (`/`) and a public liveness probe (`/health`). Not a 
 US economy and macroeconomic time series (800K+) — GDP, inflation and consumer prices (CPI, PCE), unemployment rate, interest rates (Fed funds, Treasury yields, 10-year), money supply (M1/M2), exchange rates, housing, industrial production, S&P 500, recession indicators. The default for any national economic indicator over time.
 
 - **Endpoints:** `/fred` · `/fred/{series_id}`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/FRED.md` · **params:** `docs/endpoints.csv`
 
 ### EDGAR
 
@@ -106,77 +106,77 @@ Deep data for stocks, shares, and equities (Yahoo Finance) by ticker/symbol — 
 US federal spending ($6T+/yr) — government contracts, grants, and awards; recipients, contractors, and vendors; award amounts; agency and defense spending totals; subawards. Use for who received federal money, federal contracts, or grant awards.
 
 - **Endpoints:** `/usaspending/agencies` · `/usaspending/by-agency` · `/usaspending/search`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/USASPENDING.md` · **params:** `docs/endpoints.csv`
 
 ### Census
 
 US demographics from the Census Bureau / American Community Survey (ACS) — population, median household income, race and ethnicity, age, sex, education, poverty, housing and rent, commute, employment — by state, county, or census tract. Use for any US demographic or socioeconomic statistic.
 
 - **Endpoints:** `/census/acs` · `/census/income` · `/census/population`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/CENSUS.md` · **params:** `docs/endpoints.csv`
 
 ### BLS
 
 US labor statistics and jobs data (Bureau of Labor Statistics) — unemployment rate, employment and nonfarm payrolls, wages and average hourly earnings, job openings, CPI inflation and consumer prices, PPI producer prices, productivity, by series. Use for the labor market, jobs, or price indexes.
 
 - **Endpoints:** `/bls/{series_id}`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/BLS.md` · **params:** `docs/endpoints.csv`
 
 ### Treasury
 
 US federal fiscal data (Treasury) — the national / public debt (debt to the penny, debt held by the public, intragovernmental), federal deficit context, average interest rates and yields on Treasury securities, and government exchange rates. Use for the size of the national debt or US borrowing costs.
 
 - **Endpoints:** `/treasury/debt` · `/treasury/exchange` · `/treasury/rates`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/TREASURY.md` · **params:** `docs/endpoints.csv`
 
 ### FEC
 
 Federal campaign finance and elections (FEC) — candidates (presidential, Senate, House), itemized contributions and donors, PAC and super PAC money, and candidate fundraising totals (receipts, disbursements). Use for election money: who is running, who donated, how much was raised or spent.
 
 - **Endpoints:** `/fec/candidates` · `/fec/contributions` · `/fec/totals`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/FEC.md` · **params:** `docs/endpoints.csv`
 
 ### Congress
 
 US legislation and Congress (Congress.gov) — bills and laws with status, sponsors and cosponsors, and actions; members of Congress (representatives, senators); committees; and roll-call votes. Use for tracking laws, what Congress is doing, or how members voted.
 
 - **Endpoints:** `/congress/bill/{congress_num}/{bill_type}/{number}` · `/congress/bills` · `/congress/members` · `/congress/votes`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/CONGRESS.md` · **params:** `docs/endpoints.csv`
 
 ### FDA
 
 Drug and food safety (openFDA) — drug adverse-event and side-effect reports (FAERS), drug recalls, and food recalls (contamination, allergens), for medications and pharmaceuticals. Use for medication safety, adverse reactions, or recalled products.
 
 - **Endpoints:** `/fda/drug-events` · `/fda/drug-recalls` · `/fda/food-recalls`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/FDA.md` · **params:** `docs/endpoints.csv`
 
 ### Clinical Trials
 
 Clinical and medical trials (ClinicalTrials.gov, 500K+ studies) — searchable by condition or disease, intervention / drug or treatment, and status (recruiting, completed), by NCT id. Use for clinical or drug trials on a disease or treatment.
 
 - **Endpoints:** `/clinical-trials` · `/clinical-trials/{nct_id}`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/CLINICAL_TRIALS.md` · **params:** `docs/endpoints.csv`
 
 ### EIA
 
 US energy data (Energy Information Administration) — gasoline and fuel prices, crude oil and petroleum, natural gas, electricity (generation, sales, prices), coal, renewables (solar, wind), CO2 emissions, and energy consumption. Use for energy prices or production.
 
 - **Endpoints:** `/eia` · `/eia/electricity` · `/eia/gas-prices` · `/eia/{route}`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/EIA.md` · **params:** `docs/endpoints.csv`
 
 ### FEMA
 
 Disasters and emergency management (OpenFEMA) — federal disaster declarations (hurricanes, floods, wildfires / fires, storms, earthquakes, emergencies), FEMA grants and assistance, and NFIP flood-insurance claims. Use for disaster events or federal disaster aid.
 
 - **Endpoints:** `/fema/disasters` · `/fema/flood-claims` · `/fema/grants`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/FEMA.md` · **params:** `docs/endpoints.csv`
 
 ### Federal Register
 
 US federal regulations (Federal Register) — proposed and final rules and rulemaking, agency notices, executive orders, and presidential documents, by type and agency. Use for regulations, rules, or executive orders.
 
 - **Endpoints:** `/federal-register` · `/federal-register/{doc_number}`
-- **Detail:** `docs/GOV_APIS.md` · **params:** `docs/endpoints.csv`
+- **Detail:** `docs/FEDERAL_REGISTER.md` · **params:** `docs/endpoints.csv`
 
 ### JEFS
 
