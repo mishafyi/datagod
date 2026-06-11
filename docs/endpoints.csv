@@ -51,10 +51,6 @@ FEMA,GET,/fema/flood-claims,NFIP (National Flood Insurance Program) flood insura
 FEMA,GET,/fema/grants,FEMA grant and assistance awards.,"limit (query, integer, default 10, max 1000)"
 Federal Register,GET,/federal-register,"Search the Federal Register: proposed and final rules, notices, executive orders, and presidential documents; filter by type and agency.","term (query, string); doc_type (query, string); agency (query, string); limit (query, integer, default 10, max 100)"
 Federal Register,GET,/federal-register/{doc_number},One Federal Register document by its document number.,"doc_number (path, string, required)"
-JEFS,GET,/jefs/facets,"Available JEFS filters (years, courts, positions, report types). Requires an active session.",
-JEFS,POST,/jefs/register,"Open a JEFS session for judicial financial disclosures — drives a Playwright browser through registration + reCAPTCHA. Requires a real name, occupation, and address.","name (query, string, required); occupation (query, string, required); address (query, string, required); headed (query, boolean, default True)"
-JEFS,POST,/jefs/reset,Clear the JEFS session; you must re-register before the next call.,
-JEFS,GET,/jefs/search,Search federal judges' financial disclosure reports. Requires an active session (call /jefs/register first).,"q (query, string); year (query, string); court_type (query, string); start (query, integer, default 0)"
 House Disclosures,GET,/house-disclosures/candidates,US House candidates' financial disclosures.,"last_name (query, string); year (query, string); state (query, string); district (query, string)"
 House Disclosures,GET,/house-disclosures/members,US House members' financial disclosures — congressional stock trades and holdings.,"last_name (query, string); year (query, string); state (query, string); district (query, string)"
 NARA,GET,/nara/record/{na_id},One National Archives catalog record by its National Archives Identifier (NAID).,"na_id (path, string, required)"

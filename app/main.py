@@ -24,7 +24,7 @@ from .clients import (
     fda,
     fred,
     house_fd,
-    jefs,
+    # jefs,  # disabled 2026-06-11 — see the JEFS route block below
     nara,
     nasdaq,
     nsarchive,
@@ -88,7 +88,8 @@ API_TAGS = [
     {"name": "EIA", "description": "Energy Information Administration — gas prices, electricity, and generic dataset queries."},
     {"name": "FEMA", "description": "OpenFEMA — disaster declarations, grants, flood claims."},
     {"name": "Federal Register", "description": "Federal Register — rules, notices, executive orders."},
-    {"name": "JEFS", "description": "Judicial Financial Disclosures — session-based; needs Playwright registration + reCAPTCHA first."},
+    # {"name": "JEFS", "description": "Judicial Financial Disclosures — session-based; needs Playwright registration + reCAPTCHA first."},  # disabled 2026-06-11
+
     {"name": "House Disclosures", "description": "US House financial disclosures (member/candidate stock trades)."},
     {"name": "NARA", "description": "US National Archives Catalog — all record groups plus the 14 presidential libraries."},
     {"name": "NSArchive", "description": "National Security Archive (GWU NGO, not NARA) — Virtual Reading Room declassified docs (HTML scrape)."},
@@ -496,36 +497,50 @@ async def fed_register_doc(doc_number: str):
     return await federal_register.document(doc_number)
 
 
-# ── JEFS (Judicial Financial Disclosures) ────────────────────────
-
-@app.post("/jefs/register", tags=["JEFS"], summary="Open a JEFS session (Playwright + reCAPTCHA)")
-async def jefs_register(name: str, occupation: str, address: str, headed: bool = True):
-    """Open a Playwright browser to register a JEFS session.
-    Required: real name, occupation, address (under penalty of perjury per JEFS terms).
-    The browser opens headed; user solves reCAPTCHA + submits user-agreement."""
-    return await jefs.register(name, occupation, address, headed)
-
-
-@app.get("/jefs/facets", tags=["JEFS"], summary="JEFS filter facets (needs session)")
-async def jefs_get_facets():
-    """Get filter dropdowns (years, courts, positions, report types). Requires active session."""
-    return await jefs.get_facets()
-
-
-@app.get("/jefs/search", tags=["JEFS"], summary="Search judicial disclosures (needs session)")
-async def jefs_search(q: str = "", year: str = "", court_type: str = "",
-                       start: int = 0):
-    """Search judicial financial disclosures. Requires active session."""
-    facets = {}
-    if year: facets["operating_year_s"] = [year]
-    if court_type: facets["court_type_s"] = [court_type]
-    return await jefs.search(q, facets, start=start)
-
-
-@app.post("/jefs/reset", tags=["JEFS"], summary="Clear the JEFS session")
-async def jefs_reset():
-    """Clear JEFS session. Must re-register before next call."""
-    return await jefs.reset()
+# ── JEFS (Judicial Financial Disclosures) — DISABLED 2026-06-11 ───
+# Temporarily removed from the API. Registration needs a headed browser plus a
+# human-solved reCAPTCHA, so it can never run on the headless server, and the
+# search/facets routes are useless without a session. To re-enable: uncomment
+# the block below, the `jefs` import near the top of this file, and the JEFS
+# entry in API_TAGS. The client + full flow stay in app/clients/jefs.py and
+# docs/JEFS_API.md.
+#
+# @app.post("/jefs/register", tags=["JEFS"], summary="Open a JEFS session (Playwright + reCAPTCHA)")
+# async def jefs_register(name: str, occupation: str, email: str, phone: str,
+#                         address_line1: str, city: str, state: str, postalcode: str,
+#                         address_line2: str = "", representing: str = "Self",
+#                         representing_address: str = "", headed: bool = True):
+#     """Open a Playwright browser to register a JEFS session. Fills the registration
+#     form with your real name, occupation, email, phone, and mailing address (and who
+#     you're requesting on behalf of — "Self" by default); you then solve the reCAPTCHA
+#     and click "Enter Database", certifying under penalty of perjury (28 U.S.C. § 1746).
+#     Needs a visible browser — run DataGod locally, not on a headless server. The browser
+#     opens headed by default."""
+#     return await jefs.register(name, occupation, email, phone, address_line1,
+#                                address_line2, city, state, postalcode, representing,
+#                                representing_address, headed)
+#
+#
+# @app.get("/jefs/facets", tags=["JEFS"], summary="JEFS filter facets (needs session)")
+# async def jefs_get_facets():
+#     """Get filter dropdowns (years, courts, positions, report types). Requires active session."""
+#     return await jefs.get_facets()
+#
+#
+# @app.get("/jefs/search", tags=["JEFS"], summary="Search judicial disclosures (needs session)")
+# async def jefs_search(q: str = "", year: str = "", court_type: str = "",
+#                        start: int = 0):
+#     """Search judicial financial disclosures. Requires active session."""
+#     facets = {}
+#     if year: facets["operating_year_s"] = [year]
+#     if court_type: facets["court_type_s"] = [court_type]
+#     return await jefs.search(q, facets, start=start)
+#
+#
+# @app.post("/jefs/reset", tags=["JEFS"], summary="Clear the JEFS session")
+# async def jefs_reset():
+#     """Clear JEFS session. Must re-register before next call."""
+#     return await jefs.reset()
 
 
 # ── House Financial Disclosures ──────────────────────────────────

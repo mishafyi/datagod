@@ -55,7 +55,6 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | Disaster declarations, FEMA grants, flood claims | FEMA | `GET /fema/disasters` |
 | Federal rules, notices, executive orders | Federal Register | `GET /federal-register` |
 | US House members' stock trades | House Disclosures | `GET /house-disclosures/members` |
-| Federal judges' financial disclosures | JEFS | `GET /jefs/search` (needs session) |
 | US National Archives catalog records | NARA | `GET /nara/search` |
 | Declassified national-security documents | NSArchive / Wilson Center | `GET /nsarchive/search`, `GET /wilson/documents` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
@@ -177,13 +176,6 @@ US federal regulations (Federal Register) — proposed and final rules and rulem
 
 - **Endpoints:** `/federal-register` · `/federal-register/{doc_number}`
 - **Detail:** `docs/FEDERAL_REGISTER.md` · **params:** `docs/endpoints.csv`
-
-### JEFS
-
-Financial disclosures of federal judges (Judicial) — judges' financial disclosure reports and holdings. Session-based: requires Playwright registration + reCAPTCHA first. Use for the finances or holdings of federal judges and the judiciary.
-
-- **Endpoints:** `/jefs/facets` · `/jefs/register` · `/jefs/reset` · `/jefs/search`
-- **Detail:** `docs/JEFS_API.md` · **params:** `docs/endpoints.csv`
 
 ### House Disclosures
 

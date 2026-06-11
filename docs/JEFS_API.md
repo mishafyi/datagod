@@ -7,6 +7,13 @@ routes: "/jefs/facets, /jefs/register, /jefs/reset, /jefs/search"
 
 # JEFS API Reference
 
+> **⚠️ DISABLED ON THE API (2026-06-11).** The four `/jefs/*` routes are commented out in
+> `app/main.py` and are not served. Registration needs a headed browser + a human-solved
+> reCAPTCHA, so it can't run on the headless server. The client and flow documented below
+> remain valid and verified — re-enable by uncommenting the JEFS route block, the `jefs`
+> import, and the JEFS `API_TAGS` entry in `app/main.py` (then restore the JEFS row in
+> `scripts/gen_api_guide.py`'s QUICK_INDEX and regenerate the guide).
+
 **Site**: [pub.jefs.uscourts.gov](https://pub.jefs.uscourts.gov)
 **Purpose**: Federal-judge financial disclosure database (annual statements filed by every Article III judge + magistrate + bankruptcy judge).
 **Auth**: **No public REST API**. The site is session-based, reCAPTCHA-protected, requires real-name registration each session.
@@ -14,13 +21,17 @@ routes: "/jefs/facets, /jefs/register, /jefs/reset, /jefs/search"
 ## Why this is unusual
 
 Every other DataGod client wraps a free, anonymous public API. JEFS is the exception:
-- The site is browser-rendered (JS-heavy) with reCAPTCHA on registration
+- The site is browser-rendered (JS-heavy) with an **invisible** reCAPTCHA v2 on registration (`data-size="invisible"`, fires on submit via `data-callback="rcResults"`)
 - All API calls go to `POST /index.php` with `action=` query parameter (Apache Solr backend)
-- Cookies must be captured from a real browser session
+- Cookies must be captured from a real browser session (including the F5/`TS…` WAF cookies, which must be sent back on every later request)
 - 30-minute idle timeout
-- **Legal requirement**: every user must provide real name, occupation, and address **under penalty of perjury** for each session
+- **Legal requirement**: every user must check a box that reads *"I certify under penalty of perjury that the foregoing is true and correct. (28 U.S.C. § 1746)."* — supplying real name, occupation, email, phone, and mailing address for each session
 
-So this client is **half-automated**: Playwright handles the browser, the user provides real credentials.
+So this client is **half-automated**: Playwright fills the form, the user solves the reCAPTCHA and submits.
+
+> **Verified against the live DOM 2026-06-10.** The registration form is `#registration-form` inside the `#register-dialog` (opened by the "Begin Registration" button). Required inputs: `name`, `occupation`, `email`, `phone`, the five address fields `address-line-1` / `address-line-2` / `address-city` / `address-state` / `address-postalcode`, and the `certified` checkbox — plus a hidden `_csrf` token and the reCAPTCHA token, both of which ride along automatically because the site's own JS submits `$('#registration-form').serialize()`. There is **no single `name="address"` field** (an earlier version of this client assumed one and could never register). On success the JS runs `Metro.dialog.close('#register-dialog'); location.href = "/"`, so the success signal is the form disappearing — not a URL change.
+>
+> **Local-only by nature.** Registration needs a visible browser window + a human-solved reCAPTCHA, so it can only run where someone is at the keyboard. It cannot work on the headless Coolify deployment. Playwright is therefore a **local dev dependency, deliberately not in `requirements.txt`** (install with `.venv/bin/pip install playwright && .venv/bin/playwright install chromium`); on the server `/jefs/register` returns a clear "Playwright not installed" error, which is the correct behavior there.
 
 ## Discovered endpoints
 
@@ -59,7 +70,7 @@ All POST to `/index.php` with `action=X`:
 
 | Route | What it does |
 |-------|-------------|
-| `POST /jefs/register?name=&occupation=&address=&headed=true` | Opens Playwright browser, user solves reCAPTCHA + submits form, cookie captured |
+| `POST /jefs/register?name=&occupation=&email=&phone=&address_line1=&city=&state=&postalcode=&address_line2=&headed=true` | Opens Playwright browser, fills the form, user solves reCAPTCHA + clicks "Enter Database", authorized cookies captured; the response includes a `get_facets` probe as proof the session works |
 | `GET /jefs/facets` | Returns filter dropdowns (requires active session) |
 | `GET /jefs/search?q=&year=&court_type=&start=0` | Search filings (requires active session) |
 | `POST /jefs/reset` | Clear session |
@@ -71,11 +82,13 @@ Session is a process-singleton. One DataGod server instance = one JEFS session a
 ```python
 import httpx
 
-# 1. Register a session (opens browser — user solves reCAPTCHA)
+# 1. Register a session (opens browser — user solves reCAPTCHA + clicks "Enter Database")
 r = httpx.post("http://localhost:8000/jefs/register",
                params={"name": "Real Name", "occupation": "Researcher",
-                       "address": "123 Main St, City, ST 12345"})
-print(r.json())  # {"registered": True, ...}
+                       "email": "you@example.com", "phone": "(202) 555-0100",
+                       "address_line1": "123 Main St", "city": "Washington",
+                       "state": "DC", "postalcode": "20001"})
+print(r.json())  # {"registered": True, "cookies_captured": 4, "session_check": "..."}
 
 # 2. Search for disclosures
 r = httpx.get("http://localhost:8000/jefs/search",

@@ -5,7 +5,7 @@ pass/fail table.
     .venv/bin/python tests/test_all_endpoints.py
 
 PASS = HTTP 200 + meta.status "success". FAIL = anything else (unless expected).
-JEFS /register is skipped (it launches an interactive browser + reCAPTCHA).
+JEFS's 4 routes are disabled on the API (2026-06-11) and skipped here.
 Target host: $DATAGOD_BASE_URL or the production URL.
 """
 
@@ -127,11 +127,11 @@ fr = hit("GET", "/federal-register?limit=2", "FederalRegister")
 docnum = find(fr, "document_number")
 hit("GET", f"/federal-register/{docnum}", "FederalRegister") if docnum else skip(
     "FederalRegister", "GET /federal-register/{doc_number}", "no doc number from list")
-# ── JEFS (register is interactive → skip; facets/search need a session) ──
-skip("JEFS", "POST /jefs/register", "interactive browser + reCAPTCHA")
-hit("GET", "/jefs/facets", "JEFS", expect_error=True)
-hit("GET", "/jefs/search", "JEFS", expect_error=True)
-hit("POST", "/jefs/reset", "JEFS")
+# ── JEFS (disabled on the API 2026-06-11 — routes commented out in main.py) ──
+skip("JEFS", "POST /jefs/register", "JEFS disabled on the API (2026-06-11)")
+skip("JEFS", "GET /jefs/facets", "JEFS disabled on the API (2026-06-11)")
+skip("JEFS", "GET /jefs/search", "JEFS disabled on the API (2026-06-11)")
+skip("JEFS", "POST /jefs/reset", "JEFS disabled on the API (2026-06-11)")
 # ── House Disclosures ──
 hit("GET", "/house-disclosures/members?last_name=pelosi", "HouseFD")
 hit("GET", "/house-disclosures/candidates?last_name=smith", "HouseFD")
