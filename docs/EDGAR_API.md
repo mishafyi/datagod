@@ -1,3 +1,10 @@
+---
+name: edgar
+description: "SEC filings and financials for public companies and corporations — 10-K, 10-Q, 8-K annual and quarterly reports, full XBRL financial statements (revenue, earnings, net income, assets, liabilities, EPS, cash flow), one-metric-across-all-companies comparisons, and full-text search inside filings (by CIK or ticker). Use for any public-company financial data, SEC disclosures, or 'which companies mention X'."
+keywords: "SEC, public company, corporation, stock filings, 10-K, 10-Q, 8-K, annual report, quarterly report, financial statements, XBRL, revenue, earnings, net income, assets, liabilities, EPS, cash flow, CIK, ticker, full-text filing search, prospectus, IPO"
+routes: "/edgar/company/{cik}, /edgar/concept/{cik}/{concept}, /edgar/financials/{cik}, /edgar/frames/{concept}, /edgar/search"
+---
+
 # SEC EDGAR API Reference
 
 ## Overview

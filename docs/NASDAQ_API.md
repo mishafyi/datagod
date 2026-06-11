@@ -1,3 +1,10 @@
+---
+name: nasdaq
+description: "Stock-market quotes for stocks, shares, and equities (Nasdaq.com, unofficial) — price, quote, bid/ask, volume, market cap, sector, industry, P/E, 52-week range, dividends, and daily OHLCV price history by ticker/symbol. Use for a quick quote or price snapshot of a listed ticker."
+keywords: "stocks, shares, equities, stock price, quote, ticker, symbol, market cap, sector, industry, P/E ratio, 52-week range, bid, ask, volume, dividends, OHLC, price history, real-time quote"
+routes: "/nasdaq/dividends/{ticker}, /nasdaq/history/{ticker}, /nasdaq/price/{ticker}, /nasdaq/quote/{ticker}"
+---
+
 # Nasdaq.com API Reference
 
 **Base URL**: `https://api.nasdaq.com`

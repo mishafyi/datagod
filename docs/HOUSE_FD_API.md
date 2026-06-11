@@ -1,3 +1,10 @@
+---
+name: house-disclosures
+description: "US House financial disclosures and congressional stock trades — representatives' and candidates' stock trades, holdings, and periodic transaction reports (PTRs). Use for politicians' or members of Congress' stock transactions in the House."
+keywords: "congressional stock trades, stock trades, politician trading, House members, representatives, financial disclosures, holdings, periodic transaction reports, PTR, congressional trading"
+routes: "/house-disclosures/candidates, /house-disclosures/members"
+---
+
 # House Financial Disclosures — Undocumented API
 
 > Discovered via Chrome DevTools inspection, 2026-03-16

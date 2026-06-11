@@ -1,3 +1,10 @@
+---
+name: smithsonian
+description: "Museum and archive collections (Smithsonian Open Access, 11M+ objects) — art and artwork, artifacts, history, science specimens, and photographs / images with metadata and category / term browsing. Use for museum objects, cultural heritage, or collection metadata."
+keywords: "museum, museums, art, artwork, paintings, artifacts, collections, history, science, specimens, photographs, images, cultural heritage, open access, objects"
+routes: "/smithsonian/category/{category}/search, /smithsonian/object/{object_id}, /smithsonian/search, /smithsonian/stats, /smithsonian/terms/{category}"
+---
+
 # Smithsonian Open Access (EDAN) API Reference
 
 **Base URL**: `https://api.si.edu/openaccess/api/v1.0`

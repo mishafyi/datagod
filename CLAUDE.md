@@ -37,26 +37,26 @@ Two test files (no unit-test runner, linter, or type-checker is configured):
 
 | Module | What it covers | Routes (in `main.py`) | Per-source doc | Auth |
 |--------|---------------|----------------------|----------------|------|
-| **`bls.py`** | BLS — employment, wages, CPI, occupational | `/bls/{series_id}` | `docs/GOV_APIS.md` | `BLS_API_KEY` (optional) |
-| **`census.py`** | Census Bureau — demographics, ACS | `/census/population`, `/census/income`, `/census/acs` | `docs/GOV_APIS.md` | `CENSUS_API_KEY` (⚠️ latent bug — see Environment) |
-| **`clinicaltrials.py`** | ClinicalTrials.gov — 500K+ trials | `/clinical-trials`, `/clinical-trials/{nct_id}` | `docs/GOV_APIS.md` | none |
-| **`congress_gov.py`** | Congress.gov — bills, members, votes | `/congress/bills`, `/congress/bill/...`, `/congress/members`, `/congress/votes` | `docs/GOV_APIS.md` | `CONGRESS_API_KEY` (DEMO_KEY fallback) |
+| **`bls.py`** | BLS — employment, wages, CPI, occupational | `/bls/{series_id}` | `docs/BLS.md` | `BLS_API_KEY` (optional) |
+| **`census.py`** | Census Bureau — demographics, ACS | `/census/population`, `/census/income`, `/census/acs` | `docs/CENSUS.md` | `CENSUS_API_KEY` (required; client now sends it — set a *valid* key) |
+| **`clinicaltrials.py`** | ClinicalTrials.gov — 500K+ trials | `/clinical-trials`, `/clinical-trials/{nct_id}` | `docs/CLINICAL_TRIALS.md` | none |
+| **`congress_gov.py`** | Congress.gov — bills, members, votes | `/congress/bills`, `/congress/bill/...`, `/congress/members`, `/congress/votes` | `docs/CONGRESS.md` | `CONGRESS_API_KEY` (DEMO_KEY fallback) |
 | **`cross_reference.py`** | Cross-source aggregator | `/cross-reference/company/{name}`, `/cross-reference/politician/{last_name}` | — | inherits from underlying clients |
 | **`edgar.py`** | SEC EDGAR — corporate filings, XBRL, full-text search | `/edgar/company/{cik}`, `/edgar/financials/{cik}`, `/edgar/concept/{cik}/{concept}`, `/edgar/frames/{concept}`, `/edgar/search` | `docs/EDGAR_API.md` | `SEC_USER_AGENT` (required, "Name email") |
-| **`eia.py`** | EIA — energy production, prices, electricity, gas | `/eia`, `/eia/gas-prices`, `/eia/electricity`, `/eia/{route:path}` | `docs/GOV_APIS.md` | `EIA_API_KEY` (DEMO_KEY fallback) |
-| **`fda.py`** | openFDA — drug events, recalls, food recalls | `/fda/drug-events`, `/fda/drug-recalls`, `/fda/food-recalls` | `docs/GOV_APIS.md` | none |
-| **`fec.py`** | FEC — campaign finance, candidates, contributions | `/fec/candidates`, `/fec/contributions`, `/fec/totals` | `docs/GOV_APIS.md` | `FEC_API_KEY` (DEMO_KEY fallback) |
-| **`federal_register.py`** | Federal Register — rules, notices, executive orders | `/federal-register`, `/federal-register/{doc_number}` | `docs/GOV_APIS.md` | none |
-| **`fema.py`** | OpenFEMA — disasters, grants, flood claims | `/fema/disasters`, `/fema/grants`, `/fema/flood-claims` | `docs/GOV_APIS.md` | none |
-| **`fred.py`** | FRED — 800K+ economic time series | `/fred/{series_id}`, `/fred?q=...` | `docs/GOV_APIS.md` | `FRED_API_KEY` (required) |
+| **`eia.py`** | EIA — energy production, prices, electricity, gas | `/eia`, `/eia/gas-prices`, `/eia/electricity`, `/eia/{route:path}` | `docs/EIA.md` | `EIA_API_KEY` (DEMO_KEY fallback) |
+| **`fda.py`** | openFDA — drug events, recalls, food recalls | `/fda/drug-events`, `/fda/drug-recalls`, `/fda/food-recalls` | `docs/FDA.md` | none |
+| **`fec.py`** | FEC — campaign finance, candidates, contributions | `/fec/candidates`, `/fec/contributions`, `/fec/totals` | `docs/FEC.md` | `FEC_API_KEY` (DEMO_KEY fallback) |
+| **`federal_register.py`** | Federal Register — rules, notices, executive orders | `/federal-register`, `/federal-register/{doc_number}` | `docs/FEDERAL_REGISTER.md` | none |
+| **`fema.py`** | OpenFEMA — disasters, grants, flood claims | `/fema/disasters`, `/fema/grants`, `/fema/flood-claims` | `docs/FEMA.md` | none |
+| **`fred.py`** | FRED — 800K+ economic time series | `/fred/{series_id}`, `/fred?q=...` | `docs/FRED.md` | `FRED_API_KEY` (required) |
 | **`house_fd.py`** | House Financial Disclosures — member/candidate trades | `/house-disclosures/members`, `/house-disclosures/candidates` | `docs/HOUSE_FD_API.md` | none (scrapes HTML) |
 | **`jefs.py`** | JEFS — Judicial Financial Disclosures (federal judges) | `/jefs/register`, `/jefs/facets`, `/jefs/search`, `/jefs/reset` | `docs/JEFS_API.md` | session + Playwright reCAPTCHA; user must provide real credentials |
 | **`nara.py`** | NARA — US National Archives Catalog (all record groups + the 14 presidential libraries) | `/nara/search`, `/nara/record/{na_id}` | `docs/NARA_API.md` | none (keyless `/proxy` gateway) |
 | **`nasdaq.py`** | Nasdaq.com — quote, history, dividends (unofficial) | `/nasdaq/quote/{ticker}`, `/nasdaq/price/{ticker}`, `/nasdaq/history/{ticker}`, `/nasdaq/dividends/{ticker}` | `docs/NASDAQ_API.md` | browser-like `User-Agent` only |
 | **`nsarchive.py`** | National Security Archive (GWU NGO, ≠ NARA) — Virtual Reading Room declassified docs (HTML scrape, brittle) | `/nsarchive/search`, `/nsarchive/document/{doc_id}` | `docs/NSARCHIVE_API.md` | none (scrapes HTML) |
 | **`smithsonian.py`** | Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records | `/smithsonian/search`, `/smithsonian/object/{id}`, `/smithsonian/category/{category}/search`, `/smithsonian/terms/{category}`, `/smithsonian/stats` | `docs/SMITHSONIAN_API.md` | `SMITHSONIAN_API_KEY` (DEMO_KEY fallback) |
-| **`treasury.py`** | Treasury Fiscal Data — debt, rates, exchange | `/treasury/debt`, `/treasury/rates`, `/treasury/exchange` | `docs/GOV_APIS.md` | none |
-| **`usaspending.py`** | USAspending — federal contracts, grants ($6T+/yr) | `/usaspending/agencies`, `/usaspending/search`, `/usaspending/by-agency` | `docs/GOV_APIS.md` | none |
+| **`treasury.py`** | Treasury Fiscal Data — debt, rates, exchange | `/treasury/debt`, `/treasury/rates`, `/treasury/exchange` | `docs/TREASURY.md` | none |
+| **`usaspending.py`** | USAspending — federal contracts, grants ($6T+/yr) | `/usaspending/agencies`, `/usaspending/search`, `/usaspending/by-agency` | `docs/USASPENDING.md` | none |
 | **`wilson.py`** | Wilson Center Digital Archive — LOCAL mirror of 16,756 declassified documents (SQLite + FTS5; live site is DNS-dead) | `/wilson/documents`, `/wilson/document/{slug}` | `docs/WILSON_DIGITAL_ARCHIVE_API.md` | none (local data) |
 | **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
 
@@ -70,8 +70,8 @@ Each file is a deep-dive on a specific upstream — quirks, undocumented behavio
 |-----|--------|
 | `docs/API_GUIDE.md` | **Agent-facing API guide** — "which endpoint for which information" routing map + a keyword-rich description and the parameters for every endpoint (no app architecture). Curated descriptions live in `scripts/gen_api_guide.py`; `docs/endpoints.csv` is the same data, flat. Regenerate with `python -m scripts.gen_api_guide`. |
 | `docs/EDGAR_API.md` | SEC EDGAR — submissions, company concepts, XBRL frames, full-text search. The Frames API quirks (period format `CYxxxxQxI`), ticker→CIK resolution, rate limit (10/sec). |
-| `docs/GOV_APIS.md` | Comprehensive reference for the 14 US-government APIs (FRED, BLS, Census, Treasury, FEC, Congress, FDA, ClinicalTrials, EIA, FEMA, Federal Register, USAspending, SAM.gov, PatentsView, etc.) — with verified curl examples. Use this to understand any of the gov APIs. |
-| `docs/GOV_APIS.html` | Browser-renderable version of the above. |
+| `docs/<SOURCE>.md` (FRED, BLS, CENSUS, TREASURY, FEC, CONGRESS, FDA, CLINICAL_TRIALS, EIA, FEMA, FEDERAL_REGISTER, USASPENDING) | Per-source skill docs (YAML frontmatter + endpoints + params + quirks), generated by `scripts/gen_source_docs.py`. The router `docs/API_GUIDE.md` links to them. (Split out of the former `GOV_APIS.md`.) |
+| `docs/UNWIRED_RESEARCH.md` | Researched-but-not-wired gov APIs (SAM.gov, PatentsView) — kept for future wiring. |
 | `docs/HOUSE_FD_API.md` | House Financial Disclosures — undocumented form-POST endpoint, response shape (HTML table), how `house_fd.py` parses it. |
 | `docs/JEFS_API.md` | Judicial Financial Disclosures (pub.jefs.uscourts.gov) — session-based, reCAPTCHA-protected, no public REST API. How `jefs.py` uses Playwright for registration and then session-based POSTs for search/download. |
 | `docs/SENATE_EFD_API.md` | Senate Financial Disclosures — not yet wired into a client, but research is here. Includes session-based auth model. |
@@ -148,7 +148,7 @@ async def some_endpoint(arg: str) -> UpstreamJSON:
 
 **API-key auth (DataGod's own endpoints).** `DATAGOD_API_KEY` gates every route: requests must send an `X-API-Key: <key>` header. Enforced by `app/auth.py` (FastAPI's built-in `APIKeyHeader`) wired as an app-level dependency in `main.py`. Public (no auth): `/health` (`auth.PUBLIC_PATHS`). The interactive docs (`/docs`, `/redoc`, `/openapi.json`) are custom routes protected by **HTTP Basic** (`auth.require_docs_auth`: user `DATAGOD_DOCS_USER`, password `DATAGOD_DOCS_PASSWORD` — both fall back to `datagod` / `DATAGOD_API_KEY`), and are exempt from the `X-API-Key` check (`auth.DOCS_PATHS`). A missing/invalid key returns **401** in the standard error envelope. Set it in `.env` locally and as a Coolify env var in production; the service fails **closed** if the key is unset. The `.env` file is git-ignored — never commit it.
 
-**Known latent bug**: `census.py` never references `cfg.CENSUS_API_KEY`. Census now redirects keyless requests to a "Missing Key" HTML page (the JSON parser then errors with "Expecting value"). Was silent for years; began returning errors in 2026.
+**Census key**: `census.py` now sends `cfg.CENSUS_API_KEY` (fixed 2026-06-11; it previously never sent the key → keyless request → Census "Invalid Key" redirect → JSON parse error "Expecting value" → 502). The endpoint still needs a **valid** `CENSUS_API_KEY`: Census rejects invalid keys with the same Invalid-Key page, so set a working key in `.env` / Coolify.
 
 ## Conventions specific to this repo
 

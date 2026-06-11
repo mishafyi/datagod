@@ -1,3 +1,10 @@
+---
+name: jefs
+description: "Financial disclosures of federal judges (Judicial) — judges' financial disclosure reports and holdings. Session-based: requires Playwright registration + reCAPTCHA first. Use for the finances or holdings of federal judges and the judiciary."
+keywords: "federal judges, judicial, judges financial disclosures, judiciary, court, judge holdings, financial disclosure reports"
+routes: "/jefs/facets, /jefs/register, /jefs/reset, /jefs/search"
+---
+
 # JEFS API Reference
 
 **Site**: [pub.jefs.uscourts.gov](https://pub.jefs.uscourts.gov)

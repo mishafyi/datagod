@@ -1,3 +1,10 @@
+---
+name: nsarchive
+description: "Declassified national-security documents (National Security Archive — a GWU NGO, not NARA) — foreign policy, intelligence (CIA), military, and Cold War cables, memos, and FOIA releases. Use for declassified Cold War or foreign-policy documents."
+keywords: "declassified, national security, intelligence, CIA, foreign policy, Cold War, cables, memos, FOIA, classified documents, diplomacy"
+routes: "/nsarchive/document/{doc_id}, /nsarchive/search"
+---
+
 # National Security Archive (NSArchive) — Virtual Reading Room (HTML scrape)
 
 **Base URL**: `https://nsarchive.gwu.edu`

@@ -1,3 +1,10 @@
+---
+name: wilson-center
+description: "Cold War and international-history primary sources (Wilson Center Digital Archive, local mirror) — 16,756 declassified documents on diplomacy, foreign policy, and international relations (cables, telegrams). Use for primary-source Cold War and foreign-relations documents."
+keywords: "Cold War, diplomacy, international relations, foreign policy, declassified documents, primary sources, history, digital archive, telegrams"
+routes: "/wilson/document/{slug}, /wilson/documents"
+---
+
 # Wilson Center Digital Archive — Local Mirror
 
 **Source**: a downloaded mirror of <https://digitalarchive.wilsoncenter.org/search>, captured ~2025-03-16, stored at `data/digitalarchive wilsoncenter/`.

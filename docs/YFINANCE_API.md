@@ -1,3 +1,10 @@
+---
+name: yfinance
+description: "Deep data for stocks, shares, and equities (Yahoo Finance) by ticker/symbol — ~140 fundamental fields (market cap, P/E, EPS, beta, margins, ROE), full financial statements (income statement, balance sheet, cash flow), options chains (calls, puts, implied volatility), institutional and fund holders/ownership, analyst recommendations and price targets, dividends, earnings, news, and OHLCV price history. Use for thorough single-ticker stock analysis beyond a basic quote."
+keywords: "stocks, shares, equities, ticker, symbol, stock price, fundamentals, market cap, P/E, EPS, beta, profit margin, ROE, income statement, balance sheet, cash flow, financial statements, options, options chain, calls, puts, implied volatility, holders, ownership, institutional holders, analyst ratings, recommendations, price targets, dividends, earnings, news, OHLCV, history"
+routes: "/yfinance/dividends/{ticker}, /yfinance/financials/{ticker}, /yfinance/history/{ticker}, /yfinance/holders/{ticker}, /yfinance/info/{ticker}, /yfinance/news/{ticker}, /yfinance/options/{ticker}, /yfinance/recommendations/{ticker}"
+---
+
 # yfinance API Reference
 
 **Library**: [ranaroussi/yfinance](https://github.com/ranaroussi/yfinance) (installed from PyPI, unmodified)

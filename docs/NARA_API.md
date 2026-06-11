@@ -1,3 +1,10 @@
+---
+name: nara
+description: "US National Archives catalog — historical federal and government records, primary sources, and declassified documents across all record groups and the 14 presidential libraries. Use for archival US government documents, historical records, or presidential materials."
+keywords: "National Archives, archives, historical records, government records, presidential libraries, primary sources, declassified, catalog, historical documents"
+routes: "/nara/record/{na_id}, /nara/search"
+---
+
 # NARA — National Archives Catalog API Reference
 
 **Base URL**: `https://catalog.archives.gov/proxy`
