@@ -1,6 +1,7 @@
 """Census Bureau — Demographics for every US geography."""
 
 from . import UpstreamJSON, safe_get
+from ..config import cfg
 
 BASE = "https://api.census.gov/data"
 
@@ -11,6 +12,8 @@ async def acs(variables: str = "NAME,B01001_001E", year: int = 2022,
     params: dict = {"get": variables, "for": geo_for}
     if geo_in:
         params["in"] = geo_in
+    if cfg.CENSUS_API_KEY:
+        params["key"] = cfg.CENSUS_API_KEY
     return await safe_get(f"{BASE}/{year}/acs/acs1", "census",
                           params=params, follow_redirects=True)
 

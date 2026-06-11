@@ -163,33 +163,33 @@ DESCRIPTIONS = {
     "/admin/clear-cache": "Clear the in-memory cache (operational endpoint).",
 }
 
-# Keyword-dense per-source descriptions for the router — the recall layer. Pack
-# in synonyms and the concrete things each source covers so an LLM scanning the
-# router recognizes the source exists and when to reach for it.
+# Keyword-rich per-source descriptions — the recall layer. The keywords are woven
+# INTO the prose (literal search terms like "stocks"/"shares", not only "equity",
+# plus the names of the main datasets) so an LLM or grep matches the source.
 SOURCE_DESC = {
     "Health": "Service utility: API index (`/`) and a public liveness probe (`/health`). Not a data source.",
-    "FRED": "US macroeconomic time series (800K+). GDP, inflation and consumer prices (CPI, PCE), unemployment rate, interest rates (Fed funds, Treasury yields), money supply (M1/M2), exchange rates, housing, industrial production, S&P 500, recession indicators. The default for any national economic indicator over time.",
-    "EDGAR": "SEC corporate filings and financials. 10-K / 10-Q / 8-K filings, full XBRL financial statements (revenue, net income, assets, liabilities, EPS, cash flow), one-metric-across-all-public-companies comparisons, and full-text search inside filings. Use for any public-company financial data, SEC disclosures, or 'which companies mention X'.",
-    "Nasdaq": "Stock-market quotes (Nasdaq.com, unofficial). Price, bid/ask, volume, market cap, sector, industry, P/E, 52-week range, dividends, and daily OHLCV history. Use for a quick quote or price snapshot of a listed ticker.",
-    "yfinance": "Deep equity data (Yahoo Finance). ~140 fundamental fields, full income statement / balance sheet / cash flow, options chains, institutional and fund holders, analyst recommendations, news, and flexible price history. Use for thorough single-ticker analysis beyond a basic quote.",
-    "USAspending": "US federal spending ($6T+/yr). Government contracts and grants, recipients and contractors, award amounts, and agency spending totals. Use for who received federal money, defense/agency contracts, or grant awards.",
-    "Census": "US demographics (Census Bureau / American Community Survey). Population, median household income, and raw ACS queries — race, age, sex, education, poverty, housing, commute — by state, county, or tract. Use for any US demographic or socioeconomic statistic.",
-    "BLS": "US labor statistics (Bureau of Labor Statistics). Unemployment rate, nonfarm payroll jobs, wages and average hourly earnings, CPI inflation, PPI producer prices, productivity. Use for the labor market, employment, or price indexes by series.",
-    "Treasury": "US federal fiscal data (Treasury Fiscal Data). National debt (debt to the penny, debt held by the public, intragovernmental), average interest rates on Treasury securities, and government exchange rates. Use for the size of the national debt or US borrowing costs.",
-    "FEC": "Federal campaign finance (Federal Election Commission). Candidates (President / Senate / House), itemized contributions and donors, and candidate fundraising totals. Use for elections money: who is running, who donated, how much was raised or spent.",
-    "Congress": "US legislation (Congress.gov). Bills with status, sponsors, and actions; members of Congress; and roll-call votes. Use for tracking laws, what Congress is doing, or how members voted.",
-    "FDA": "Drug and food safety (openFDA). Drug adverse-event / side-effect reports (FAERS), drug recalls, and food recalls (contamination, allergens). Use for medication safety, adverse reactions, or recalled products.",
-    "Clinical Trials": "Medical research trials (ClinicalTrials.gov, 500K+ studies). Search by condition or disease, intervention or drug, and status (recruiting, completed). Use for clinical trials on a disease or treatment.",
-    "EIA": "US energy data (Energy Information Administration). Gasoline and fuel prices, electricity generation / sales / prices, and any energy series — crude oil, natural gas, coal, renewables, CO2 emissions, consumption. Use for energy prices or production.",
-    "FEMA": "Disasters and emergency management (OpenFEMA). Federal disaster declarations (hurricanes, floods, wildfires, severe storms), FEMA grants and assistance, and NFIP flood-insurance claims. Use for disaster events or federal disaster aid.",
-    "Federal Register": "US federal regulations (Federal Register). Proposed and final rules, agency notices, executive orders, and presidential documents — searchable by type and agency. Use for rulemaking, regulations, or executive orders.",
-    "JEFS": "Federal judges' financial disclosures (Judicial). Disclosure reports for federal judges — session-based, requires Playwright registration + reCAPTCHA first. Use for the finances or holdings of federal judges.",
-    "House Disclosures": "US House financial disclosures. Representatives' and candidates' stock trades and holdings (congressional trading / periodic transaction reports). Use for politicians' stock transactions in the House.",
-    "NARA": "US National Archives catalog. Historical federal records across all record groups and the 14 presidential libraries. Use for archival US government documents, historical records, or presidential materials.",
-    "NSArchive": "Declassified national-security documents (National Security Archive — a GWU NGO, not NARA). Virtual Reading Room: foreign policy, intelligence, military, declassified cables and memos. Use for declassified Cold War or foreign-policy documents.",
-    "Smithsonian": "Museum and archive collections (Smithsonian Open Access, 11M+ objects). Art, history, science specimens, and photographs with metadata, plus category and controlled-term browsing. Use for museum objects, cultural artifacts, or collection metadata.",
-    "Wilson Center": "Cold War and international-history documents (Wilson Center Digital Archive, local mirror). 16,756 declassified primary-source documents on diplomacy and international relations. Use for primary-source Cold War and foreign-relations documents.",
-    "Cross-Reference": "Aggregators that join several sources in one call. Company -> SEC filings + federal contracts + political contributions; politician -> House stock disclosures + campaign finance. Use to profile a company or politician across sources at once.",
+    "FRED": "US economy and macroeconomic time series (800K+) — GDP, inflation and consumer prices (CPI, PCE), unemployment rate, interest rates (Fed funds, Treasury yields, 10-year), money supply (M1/M2), exchange rates, housing, industrial production, S&P 500, recession indicators. The default for any national economic indicator over time.",
+    "EDGAR": "SEC filings and financials for public companies and corporations — 10-K, 10-Q, 8-K annual and quarterly reports, full XBRL financial statements (revenue, earnings, net income, assets, liabilities, EPS, cash flow), one-metric-across-all-companies comparisons, and full-text search inside filings (by CIK or ticker). Use for any public-company financial data, SEC disclosures, or 'which companies mention X'.",
+    "Nasdaq": "Stock-market quotes for stocks, shares, and equities (Nasdaq.com, unofficial) — price, quote, bid/ask, volume, market cap, sector, industry, P/E, 52-week range, dividends, and daily OHLCV price history by ticker/symbol. Use for a quick quote or price snapshot of a listed ticker.",
+    "yfinance": "Deep data for stocks, shares, and equities (Yahoo Finance) by ticker/symbol — ~140 fundamental fields (market cap, P/E, EPS, beta, margins, ROE), full financial statements (income statement, balance sheet, cash flow), options chains (calls, puts, implied volatility), institutional and fund holders/ownership, analyst recommendations and price targets, dividends, earnings, news, and OHLCV price history. Use for thorough single-ticker stock analysis beyond a basic quote.",
+    "USAspending": "US federal spending ($6T+/yr) — government contracts, grants, and awards; recipients, contractors, and vendors; award amounts; agency and defense spending totals; subawards. Use for who received federal money, federal contracts, or grant awards.",
+    "Census": "US demographics from the Census Bureau / American Community Survey (ACS) — population, median household income, race and ethnicity, age, sex, education, poverty, housing and rent, commute, employment — by state, county, or census tract. Use for any US demographic or socioeconomic statistic.",
+    "BLS": "US labor statistics and jobs data (Bureau of Labor Statistics) — unemployment rate, employment and nonfarm payrolls, wages and average hourly earnings, job openings, CPI inflation and consumer prices, PPI producer prices, productivity, by series. Use for the labor market, jobs, or price indexes.",
+    "Treasury": "US federal fiscal data (Treasury) — the national / public debt (debt to the penny, debt held by the public, intragovernmental), federal deficit context, average interest rates and yields on Treasury securities, and government exchange rates. Use for the size of the national debt or US borrowing costs.",
+    "FEC": "Federal campaign finance and elections (FEC) — candidates (presidential, Senate, House), itemized contributions and donors, PAC and super PAC money, and candidate fundraising totals (receipts, disbursements). Use for election money: who is running, who donated, how much was raised or spent.",
+    "Congress": "US legislation and Congress (Congress.gov) — bills and laws with status, sponsors and cosponsors, and actions; members of Congress (representatives, senators); committees; and roll-call votes. Use for tracking laws, what Congress is doing, or how members voted.",
+    "FDA": "Drug and food safety (openFDA) — drug adverse-event and side-effect reports (FAERS), drug recalls, and food recalls (contamination, allergens), for medications and pharmaceuticals. Use for medication safety, adverse reactions, or recalled products.",
+    "Clinical Trials": "Clinical and medical trials (ClinicalTrials.gov, 500K+ studies) — searchable by condition or disease, intervention / drug or treatment, and status (recruiting, completed), by NCT id. Use for clinical or drug trials on a disease or treatment.",
+    "EIA": "US energy data (Energy Information Administration) — gasoline and fuel prices, crude oil and petroleum, natural gas, electricity (generation, sales, prices), coal, renewables (solar, wind), CO2 emissions, and energy consumption. Use for energy prices or production.",
+    "FEMA": "Disasters and emergency management (OpenFEMA) — federal disaster declarations (hurricanes, floods, wildfires / fires, storms, earthquakes, emergencies), FEMA grants and assistance, and NFIP flood-insurance claims. Use for disaster events or federal disaster aid.",
+    "Federal Register": "US federal regulations (Federal Register) — proposed and final rules and rulemaking, agency notices, executive orders, and presidential documents, by type and agency. Use for regulations, rules, or executive orders.",
+    "JEFS": "Financial disclosures of federal judges (Judicial) — judges' financial disclosure reports and holdings. Session-based: requires Playwright registration + reCAPTCHA first. Use for the finances or holdings of federal judges and the judiciary.",
+    "House Disclosures": "US House financial disclosures and congressional stock trades — representatives' and candidates' stock trades, holdings, and periodic transaction reports (PTRs). Use for politicians' or members of Congress' stock transactions in the House.",
+    "NARA": "US National Archives catalog — historical federal and government records, primary sources, and declassified documents across all record groups and the 14 presidential libraries. Use for archival US government documents, historical records, or presidential materials.",
+    "NSArchive": "Declassified national-security documents (National Security Archive — a GWU NGO, not NARA) — foreign policy, intelligence (CIA), military, and Cold War cables, memos, and FOIA releases. Use for declassified Cold War or foreign-policy documents.",
+    "Smithsonian": "Museum and archive collections (Smithsonian Open Access, 11M+ objects) — art and artwork, artifacts, history, science specimens, and photographs / images with metadata and category / term browsing. Use for museum objects, cultural heritage, or collection metadata.",
+    "Wilson Center": "Cold War and international-history primary sources (Wilson Center Digital Archive, local mirror) — 16,756 declassified documents on diplomacy, foreign policy, and international relations (cables, telegrams). Use for primary-source Cold War and foreign-relations documents.",
+    "Cross-Reference": "Aggregators that combine several sources in one call — a company profile (SEC filings + federal contracts + political contributions) or a politician profile (House stock disclosures + campaign finance). Use to cross-reference a company or politician across sources at once.",
     "Admin": "Operational endpoints (cache management). Not a data source.",
 }
 
@@ -310,9 +310,6 @@ def render_md() -> tuple[str, list[str]]:
         paths = " · ".join(f"`{path}`" for _m, path, _op in sorted(rows, key=lambda r: r[1]))
         doc = SOURCE_DOC.get(tag, "")
         out += [f"### {tag}", "", desc, ""]
-        keywords = SOURCE_KEYWORDS.get(tag)
-        if keywords:
-            out.append(f"- **Keywords:** {keywords}")
         out.append(f"- **Endpoints:** {paths}")
         out.append(
             f"- **Detail:** `{doc}` · **params:** `docs/endpoints.csv`"
