@@ -10,6 +10,8 @@ routes: "/wilson/document/{slug}, /wilson/documents"
 **Source**: a downloaded mirror of <https://digitalarchive.wilsoncenter.org/search>, captured ~2025-03-16, stored at `data/digitalarchive wilsoncenter/`.
 **Why local**: the live site became unreachable (its DNS returns NODATA — no A record from any resolver, including Cloudflare's own 1.1.1.1). The `wilson.py` client was therefore rewritten to serve the mirror instead of the live `/srv/*.json` API. There is **no network call** in this client.
 
+> **Production (Coolify):** `data/wilson.db` (228 MB) exceeds GitHub's 100 MB limit and isn't in the Docker image (which copies only `app/`). It's served from a **Coolify persistent volume**: host `/data/datagod` → container `/app/data` (the client reads `/app/data/wilson.db`). To reproduce on a fresh deploy: `scp wilson.db` to `/data/datagod/` on the VPS, add that directory mount to the app in Coolify, and redeploy. The download endpoints additionally need the full ~11 GB mirror (not shipped); search + document metadata work from `wilson.db` alone.
+
 ## The mirror (zstd-compressed tarballs)
 
 | File | Size | Contents |
