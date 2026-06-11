@@ -233,3 +233,7 @@ Operational endpoints (cache management). Not a data source.
 
 - **Endpoints:** `/admin/clear-cache`
 - **params:** `docs/endpoints.csv`
+
+## Also
+
+Researched but **not wired** (no endpoint yet): `docs/UNWIRED_RESEARCH.md` (SAM.gov, PatentsView) · `docs/SENATE_EFD_API.md` (Senate financial disclosures).

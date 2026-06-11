@@ -1,3 +1,10 @@
+---
+name: senate-efd
+description: "Senate Electronic Financial Disclosures (EFD) — senators' financial disclosure reports and stock trades. Researched (undocumented, session-based) but NOT yet wired into DataGod."
+keywords: "Senate, senators, financial disclosures, stock trades, EFD, periodic transaction reports, holdings, congressional trading, not wired"
+routes: "(none — researched, not wired)"
+---
+
 # Senate EFD (Electronic Financial Disclosures) — Undocumented API
 
 > Discovered via Chrome DevTools inspection, 2026-03-16

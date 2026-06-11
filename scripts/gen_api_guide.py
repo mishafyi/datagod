@@ -316,6 +316,13 @@ def render_md() -> tuple[str, list[str]]:
             if doc else "- **params:** `docs/endpoints.csv`"
         )
         out.append("")
+    out += [
+        "## Also",
+        "",
+        "Researched but **not wired** (no endpoint yet): `docs/UNWIRED_RESEARCH.md` "
+        "(SAM.gov, PatentsView) · `docs/SENATE_EFD_API.md` (Senate financial disclosures).",
+        "",
+    ]
     return "\n".join(out).rstrip() + "\n", missing
 
 
