@@ -49,11 +49,17 @@ async def frames(concept: str, unit: str = "USD", period: str = "CY2023",
     )
 
 
-async def search_filings(query: str, forms: str = "", limit: int = 10) -> UpstreamJSON:
-    """Full-text search inside filing documents."""
+async def search_filings(query: str, forms: str = "", limit: int = 10,
+                         startdt: str = "", enddt: str = "") -> UpstreamJSON:
+    """Full-text search inside filing documents. Optional `startdt`/`enddt`
+    (YYYY-MM-DD) scope results to a filing-date range (SEC EFTS covers 2001+)."""
     params: dict = {"q": query, "from": 0, "size": limit}
     if forms:
         params["forms"] = forms
+    if startdt:
+        params["startdt"] = startdt
+    if enddt:
+        params["enddt"] = enddt
     return await _gated_get(SEARCH, params=params, headers=HEADERS)
 
 

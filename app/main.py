@@ -225,9 +225,11 @@ async def edgar_frames(concept: str, unit: str = "USD", period: str = "CY2023",
 
 
 @app.get("/edgar/search", tags=["EDGAR"], summary="Full-text search inside filing documents")
-async def edgar_search(q: str, forms: str = "", limit: int = Query(10, le=100)):
-    """Full-text search inside filing documents."""
-    return await edgar.search_filings(q, forms, limit)
+async def edgar_search(q: str, forms: str = "", limit: int = Query(10, le=100),
+                       startdt: str = "", enddt: str = ""):
+    """Full-text search inside filing documents. Optional `startdt`/`enddt`
+    (YYYY-MM-DD) scope to a filing-date range, e.g. ?q=Ukraine&startdt=2026-01-01&enddt=2026-12-31."""
+    return await edgar.search_filings(q, forms, limit, startdt, enddt)
 
 
 # ── Nasdaq ───────────────────────────────────────────────────────
