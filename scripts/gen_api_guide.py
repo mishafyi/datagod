@@ -100,7 +100,7 @@ DESCRIPTIONS = {
     "/edgar/financials/{cik}": "All XBRL financial facts for a company across years. Use for: revenue, net income, assets, liabilities, cash, equity, EPS, R&D spend — the full financial-statement dataset.",
     "/edgar/concept/{cik}/{concept}": "History of one XBRL concept for one company (e.g. Revenues, NetIncomeLoss, Assets, CashAndCashEquivalents). Use to track a single financial metric over time.",
     "/edgar/frames/{concept}": "One financial concept across ALL public companies for a period — cross-company comparison in a single call. Use to rank or compare revenue / assets / net income across thousands of filers.",
-    "/edgar/search": "Full-text search inside SEC filing documents. Use for: which companies mention a topic (AI, climate risk, layoffs, a competitor, a country like Ukraine, a product) in their filings; filter by form type (forms=) and filing-date range (startdt/enddt, YYYY-MM-DD, covers 2001+).",
+    "/edgar/search": "Full-text search inside SEC filing documents. Use for: which companies mention a topic (AI, climate risk, layoffs, a competitor, a country like Ukraine, a product) in their filings; filter by form type (forms=) and filing-date range (startdt/enddt, YYYY-MM-DD, covers 2001+). limit (1-10000) is auto-paginated to return up to that many hits (SEC caps total reachable at 10,000).",
     "/nasdaq/quote/{ticker}": "Stock quote summary: market cap, sector, industry, P/E, dividend yield, 52-week high/low. Quick snapshot of a listed company.",
     "/nasdaq/price/{ticker}": "Current price, bid/ask, day volume, and percent change for a ticker.",
     "/nasdaq/history/{ticker}": "Daily OHLCV price history (open, high, low, close, volume) between two dates.",

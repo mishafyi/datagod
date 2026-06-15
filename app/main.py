@@ -225,10 +225,12 @@ async def edgar_frames(concept: str, unit: str = "USD", period: str = "CY2023",
 
 
 @app.get("/edgar/search", tags=["EDGAR"], summary="Full-text search inside filing documents")
-async def edgar_search(q: str, forms: str = "", limit: int = Query(10, le=100),
+async def edgar_search(q: str, forms: str = "", limit: int = Query(10, le=10000),
                        startdt: str = "", enddt: str = ""):
-    """Full-text search inside filing documents. Optional `startdt`/`enddt`
-    (YYYY-MM-DD) scope to a filing-date range, e.g. ?q=Ukraine&startdt=2026-01-01&enddt=2026-12-31."""
+    """Full-text search inside filing documents. `limit` (1-10000) is the max hits
+    returned — results are auto-paginated from the SEC (100/page) up to the SEC's
+    10,000 ceiling. Optional `forms` and `startdt`/`enddt` (YYYY-MM-DD) date range,
+    e.g. ?q=Ukraine&forms=10-Q&startdt=2026-01-01&enddt=2026-12-31&limit=2000."""
     return await edgar.search_filings(q, forms, limit, startdt, enddt)
 
 
