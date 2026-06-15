@@ -323,8 +323,10 @@ curl -s "https://efts.sec.gov/LATEST/search-index?q=%22artificial+intelligence%2
 | `dateRange` | `custom` for date filtering | `custom` |
 | `startdt` | Start date (with dateRange=custom) | `2024-01-01` |
 | `enddt` | End date (with dateRange=custom) | `2025-01-01` |
-| `from` | Pagination offset | `0` |
-| `size` | Results per page | `50` |
+| `from` | Pagination offset — start at 0, step by 100 (`0,100,200…`); the only way to page | `100` |
+| `size` | **Ignored by the SEC** — every page is hard-fixed at 100 hits regardless of value | — |
+
+> **Pagination reality (verified 2026-06-15):** EFTS returns a **fixed 100 hits per page** and **ignores `size`** (size=5 / 50 / 100 — and the `dateRange=custom&size=50` form — all return 100). Page through results with `from` in steps of 100. The backend is Elasticsearch with a **10,000-result window**, so `from` maxes out around 9900 and `hits.total` itself caps at `{"value":10000,"relation":"gte"}` for broad queries. DataGod's `/edgar/search` exposes `from` as a **thin pass-through** — it returns one 100-hit page and does **not** auto-paginate; page client-side, exactly like hitting EFTS directly.
 
 **Response structure:**
 ```json

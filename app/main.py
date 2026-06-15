@@ -225,13 +225,14 @@ async def edgar_frames(concept: str, unit: str = "USD", period: str = "CY2023",
 
 
 @app.get("/edgar/search", tags=["EDGAR"], summary="Full-text search inside filing documents")
-async def edgar_search(q: str, forms: str = "", limit: int = Query(10, le=10000),
-                       startdt: str = "", enddt: str = ""):
-    """Full-text search inside filing documents. `limit` (1-10000) is the max hits
-    returned — results are auto-paginated from the SEC (100/page) up to the SEC's
-    10,000 ceiling. Optional `forms` and `startdt`/`enddt` (YYYY-MM-DD) date range,
-    e.g. ?q=Ukraine&forms=10-Q&startdt=2026-01-01&enddt=2026-12-31&limit=2000."""
-    return await edgar.search_filings(q, forms, limit, startdt, enddt)
+async def edgar_search(q: str, forms: str = "", startdt: str = "", enddt: str = "",
+                       offset: int = Query(0, ge=0, le=9900, alias="from")):
+    """Full-text search inside filing documents (thin pass-through to SEC EFTS). The
+    SEC returns a fixed 100 hits per page and ignores page size; paginate with `from`
+    in steps of 100 (0, 100, 200 … max 9900 — the SEC caps results at 10,000). Optional
+    `forms` and `startdt`/`enddt` (YYYY-MM-DD), e.g.
+    ?q=Ukraine&forms=10-Q&startdt=2026-01-01&enddt=2026-12-31&from=100."""
+    return await edgar.search_filings(q, forms, startdt, enddt, offset)
 
 
 # ── Nasdaq ───────────────────────────────────────────────────────

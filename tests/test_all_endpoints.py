@@ -74,7 +74,8 @@ hit("GET", "/edgar/company/AAPL", "EDGAR")
 hit("GET", "/edgar/financials/AAPL", "EDGAR", timeout=60)
 hit("GET", "/edgar/concept/AAPL/Revenues", "EDGAR")
 hit("GET", "/edgar/frames/Revenues?period=CY2023", "EDGAR", timeout=60)
-hit("GET", "/edgar/search?q=artificial+intelligence&limit=2", "EDGAR")
+hit("GET", "/edgar/search?q=artificial+intelligence", "EDGAR")
+hit("GET", "/edgar/search?q=artificial+intelligence&from=100", "EDGAR")  # pagination pass-through
 # ── Nasdaq ──
 hit("GET", "/nasdaq/quote/AAPL", "Nasdaq")
 hit("GET", "/nasdaq/price/AAPL", "Nasdaq")
