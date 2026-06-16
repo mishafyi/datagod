@@ -7,3 +7,4 @@ yfinance>=0.2.40
 selectolax>=0.3.21
 feedparser>=6.0.12
 beautifulsoup4>=4.12
+lxml>=5.0  # yfinance get_earnings_dates() -> pandas.read_html needs it
