@@ -14,18 +14,19 @@ SERIES = {
 }
 
 
-async def series(series_id: str, start_year: int = 2024,
-                 end_year: int = 2026) -> UpstreamJSON:
+async def series(series_id: str, start_year: int,
+                 end_year: int) -> UpstreamJSON:
     """Get time series data. Use SERIES dict for common IDs."""
     series_id = SERIES.get(series_id, series_id)
-    return await safe_get(f"{BASE}/{series_id}", "bls", params={
-        "startyear": str(start_year), "endyear": str(end_year),
-    })
+    params: dict = {"startyear": str(start_year), "endyear": str(end_year)}
+    if cfg.BLS_API_KEY:
+        params["registrationkey"] = cfg.BLS_API_KEY
+    return await safe_get(f"{BASE}/{series_id}", "bls", params=params)
 
 
-async def multiple(series_ids: list[str], start_year: int = 2024,
-                   end_year: int = 2026) -> UpstreamJSON:
-    """Get multiple series at once (POST, requires key)."""
+async def multiple(series_ids: list[str], start_year: int,
+                   end_year: int) -> UpstreamJSON:
+    """Get multiple series at once (POST, registrationkey added when set)."""
     resolved = [SERIES.get(s, s) for s in series_ids]
     payload: dict = {"seriesid": resolved, "startyear": str(start_year),
                      "endyear": str(end_year)}

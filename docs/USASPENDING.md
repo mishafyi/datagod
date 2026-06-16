@@ -19,13 +19,13 @@ List of federal agencies (names and IDs) for filtering spending queries.
 
 Federal spending totals grouped by agency for a fiscal year / quarter.
 
-**Params:** `fy` (query, string, default 2025) · `quarter` (query, string, default 1)
+**Params:** `fy` (query, string, required) · `quarter` (query, string, default 1)
 
 ### `GET /usaspending/search`
 
 Search federal awards (contracts and grants) by keyword. Use for: who received federal money, contractors/recipients, award amounts, defense or agency spending.
 
-**Params:** `q` (query, string, required) · `start_date` (query, string) · `end_date` (query, string) · `limit` (query, integer, default 10, max 100)
+**Params:** `q` (query, string, required) · `start_date` (query, string) · `end_date` (query, string) · `limit` (query, integer, default 10, max 100) · `page` (query, integer, default 1) · `sort` (query, string, default Award Amount) · `order` (query, string, default desc) · `award_type_codes` (query, string)
 
 ## Quirks & notes
 

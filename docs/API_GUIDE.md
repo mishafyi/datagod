@@ -76,28 +76,28 @@ Service utility: API index (`/`) and a public liveness probe (`/health`). Not a 
 
 US economy and macroeconomic time series (800K+) — GDP, inflation and consumer prices (CPI, PCE), unemployment rate, interest rates (Fed funds, Treasury yields, 10-year), money supply (M1/M2), exchange rates, housing, industrial production, S&P 500, recession indicators. The default for any national economic indicator over time.
 
-- **Endpoints:** `/fred` · `/fred/{series_id}`
+- **Endpoints:** `/fred` · `/fred/series/{series_id}` · `/fred/{series_id}`
 - **Detail:** `docs/FRED.md` · **params:** `docs/endpoints.csv`
 
 ### EDGAR
 
 SEC filings and financials for public companies and corporations — 10-K, 10-Q, 8-K annual and quarterly reports, full XBRL financial statements (revenue, earnings, net income, assets, liabilities, EPS, cash flow), one-metric-across-all-companies comparisons, and full-text search inside filings (by CIK or ticker). Use for any public-company financial data, SEC disclosures, or 'which companies mention X'.
 
-- **Endpoints:** `/edgar/company/{cik}` · `/edgar/concept/{cik}/{concept}` · `/edgar/financials/{cik}` · `/edgar/frames/{concept}` · `/edgar/search`
+- **Endpoints:** `/edgar/cik/{ticker}` · `/edgar/company/{cik}` · `/edgar/concept/{cik}/{concept}` · `/edgar/document/{cik}/{accession}/{document}` · `/edgar/financials/{cik}` · `/edgar/frames/{concept}` · `/edgar/search` · `/edgar/submissions/{filename}`
 - **Detail:** `docs/EDGAR_API.md` · **params:** `docs/endpoints.csv`
 
 ### Nasdaq
 
 Stock-market quotes for stocks, shares, and equities (Nasdaq.com, unofficial) — price, quote, bid/ask, volume, market cap, sector, industry, P/E, 52-week range, dividends, and daily OHLCV price history by ticker/symbol. Use for a quick quote or price snapshot of a listed ticker.
 
-- **Endpoints:** `/nasdaq/dividends/{ticker}` · `/nasdaq/history/{ticker}` · `/nasdaq/price/{ticker}` · `/nasdaq/quote/{ticker}`
+- **Endpoints:** `/nasdaq/calendar/earnings` · `/nasdaq/calendar/ipo` · `/nasdaq/dividends/{ticker}` · `/nasdaq/earnings-surprise/{ticker}` · `/nasdaq/financials/{ticker}` · `/nasdaq/history/{ticker}` · `/nasdaq/insider-trades/{ticker}` · `/nasdaq/price/{ticker}` · `/nasdaq/quote/{ticker}` · `/nasdaq/screener`
 - **Detail:** `docs/NASDAQ_API.md` · **params:** `docs/endpoints.csv`
 
 ### yfinance
 
 Deep data for stocks, shares, and equities (Yahoo Finance) by ticker/symbol — ~140 fundamental fields (market cap, P/E, EPS, beta, margins, ROE), full financial statements (income statement, balance sheet, cash flow), options chains (calls, puts, implied volatility), institutional and fund holders/ownership, analyst recommendations and price targets, dividends, earnings, news, and OHLCV price history. Use for thorough single-ticker stock analysis beyond a basic quote.
 
-- **Endpoints:** `/yfinance/dividends/{ticker}` · `/yfinance/financials/{ticker}` · `/yfinance/history/{ticker}` · `/yfinance/holders/{ticker}` · `/yfinance/info/{ticker}` · `/yfinance/news/{ticker}` · `/yfinance/options/{ticker}` · `/yfinance/recommendations/{ticker}`
+- **Endpoints:** `/yfinance/dividends/{ticker}` · `/yfinance/earnings/{ticker}` · `/yfinance/financials/{ticker}` · `/yfinance/history/{ticker}` · `/yfinance/holders/{ticker}` · `/yfinance/info/{ticker}` · `/yfinance/news/{ticker}` · `/yfinance/options/{ticker}` · `/yfinance/recommendations/{ticker}`
 - **Detail:** `docs/YFINANCE_API.md` · **params:** `docs/endpoints.csv`
 
 ### USAspending
@@ -118,7 +118,7 @@ US demographics from the Census Bureau / American Community Survey (ACS) — pop
 
 US labor statistics and jobs data (Bureau of Labor Statistics) — unemployment rate, employment and nonfarm payrolls, wages and average hourly earnings, job openings, CPI inflation and consumer prices, PPI producer prices, productivity, by series. Use for the labor market, jobs, or price indexes.
 
-- **Endpoints:** `/bls/{series_id}`
+- **Endpoints:** `/bls/batch` · `/bls/{series_id}`
 - **Detail:** `docs/BLS.md` · **params:** `docs/endpoints.csv`
 
 ### Treasury
@@ -181,7 +181,7 @@ US federal regulations (Federal Register) — proposed and final rules and rulem
 
 US House financial disclosures and congressional stock trades — representatives' and candidates' stock trades, holdings, and periodic transaction reports (PTRs). Use for politicians' or members of Congress' stock transactions in the House.
 
-- **Endpoints:** `/house-disclosures/candidates` · `/house-disclosures/members`
+- **Endpoints:** `/house-disclosures/candidates` · `/house-disclosures/members` · `/house-disclosures/pdf`
 - **Detail:** `docs/HOUSE_FD_API.md` · **params:** `docs/endpoints.csv`
 
 ### NARA

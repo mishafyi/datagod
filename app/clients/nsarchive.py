@@ -106,11 +106,23 @@ def _parse_document(html: str, doc_id: str) -> UpstreamJSON:
     }
 
 
-async def search(q: str = "", page: int = 1) -> UpstreamJSON:
-    """Full-text search the Virtual Reading Room (empty q browses chronologically). 20/page."""
+async def search(q: str = "", page: int = 1, field_date_min: str = "",
+                 field_date_max: str = "", searched_fields: str = "") -> UpstreamJSON:
+    """Full-text search the Virtual Reading Room (empty q browses chronologically). 20/page.
+
+    `field_date_min`/`field_date_max` are `YYYY-MM-DD` bounds (forwarded as the upstream's
+    `field_date[min]`/`field_date[max]`). `searched_fields` limits which field the full-text
+    query hits — one of: All, Title, Source, "Document Text", Description.
+    """
     params: dict = {"page": max(page - 1, 0)}  # site pager is 0-based
     if q:
         params["search_api_fulltext"] = q
+    if field_date_min:
+        params["field_date[min]"] = field_date_min
+    if field_date_max:
+        params["field_date[max]"] = field_date_max
+    if searched_fields:
+        params["search_api_fulltext_searched_fields"] = searched_fields
     try:
         r = await get_client().get(f"{BASE}/virtual-reading-room", params=params, headers=HEADERS)
         r.raise_for_status()

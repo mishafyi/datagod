@@ -101,6 +101,23 @@ async def dividends(ticker: str) -> UpstreamJSON:
     return await _run(lambda: _df_to_records(yf.Ticker(ticker).dividends))
 
 
+async def earnings(ticker: str, limit: int = 12) -> UpstreamJSON:
+    """Earnings history + next-earnings calendar.
+
+    `earnings_dates`: past/upcoming earnings dates with EPS estimate, reported
+    EPS, and surprise % (yfinance `get_earnings_dates(limit=...)`, a DataFrame).
+    `calendar`: next earnings/dividend dates and EPS/revenue estimate ranges
+    (yfinance `calendar`, already a plain dict — returned unchanged).
+    """
+    def _do() -> dict:
+        t = yf.Ticker(ticker)
+        return {
+            "earnings_dates": _df_to_records(t.get_earnings_dates(limit=limit)),
+            "calendar": t.calendar,
+        }
+    return await _run(_do)
+
+
 async def options(ticker: str, expiry: str = "") -> UpstreamJSON:
     """Options chain. expiry blank → list available expiries; else returns calls+puts for that date."""
     def _do() -> dict:

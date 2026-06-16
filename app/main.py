@@ -4,9 +4,10 @@ DataGod — Unified API for 15 US Government data sources + Nasdaq.com.
 One API, all the data. Free.
 """
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Query, Request, Response
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel
 
 from .auth import UnauthorizedError, require_api_key, require_docs_auth
 from .cache import clear_cache
@@ -181,9 +182,20 @@ async def health():
 
 # ── FRED ─────────────────────────────────────────────────────────
 
+@app.get("/fred/series/{series_id}", tags=["FRED"], summary="Fetch FRED series metadata")
+async def fred_series_info(series_id: str):
+    """Metadata for a FRED series (title, units, frequency, dates) — not observations."""
+    return await fred.series_info(series_id)
+
+
 @app.get("/fred/{series_id}", tags=["FRED"], summary="Fetch a FRED economic time series")
-async def fred_series(series_id: str, limit: int = Query(10, le=1000)):
-    return await fred.get_series(series_id, limit)
+async def fred_series(series_id: str, limit: int = Query(10, le=1000),
+                      offset: int = Query(0, ge=0),
+                      sort_order: str = Query("asc", pattern="^(asc|desc)$"),
+                      observation_start: str | None = Query(None, description="YYYY-MM-DD lower bound"),
+                      observation_end: str | None = Query(None, description="YYYY-MM-DD upper bound")):
+    return await fred.get_series(series_id, limit, offset, sort_order,
+                                 observation_start, observation_end)
 
 
 @app.get("/fred", tags=["FRED"], summary="Search FRED series by keyword")
@@ -218,21 +230,59 @@ async def edgar_concept(cik: str, concept: str, taxonomy: str = "us-gaap"):
 
 
 @app.get("/edgar/frames/{concept}", tags=["EDGAR"], summary="One concept across all filers (cross-company)")
-async def edgar_frames(concept: str, unit: str = "USD", period: str = "CY2023",
+async def edgar_frames(concept: str, unit: str = "USD",
+                        period: str = Query(..., description="e.g. CY2023, CY2023Q1, CY2023Q4I"),
                         taxonomy: str = "us-gaap"):
     """Cross-company comparison. One concept for ALL companies."""
-    return await edgar.frames(concept, unit, period, taxonomy)
+    return await edgar.frames(concept=concept, period=period, unit=unit, taxonomy=taxonomy)
 
 
 @app.get("/edgar/search", tags=["EDGAR"], summary="Full-text search inside filing documents")
 async def edgar_search(q: str, forms: str = "", startdt: str = "", enddt: str = "",
-                       offset: int = Query(0, ge=0, le=9900, alias="from")):
+                       offset: int = Query(0, ge=0, le=9900, alias="from"),
+                       date_range: str = Query("", alias="dateRange"),
+                       size: int | None = Query(None)):
     """Full-text search inside filing documents (thin pass-through to SEC EFTS). The
     SEC returns a fixed 100 hits per page and ignores page size; paginate with `from`
     in steps of 100 (0, 100, 200 … max 9900 — the SEC caps results at 10,000). Optional
     `forms` and `startdt`/`enddt` (YYYY-MM-DD), e.g.
     ?q=Ukraine&forms=10-Q&startdt=2026-01-01&enddt=2026-12-31&from=100."""
-    return await edgar.search_filings(q, forms, startdt, enddt, offset)
+    params: dict = {"q": q, "from": offset}
+    if forms:
+        params["forms"] = forms
+    if startdt:
+        params["startdt"] = startdt
+    if enddt:
+        params["enddt"] = enddt
+    if date_range:
+        params["dateRange"] = date_range
+    if size is not None:
+        params["size"] = size
+    return await edgar.search_filings(params)
+
+
+@app.get("/edgar/submissions/{filename}", tags=["EDGAR"], summary="Submissions overflow file (1000+ filers)")
+async def edgar_submissions_overflow(filename: str):
+    """Overflow filings file for large filers, e.g. CIK0000320193-submissions-001.json
+    (from the company route's filings.files[].name)."""
+    return await edgar.submissions_overflow(filename)
+
+
+@app.get("/edgar/document/{cik}/{accession}/{document:path}", tags=["EDGAR"], summary="Raw filing document bytes")
+async def edgar_document(cik: str, accession: str, document: str):
+    """Raw filing document from the EDGAR archives. `accession` is dashless
+    (e.g. 000032019324000123); `document` is the primaryDocument (e.g. aapl-20240928.htm)."""
+    result = await edgar.filing_document(cik, accession, document)
+    if isinstance(result, dict):  # error-dict -> let the envelope wrap it
+        return result
+    return Response(content=result.content,
+                    media_type=result.headers.get("content-type", "application/octet-stream"))
+
+
+@app.get("/edgar/cik/{ticker}", tags=["EDGAR"], summary="Resolve a ticker to its CIK")
+async def edgar_cik(ticker: str):
+    """Resolve a ticker symbol to its zero-padded CIK, e.g. AAPL -> 0000320193."""
+    return await edgar.ticker_to_cik(ticker)
 
 
 # ── Nasdaq ───────────────────────────────────────────────────────
@@ -261,6 +311,42 @@ async def nasdaq_history(ticker: str, fromdate: str, todate: str,
 async def nasdaq_dividends(ticker: str, asset_class: str = "stocks"):
     """Dividend history."""
     return await nasdaq.dividends(ticker, asset_class)
+
+
+@app.get("/nasdaq/financials/{ticker}", tags=["Nasdaq"], summary="Income statement, balance sheet, cash flow")
+async def nasdaq_financials(ticker: str, frequency: str = "A"):
+    """Financial statements. frequency: 'A' annual, 'Q' quarterly."""
+    return await nasdaq.financials(ticker, frequency)
+
+
+@app.get("/nasdaq/insider-trades/{ticker}", tags=["Nasdaq"], summary="Recent insider (Form 4) transactions")
+async def nasdaq_insider_trades(ticker: str, limit: int = Query(15, le=100)):
+    """Recent insider (Form 4) buy/sell transactions."""
+    return await nasdaq.insider_trades(ticker, limit)
+
+
+@app.get("/nasdaq/earnings-surprise/{ticker}", tags=["Nasdaq"], summary="Reported vs consensus EPS surprises")
+async def nasdaq_earnings_surprise(ticker: str, limit: int = Query(15, le=100)):
+    """Historical reported-vs-consensus EPS surprises."""
+    return await nasdaq.earnings_surprise(ticker, limit)
+
+
+@app.get("/nasdaq/calendar/earnings", tags=["Nasdaq"], summary="Companies reporting earnings on a date")
+async def nasdaq_calendar_earnings(date: str):
+    """Companies reporting earnings on a given day (YYYY-MM-DD, required)."""
+    return await nasdaq.calendar_earnings(date)
+
+
+@app.get("/nasdaq/calendar/ipo", tags=["Nasdaq"], summary="IPOs priced/expected on a date")
+async def nasdaq_calendar_ipo(date: str):
+    """IPOs priced/expected on a given day (YYYY-MM-DD, required)."""
+    return await nasdaq.calendar_ipo(date)
+
+
+@app.get("/nasdaq/screener", tags=["Nasdaq"], summary="Full stock-screener output")
+async def nasdaq_screener(limit: int = Query(25, le=1000)):
+    """Full stock-screener output (table rows)."""
+    return await nasdaq.screener(limit)
 
 
 # ── yfinance (Yahoo Finance) ─────────────────────────────────────
@@ -307,6 +393,12 @@ async def yf_dividends(ticker: str):
     return await yfin.dividends(ticker)
 
 
+@app.get("/yfinance/earnings/{ticker}", tags=["yfinance"], summary="Earnings history + next-earnings calendar")
+async def yf_earnings(ticker: str, limit: int = Query(12, ge=1, le=100)):
+    """Past/upcoming earnings dates (EPS estimate, reported EPS, surprise %) + next-earnings calendar."""
+    return await yfin.earnings(ticker, limit)
+
+
 @app.get("/yfinance/options/{ticker}", tags=["yfinance"], summary="Options chain (expiries or calls/puts)")
 async def yf_options(ticker: str, expiry: str = ""):
     """Options chain. expiry blank → list expiries; else calls+puts for that date."""
@@ -322,39 +414,60 @@ async def usaspending_agencies():
 
 @app.get("/usaspending/search", tags=["USAspending"], summary="Search federal awards by keyword")
 async def usaspending_search(q: str, start_date: str = "", end_date: str = "",
-                              limit: int = Query(10, le=100)):
-    """Search federal awards by keyword."""
-    return await usaspending.search_awards([q], start_date, end_date, limit)
+                              limit: int = Query(10, le=100), page: int = Query(1, ge=1),
+                              sort: str = "Award Amount", order: str = "desc",
+                              award_type_codes: str = ""):
+    """Search federal awards by keyword. award_type_codes: CSV (e.g. 'A,B,C,D,02,03,04,05');
+    empty => contracts + grants default."""
+    return await usaspending.search_awards([q], start_date=start_date, end_date=end_date,
+                                           limit=limit, page=page, sort=sort, order=order,
+                                           award_type_codes=award_type_codes)
 
 
 @app.get("/usaspending/by-agency", tags=["USAspending"], summary="Spending totals by agency (fiscal year)")
-async def usaspending_by_agency(fy: str = "2025", quarter: str = "1"):
+async def usaspending_by_agency(fy: str, quarter: str = "1"):
     return await usaspending.spending_by_agency(fy, quarter)
 
 
 # ── Census ───────────────────────────────────────────────────────
 
 @app.get("/census/population", tags=["Census"], summary="Population by state")
-async def census_population(year: int = 2022):
+async def census_population(year: int):
     return await census.population_by_state(year)
 
 
 @app.get("/census/income", tags=["Census"], summary="Median household income by state")
-async def census_income(year: int = 2022):
+async def census_income(year: int):
     return await census.income_by_state(year)
 
 
 @app.get("/census/acs", tags=["Census"], summary="Raw ACS query (any variables and geography)")
-async def census_acs(variables: str = "NAME,B01001_001E", year: int = 2022,
-                      geo_for: str = "state:*", geo_in: str = ""):
-    """Raw ACS query. variables: comma-separated ACS variable codes."""
-    return await census.acs(variables, year, geo_for, geo_in)
+async def census_acs(year: int, variables: str = "NAME,B01001_001E",
+                      geo_for: str = "state:*", geo_in: str = "",
+                      dataset: str = Query("acs5", pattern="^(acs1|acs5)$")):
+    """Raw ACS query. variables: comma-separated ACS variable codes.
+    dataset: acs5 (5-year, supports tracts) or acs1 (1-year, 65k+ population)."""
+    return await census.acs(year=year, variables=variables, geo_for=geo_for,
+                            geo_in=geo_in, dataset=dataset)
 
 
 # ── BLS ──────────────────────────────────────────────────────────
 
+class BlsBatch(BaseModel):
+    series_ids: list[str]
+    start_year: int
+    end_year: int
+
+
+@app.post("/bls/batch", tags=["BLS"], summary="BLS multi-series batch (POST, registrationkey added when set)")
+async def bls_multiple(body: BlsBatch):
+    """Batch-fetch multiple BLS series in one call. Each id may be a shortcut
+    (unemployment, cpi, nonfarm_employment, ppi, hourly_earnings) or a raw BLS id."""
+    return await bls.multiple(body.series_ids, body.start_year, body.end_year)
+
+
 @app.get("/bls/{series_id}", tags=["BLS"], summary="BLS series (CPI, unemployment, wages, PPI)")
-async def bls_series(series_id: str, start_year: int = 2024, end_year: int = 2026):
+async def bls_series(series_id: str, start_year: int, end_year: int):
     """Get BLS series. Shortcuts: unemployment, cpi, nonfarm_employment, ppi, hourly_earnings."""
     return await bls.series(series_id, start_year, end_year)
 
@@ -379,28 +492,32 @@ async def treasury_exchange(limit: int = Query(5, le=100)):
 # ── FEC ──────────────────────────────────────────────────────────
 
 @app.get("/fec/candidates", tags=["FEC"], summary="Search federal candidates")
-async def fec_candidates(office: str = "", state: str = "", limit: int = Query(10, le=100)):
+async def fec_candidates(office: str = "", state: str = "", limit: int = Query(10, le=100),
+                          page: int = Query(1, ge=1)):
     """Search candidates. office: P, S, H."""
-    return await fec.candidates(office, state, limit)
+    return await fec.candidates(office, state, limit, page)
 
 
 @app.get("/fec/contributions", tags=["FEC"], summary="Campaign contributions")
 async def fec_contributions(name: str = "", candidate_id: str = "",
-                             limit: int = Query(10, le=100)):
-    return await fec.contributions(name, candidate_id, limit)
+                             limit: int = Query(10, le=100), page: int = Query(1, ge=1)):
+    return await fec.contributions(name, candidate_id, limit, page)
 
 
 @app.get("/fec/totals", tags=["FEC"], summary="Candidate financial totals by receipts")
-async def fec_totals(office: str = "P", year: int = 2024, limit: int = Query(10, le=100)):
+async def fec_totals(year: int = Query(..., description="election year"), office: str = "P",
+                      limit: int = Query(10, le=100), page: int = Query(1, ge=1)):
     """Candidate financial totals by receipts."""
-    return await fec.candidate_totals(office, year, limit)
+    return await fec.candidate_totals(election_year=year, office=office,
+                                      per_page=limit, page=page)
 
 
 # ── Congress ─────────────────────────────────────────────────────
 
 @app.get("/congress/bills", tags=["Congress"], summary="Recent bills")
-async def congress_bills(limit: int = Query(10, le=250), congress_num: int = 0):
-    return await congress.bills(limit, congress_num)
+async def congress_bills(limit: int = Query(10, le=250), congress_num: int = 0,
+                          offset: int = Query(0, ge=0)):
+    return await congress.bills(limit, congress_num, offset)
 
 
 @app.get("/congress/bill/{congress_num}/{bill_type}/{number}", tags=["Congress"], summary="Single bill detail")
@@ -409,13 +526,14 @@ async def congress_bill(congress_num: int, bill_type: str, number: int):
 
 
 @app.get("/congress/members", tags=["Congress"], summary="Members of Congress")
-async def congress_members(limit: int = Query(10, le=250)):
-    return await congress.members(limit)
+async def congress_members(limit: int = Query(10, le=250), offset: int = Query(0, ge=0)):
+    return await congress.members(limit, offset)
 
 
-@app.get("/congress/votes", tags=["Congress"], summary="Roll-call votes by chamber")
-async def congress_votes(chamber: str = "house", congress_session: int = 118, limit: int = Query(10, le=250)):
-    return await congress.votes(chamber, congress_session, limit)
+@app.get("/congress/votes", tags=["Congress"], summary="Recent House roll-call votes")
+async def congress_votes(congress_session: int = 118, limit: int = Query(10, le=250),
+                          offset: int = Query(0, ge=0)):
+    return await congress.votes(congress_session, limit, offset)
 
 
 # ── FDA ──────────────────────────────────────────────────────────
@@ -461,21 +579,27 @@ async def eia_gas(limit: int = Query(10, le=100)):
 
 
 @app.get("/eia/electricity", tags=["EIA"], summary="Electricity generation and retail data")
-async def eia_electricity(limit: int = Query(10, le=100)):
-    return await eia.electricity(limit)
+async def eia_electricity(limit: int = Query(10, le=100), data_field: str = "revenue",
+                           frequency: str = "annual"):
+    """Electricity retail data. data_field: revenue, sales, price, customers."""
+    return await eia.electricity(limit, data_field, frequency)
 
 
 @app.get("/eia/{route:path}", tags=["EIA"], summary="Generic EIA dataset query by route")
 async def eia_query(route: str, frequency: str = "annual", data: str = "value",
-                     limit: int = Query(10, le=1000)):
-    return await eia.query(route, frequency, data, limit)
+                     limit: int = Query(10, le=5000), offset: int = Query(0, ge=0),
+                     sort_col: str = "period", sort_dir: str = "desc"):
+    return await eia.query(route, frequency=frequency, data_field=data, length=limit,
+                           offset=offset, sort_col=sort_col, sort_dir=sort_dir)
 
 
 # ── FEMA ─────────────────────────────────────────────────────────
 
 @app.get("/fema/disasters", tags=["FEMA"], summary="Disaster declarations")
-async def fema_disasters(limit: int = Query(10, le=1000)):
-    return await fema.disasters(limit)
+async def fema_disasters(limit: int = Query(10, le=1000),
+                          state: str = Query("", description="Two-letter USPS state code, e.g. CA"),
+                          declared_since: str = Query("", description="ISO date, e.g. 2024-01-01; filters declarationDate >=")):
+    return await fema.disasters(limit, state, declared_since)
 
 
 @app.get("/fema/grants", tags=["FEMA"], summary="FEMA grant awards")
@@ -563,12 +687,23 @@ async def house_candidates(last_name: str = "", year: str = "", state: str = "",
     return await house_fd.search_candidates(last_name, year, state, district)
 
 
+@app.get("/house-disclosures/pdf", tags=["House Disclosures"], summary="Fetch a disclosure PDF by path")
+async def house_pdf(path: str):
+    """Fetch a member/candidate disclosure PDF by its `pdf_url`-style path
+    (e.g. public_disc/ptr-pdfs/2024/20024542.pdf). Returns raw application/pdf bytes."""
+    result = await house_fd.fetch_pdf(path)
+    if isinstance(result, dict):  # error-dict -> let the envelope wrap it
+        return result
+    return Response(content=result, media_type="application/pdf")
+
+
 # ── NARA (US National Archives Catalog) ──────────────────────────
 
 @app.get("/nara/search", tags=["NARA"], summary="Search the National Archives Catalog")
-async def nara_search(q: str = "", page: int = 1):
+async def nara_search(q: str = "", page: int = 1, available_online: bool = False,
+                       type_of_materials: str = "", level_of_description: str = ""):
     """Search the National Archives Catalog (all record groups + the 14 presidential libraries). 20 results/page."""
-    return await nara.search(q, page)
+    return await nara.search(q, page, available_online, type_of_materials, level_of_description)
 
 
 @app.get("/nara/record/{na_id}", tags=["NARA"], summary="Single catalog record by NAID")
@@ -580,9 +715,12 @@ async def nara_record(na_id: str):
 # ── National Security Archive (NGO; VRR scrape) ──────────────────
 
 @app.get("/nsarchive/search", tags=["NSArchive"], summary="Search the National Security Archive VRR")
-async def nsarchive_search(q: str = "", page: int = 1):
-    """Search the National Security Archive Virtual Reading Room (empty q browses). 20/page."""
-    return await nsarchive.search(q, page)
+async def nsarchive_search(q: str = "", page: int = 1, field_date_min: str = "",
+                            field_date_max: str = "",
+                            searched_fields: str = Query("", description='One of: All, Title, Source, "Document Text", Description')):
+    """Search the National Security Archive Virtual Reading Room (empty q browses). 20/page.
+    field_date_min/field_date_max are YYYY-MM-DD bounds."""
+    return await nsarchive.search(q, page, field_date_min, field_date_max, searched_fields)
 
 
 @app.get("/nsarchive/document/{doc_id}", tags=["NSArchive"], summary="Single VRR document by id-slug")
@@ -608,9 +746,10 @@ async def smithsonian_object(object_id: str):
 
 @app.get("/smithsonian/category/{category}/search", tags=["Smithsonian"], summary="Search within a Smithsonian category")
 async def smithsonian_category(category: str, q: str = "", start: int = 0,
-                               rows: int = Query(10, le=100)):
-    """Search within art_design | history_culture | science_technology."""
-    return await smithsonian.category_search(category, q, start, rows)
+                               rows: int = Query(10, le=100), sort: str = "", obj_type: str = ""):
+    """Search within art_design | history_culture | science_technology.
+    sort: relevancy|newest|updated|random."""
+    return await smithsonian.category_search(category, q, start, rows, sort, obj_type)
 
 
 @app.get("/smithsonian/terms/{category}", tags=["Smithsonian"], summary="Controlled-vocabulary terms")

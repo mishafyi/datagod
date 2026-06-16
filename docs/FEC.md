@@ -15,19 +15,19 @@ Federal campaign finance and elections (FEC) — candidates (presidential, Senat
 
 Search federal candidates (President, Senate, House) by office and state. Campaign finance.
 
-**Params:** `office` (query, string) · `state` (query, string) · `limit` (query, integer, default 10, max 100)
+**Params:** `office` (query, string) · `state` (query, string) · `limit` (query, integer, default 10, max 100) · `page` (query, integer, default 1)
 
 ### `GET /fec/contributions`
 
 Campaign contributions — itemized donations by or for a candidate or donor name.
 
-**Params:** `name` (query, string) · `candidate_id` (query, string) · `limit` (query, integer, default 10, max 100)
+**Params:** `name` (query, string) · `candidate_id` (query, string) · `limit` (query, integer, default 10, max 100) · `page` (query, integer, default 1)
 
 ### `GET /fec/totals`
 
 Candidate financial totals (money raised / receipts), ranked, by office and election year.
 
-**Params:** `office` (query, string, default P) · `year` (query, integer, default 2024) · `limit` (query, integer, default 10, max 100)
+**Params:** `year` (query, integer, required) · `office` (query, string, default P) · `limit` (query, integer, default 10, max 100) · `page` (query, integer, default 1)
 
 ## Quirks & notes
 

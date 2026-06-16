@@ -29,12 +29,19 @@ async def content(object_id: str) -> UpstreamJSON:
                           params={"api_key": cfg.SMITHSONIAN_API_KEY})
 
 
-async def category_search(category: str, q: str = "", start: int = 0,
-                          rows: int = 10) -> UpstreamJSON:
-    """Search within a category: art_design | history_culture | science_technology."""
+async def category_search(category: str, q: str = "", start: int = 0, rows: int = 10,
+                          sort: str = "", obj_type: str = "") -> UpstreamJSON:
+    """Search within a category: art_design | history_culture | science_technology.
+
+    sort: relevancy|newest|updated|random. obj_type forwards to the upstream `type` param.
+    """
     params: dict = {"api_key": cfg.SMITHSONIAN_API_KEY, "start": start, "rows": rows}
     if q:
         params["q"] = q
+    if sort:
+        params["sort"] = sort
+    if obj_type:
+        params["type"] = obj_type
     return await safe_get(f"{BASE}/category/{category}/search", "smithsonian", params=params)
 
 

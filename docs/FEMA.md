@@ -15,7 +15,7 @@ Disasters and emergency management (OpenFEMA) — federal disaster declarations 
 
 Federal disaster declarations (hurricanes, floods, wildfires, severe storms) by date and state.
 
-**Params:** `limit` (query, integer, default 10, max 1000)
+**Params:** `limit` (query, integer, default 10, max 1000) · `state` (query, string) · `declared_since` (query, string)
 
 ### `GET /fema/flood-claims`
 

@@ -37,11 +37,12 @@ def find(obj: object, key: str) -> object:
     return None
 
 
-def hit(method: str, path: str, group: str, expect_error: bool = False, timeout: int = 45) -> object:
+def hit(method: str, path: str, group: str, expect_error: bool = False, timeout: int = 45, **kwargs) -> object:
     label = f"{method} {path.split('?')[0]}"
     try:
-        r = httpx.request(method, BASE + path, headers=HEADERS, timeout=timeout, follow_redirects=True)
+        r = httpx.request(method, BASE + path, headers=HEADERS, timeout=timeout, follow_redirects=True, **kwargs)
         mstatus, note, body = None, "", None
+        is_json = "application/json" in r.headers.get("content-type", "")
         try:
             body = r.json()
             if isinstance(body, dict):
@@ -49,8 +50,9 @@ def hit(method: str, path: str, group: str, expect_error: bool = False, timeout:
                 if mstatus == "error":
                     note = str(body.get("error"))[:64]
         except Exception:
-            note = "non-JSON body"
-        ok = r.status_code == 200 and mstatus == "success"
+            note = f"raw [{r.headers.get('content-type', '').split(';')[0]}, {len(r.content)}b]"
+        # raw-bytes routes (edgar/document, house pdf) return a 200 with a non-JSON body
+        ok = r.status_code == 200 and (mstatus == "success" or (not is_json and bool(r.content)))
         verdict = "PASS" if ok else ("EXP-ERR" if expect_error else "FAIL")
         rows.append((group, label, r.status_code, verdict, note))
         return body
@@ -68,7 +70,9 @@ hit("GET", "/", "Health")
 hit("GET", "/health", "Health")
 # ── FRED ──
 hit("GET", "/fred/GDP?limit=2", "FRED")
+hit("GET", "/fred/GDP?limit=2&sort_order=desc&observation_start=2020-01-01", "FRED")  # new params
 hit("GET", "/fred?q=unemployment&limit=2", "FRED")
+hit("GET", "/fred/series/UNRATE", "FRED")  # new: series metadata
 # ── EDGAR ──
 hit("GET", "/edgar/company/AAPL", "EDGAR")
 hit("GET", "/edgar/financials/AAPL", "EDGAR", timeout=60)
@@ -76,24 +80,43 @@ hit("GET", "/edgar/concept/AAPL/Revenues", "EDGAR")
 hit("GET", "/edgar/frames/Revenues?period=CY2023", "EDGAR", timeout=60)
 hit("GET", "/edgar/search?q=artificial+intelligence", "EDGAR")
 hit("GET", "/edgar/search?q=artificial+intelligence&from=100", "EDGAR")  # pagination pass-through
+hit("GET", "/edgar/cik/AAPL", "EDGAR")  # new: ticker->CIK
+hit("GET", "/edgar/submissions/CIK0000320193-submissions-001.json", "EDGAR")  # new: overflow file
+# new: resolve a 10-K document from AAPL's filings, then fetch it raw (bytes, not JSON)
+_co = hit("GET", "/edgar/company/320193", "EDGAR")
+_recent = ((_co or {}).get("data") or {}).get("filings", {}).get("recent", {}) if isinstance(_co, dict) else {}
+_accn = next((a for f, a in zip(_recent.get("form", []), _recent.get("accessionNumber", [])) if f == "10-K"), None)
+if _accn:
+    _doc = _recent["primaryDocument"][_recent["accessionNumber"].index(_accn)]
+    hit("GET", f"/edgar/document/320193/{_accn.replace('-', '')}/{_doc}", "EDGAR")
+else:
+    skip("EDGAR", "GET /edgar/document/...", "no 10-K accession resolved")
 # ── Nasdaq ──
 hit("GET", "/nasdaq/quote/AAPL", "Nasdaq")
 hit("GET", "/nasdaq/price/AAPL", "Nasdaq")
 hit("GET", "/nasdaq/history/AAPL?fromdate=2026-01-01&todate=2026-02-01&limit=5", "Nasdaq")
 hit("GET", "/nasdaq/dividends/AAPL", "Nasdaq")
+hit("GET", "/nasdaq/financials/NVDA", "Nasdaq")            # new
+hit("GET", "/nasdaq/insider-trades/NVDA", "Nasdaq")        # new
+hit("GET", "/nasdaq/earnings-surprise/NVDA", "Nasdaq")     # new
+hit("GET", "/nasdaq/calendar/earnings?date=2026-06-15", "Nasdaq")  # new (date required)
+hit("GET", "/nasdaq/calendar/ipo?date=2026-06", "Nasdaq")          # new (IPO calendar takes YYYY-MM)
+hit("GET", "/nasdaq/screener?limit=5", "Nasdaq")           # new
 # ── yfinance ──
-for ep in ["info", "history", "news", "recommendations", "holders", "financials", "dividends", "options"]:
-    hit("GET", f"/yfinance/{ep}/AAPL", "yfinance", timeout=60)
+for ep in ["info", "history", "news", "recommendations", "holders", "financials", "dividends", "options", "earnings"]:
+    hit("GET", f"/yfinance/{ep}/AAPL", "yfinance", timeout=60)  # 'earnings' is new
 # ── USAspending ──
 hit("GET", "/usaspending/agencies", "USAspending")
-hit("GET", "/usaspending/search?q=defense&limit=2", "USAspending")
-hit("GET", "/usaspending/by-agency", "USAspending")
+hit("GET", "/usaspending/search?q=defense&limit=2", "USAspending")  # default: contracts
+hit("GET", "/usaspending/search?q=university&award_type_codes=02,03,04,05&limit=2", "USAspending")  # new: grants reachable
+hit("GET", "/usaspending/by-agency?fy=2025", "USAspending")  # fy now required
 # ── Census (known: needs a valid key) ──
-hit("GET", "/census/population", "Census")
-hit("GET", "/census/income", "Census")
-hit("GET", "/census/acs", "Census")
+hit("GET", "/census/population?year=2022", "Census")  # year now required
+hit("GET", "/census/income?year=2022", "Census")
+hit("GET", "/census/acs?year=2022", "Census")  # defaults to acs5 (supports tract)
 # ── BLS ──
-hit("GET", "/bls/CUUR0000SA0", "BLS")
+hit("GET", "/bls/CUUR0000SA0?start_year=2024&end_year=2025", "BLS")  # years now required
+hit("POST", "/bls/batch", "BLS", json={"series_ids": ["cpi", "unemployment"], "start_year": 2023, "end_year": 2025})  # new
 # ── Treasury ──
 hit("GET", "/treasury/debt?limit=2", "Treasury")
 hit("GET", "/treasury/rates?limit=2", "Treasury")
@@ -101,7 +124,7 @@ hit("GET", "/treasury/exchange?limit=2", "Treasury")
 # ── FEC ──
 hit("GET", "/fec/candidates?limit=2", "FEC")
 hit("GET", "/fec/contributions?name=trump&limit=2", "FEC")  # schedule_a 400s without a filter
-hit("GET", "/fec/totals?limit=2", "FEC")
+hit("GET", "/fec/totals?year=2024&limit=2", "FEC")  # year now required
 # ── Congress ──
 hit("GET", "/congress/bills?limit=2", "Congress")
 hit("GET", "/congress/bill/118/hr/1", "Congress")
@@ -134,8 +157,14 @@ skip("JEFS", "GET /jefs/facets", "JEFS disabled on the API (2026-06-11)")
 skip("JEFS", "GET /jefs/search", "JEFS disabled on the API (2026-06-11)")
 skip("JEFS", "POST /jefs/reset", "JEFS disabled on the API (2026-06-11)")
 # ── House Disclosures ──
-hit("GET", "/house-disclosures/members?last_name=pelosi", "HouseFD")
+hm = hit("GET", "/house-disclosures/members?last_name=pelosi", "HouseFD")
 hit("GET", "/house-disclosures/candidates?last_name=smith", "HouseFD")
+_pdf = find(hm, "pdf_url")  # new: fetch a real disclosure PDF (raw bytes)
+if _pdf:
+    from urllib.parse import quote
+    hit("GET", f"/house-disclosures/pdf?path={quote(str(_pdf), safe='')}", "HouseFD")
+else:
+    skip("HouseFD", "GET /house-disclosures/pdf", "no pdf_url resolved from members search")
 # ── NARA (resolve a naId) ──
 na = hit("GET", "/nara/search?q=war&page=1", "NARA")
 naid = find(na, "naId")

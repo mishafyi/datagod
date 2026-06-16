@@ -19,7 +19,7 @@ List the EIA energy datasets available to query.
 
 Electricity data: generation, retail sales, and prices.
 
-**Params:** `limit` (query, integer, default 10, max 100)
+**Params:** `limit` (query, integer, default 10, max 100) · `data_field` (query, string, default revenue) · `frequency` (query, string, default annual)
 
 ### `GET /eia/gas-prices`
 
@@ -31,7 +31,7 @@ Gasoline and fuel prices over time.
 
 Generic EIA dataset query by route path — any energy series (crude oil, natural gas, coal, renewables, CO2 emissions, consumption).
 
-**Params:** `route` (path, string, required) · `frequency` (query, string, default annual) · `data` (query, string, default value) · `limit` (query, integer, default 10, max 1000)
+**Params:** `route` (path, string, required) · `frequency` (query, string, default annual) · `data` (query, string, default value) · `limit` (query, integer, default 10, max 5000) · `offset` (query, integer, default 0) · `sort_col` (query, string, default period) · `sort_dir` (query, string, default desc)
 
 ## Quirks & notes
 

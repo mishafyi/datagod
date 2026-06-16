@@ -21,19 +21,19 @@ Full detail for one bill: sponsors, actions, latest status, summary.
 
 Recent bills introduced in Congress. Legislation tracking.
 
-**Params:** `limit` (query, integer, default 10, max 250) · `congress_num` (query, integer, default 0)
+**Params:** `limit` (query, integer, default 10, max 250) · `congress_num` (query, integer, default 0) · `offset` (query, integer, default 0)
 
 ### `GET /congress/members`
 
 Members of Congress (representatives and senators), with party and state.
 
-**Params:** `limit` (query, integer, default 10, max 250)
+**Params:** `limit` (query, integer, default 10, max 250) · `offset` (query, integer, default 0)
 
 ### `GET /congress/votes`
 
 Roll-call votes by chamber and session.
 
-**Params:** `chamber` (query, string, default house) · `congress_session` (query, integer, default 118) · `limit` (query, integer, default 10, max 250)
+**Params:** `congress_session` (query, integer, default 118) · `limit` (query, integer, default 10, max 250) · `offset` (query, integer, default 0)
 
 ## Quirks & notes
 

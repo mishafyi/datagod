@@ -7,9 +7,9 @@ BASE = "https://api.open.fec.gov/v1"
 
 
 async def candidates(office: str = "", state: str = "",
-                     per_page: int = 10) -> UpstreamJSON:
+                     per_page: int = 10, page: int = 1) -> UpstreamJSON:
     """Search candidates. office: P(resident), S(enate), H(ouse)."""
-    params: dict = {"api_key": cfg.FEC_API_KEY, "per_page": per_page}
+    params: dict = {"api_key": cfg.FEC_API_KEY, "per_page": per_page, "page": page}
     if office:
         params["office"] = office
     if state:
@@ -18,9 +18,9 @@ async def candidates(office: str = "", state: str = "",
 
 
 async def contributions(contributor_name: str = "", candidate_id: str = "",
-                        per_page: int = 10) -> UpstreamJSON:
+                        per_page: int = 10, page: int = 1) -> UpstreamJSON:
     """Search individual contributions."""
-    params: dict = {"api_key": cfg.FEC_API_KEY, "per_page": per_page}
+    params: dict = {"api_key": cfg.FEC_API_KEY, "per_page": per_page, "page": page}
     if contributor_name:
         params["contributor_name"] = contributor_name
     if candidate_id:
@@ -28,10 +28,11 @@ async def contributions(contributor_name: str = "", candidate_id: str = "",
     return await safe_get(f"{BASE}/schedules/schedule_a/", "fec", params=params)
 
 
-async def candidate_totals(office: str = "P", election_year: int = 2024,
-                           per_page: int = 10) -> UpstreamJSON:
+async def candidate_totals(election_year: int, office: str = "P",
+                           per_page: int = 10, page: int = 1) -> UpstreamJSON:
     """Candidate financial totals sorted by receipts."""
     return await safe_get(f"{BASE}/candidates/totals/", "fec", params={
         "api_key": cfg.FEC_API_KEY, "office": office,
-        "election_year": election_year, "sort": "-receipts", "per_page": per_page,
+        "election_year": election_year, "sort": "-receipts",
+        "per_page": per_page, "page": page,
     })

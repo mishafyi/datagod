@@ -15,19 +15,19 @@ US demographics from the Census Bureau / American Community Survey (ACS) — pop
 
 Raw American Community Survey query — any ACS variables and geography (state / county / tract). Use for: demographics, race, age, sex, education, income, poverty, housing, commute — any ACS table by variable code.
 
-**Params:** `variables` (query, string, default NAME,B01001_001E) · `year` (query, integer, default 2022) · `geo_for` (query, string, default state:*) · `geo_in` (query, string)
+**Params:** `year` (query, integer, required) · `variables` (query, string, default NAME,B01001_001E) · `geo_for` (query, string, default state:*) · `geo_in` (query, string) · `dataset` (query, string, default acs5)
 
 ### `GET /census/income`
 
 Median household income by US state.
 
-**Params:** `year` (query, integer, default 2022)
+**Params:** `year` (query, integer, required)
 
 ### `GET /census/population`
 
 Population by US state.
 
-**Params:** `year` (query, integer, default 2022)
+**Params:** `year` (query, integer, required)
 
 ## Quirks & notes
 
