@@ -86,6 +86,8 @@ QUICK_INDEX = """\
 | US National Archives catalog records | NARA | `GET /nara/search` |
 | Declassified national-security documents | NSArchive / Wilson Center | `GET /nsarchive/search`, `GET /wilson/documents` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
+| Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
+| Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 """
 
@@ -161,6 +163,9 @@ DESCRIPTIONS = {
     "/smithsonian/stats": "Smithsonian Open Access dataset statistics (counts by unit, type, etc.).",
     "/wilson/documents": "Full-text search the Wilson Center Digital Archive (local mirror) — 16,756 declassified Cold War and international-history documents.",
     "/wilson/document/{slug}": "One Wilson Center document by slug: title, source, subjects, download availability.",
+    "/arxiv/search": "Full-text search arXiv.org scientific preprints (physics, math, computer science, machine learning/AI, quantitative biology, economics, statistics). Use for: academic papers, research preprints, scientific literature by topic/author/title. sort_by relevance|lastUpdatedDate|submittedDate; page with start (max_results le 100).",
+    "/arxiv/{arxiv_id}": "Fetch one or more arXiv papers by arXiv id (e.g. 2301.00001; comma-separated for several): title, authors, abstract, categories, PDF link, DOI.",
+    "/scholar/search": "Search Google Scholar and rank papers by citation count (scholarly literature across all publishers, not just arXiv). Use for: most-cited papers on a topic, citation counts, academic impact. BRITTLE — Google blocks automated access (CAPTCHA/429), so this often returns an error rather than data.",
     "/cross-reference/company/{name}": "Aggregate a company across EDGAR + USAspending + FEC in one call: SEC filings + federal contracts + political contributions.",
     "/cross-reference/politician/{last_name}": "Aggregate a politician across House disclosures + FEC: stock trades + campaign finance.",
     "/admin/clear-cache": "Clear the in-memory cache (operational endpoint).",
@@ -192,6 +197,8 @@ SOURCE_DESC = {
     "NSArchive": "Declassified national-security documents (National Security Archive — a GWU NGO, not NARA) — foreign policy, intelligence (CIA), military, and Cold War cables, memos, and FOIA releases. Use for declassified Cold War or foreign-policy documents.",
     "Smithsonian": "Museum and archive collections (Smithsonian Open Access, 11M+ objects) — art and artwork, artifacts, history, science specimens, and photographs / images with metadata and category / term browsing. Use for museum objects, cultural heritage, or collection metadata.",
     "Wilson Center": "Cold War and international-history primary sources (Wilson Center Digital Archive, local mirror) — 16,756 declassified documents on diplomacy, foreign policy, and international relations (cables, telegrams). Use for primary-source Cold War and foreign-relations documents.",
+    "arXiv": "Scientific preprints from arXiv.org — full-text search of 2M+ open-access papers in physics, math, computer science, machine learning and AI, quantitative biology, economics, and statistics; by topic, author, title, or arXiv id, with abstracts, authors, categories, and PDF links. Use for academic papers, research preprints, or scientific literature.",
+    "Scholar": "Academic papers ranked by citations from Google Scholar (via the vendored sort-google-scholar). Search scholarly literature across all publishers and journals (not just arXiv) and rank by citation count, with title, authors, year, venue, and cites/year. BRITTLE: Google aggressively blocks scraping (CAPTCHA / HTTP 429 / IP block), so this often returns an error rather than data.",
     "Cross-Reference": "Aggregators that combine several sources in one call — a company profile (SEC filings + federal contracts + political contributions) or a politician profile (House stock disclosures + campaign finance). Use to cross-reference a company or politician across sources at once.",
     "Admin": "Operational endpoints (cache management). Not a data source.",
 }
@@ -206,6 +213,7 @@ SOURCE_DOC = {
     "House Disclosures": "docs/HOUSE_FD_API.md", "JEFS": "docs/JEFS_API.md", "NARA": "docs/NARA_API.md",
     "NSArchive": "docs/NSARCHIVE_API.md", "Smithsonian": "docs/SMITHSONIAN_API.md",
     "Wilson Center": "docs/WILSON_DIGITAL_ARCHIVE_API.md",
+    "arXiv": "docs/ARXIV_API.md", "Scholar": "docs/SCHOLAR_API.md",
 }
 
 # Literal search terms per source — the grep/recall index. Include the obvious
@@ -233,6 +241,8 @@ SOURCE_KEYWORDS = {
     "NSArchive": "declassified, national security, intelligence, CIA, foreign policy, Cold War, cables, memos, FOIA, classified documents, diplomacy",
     "Smithsonian": "museum, museums, art, artwork, paintings, artifacts, collections, history, science, specimens, photographs, images, cultural heritage, open access, objects",
     "Wilson Center": "Cold War, diplomacy, international relations, foreign policy, declassified documents, primary sources, history, digital archive, telegrams",
+    "arXiv": "arxiv, preprints, scientific papers, research papers, academic papers, physics, math, computer science, machine learning, AI, quantitative biology, economics, statistics, scholarly articles, abstracts, PDF",
+    "Scholar": "google scholar, citations, cited by, academic papers, scholarly papers, research papers, citation count, most cited, bibliometrics, literature search",
     "Cross-Reference": "company profile, politician profile, aggregate, combined, cross-reference, multi-source",
 }
 

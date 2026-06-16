@@ -187,6 +187,11 @@ wd = hit("GET", "/wilson/documents?q=korea&page=1", "Wilson")
 slug = find(wd, "slug")
 hit("GET", f"/wilson/document/{slug}", "Wilson") if slug else skip(
     "Wilson", "GET /wilson/document/{slug}", "no slug from search")
+# ── arXiv ──
+hit("GET", "/arxiv/search?query=electron&max_results=2", "arXiv")
+hit("GET", "/arxiv/2301.00001", "arXiv")
+# ── Scholar (Google blocks server IPs → expected error, not a hard fail) ──
+hit("GET", "/scholar/search?keyword=transformer+neural+network&nresults=3", "Scholar", expect_error=True)
 # ── Cross-Reference (fans out to several upstreams) ──
 hit("GET", "/cross-reference/company/apple", "CrossRef", timeout=90)
 hit("GET", "/cross-reference/politician/pelosi", "CrossRef", timeout=90)

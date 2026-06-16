@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from .auth import UnauthorizedError, require_api_key, require_docs_auth
 from .cache import clear_cache
 from .clients import (
+    arxiv,
     bls,
     census,
     clinicaltrials,
@@ -29,6 +30,7 @@ from .clients import (
     nara,
     nasdaq,
     nsarchive,
+    scholar,
     smithsonian,
     treasury,
     usaspending,
@@ -96,6 +98,8 @@ API_TAGS = [
     {"name": "NSArchive", "description": "National Security Archive (GWU NGO, not NARA) — Virtual Reading Room declassified docs (HTML scrape)."},
     {"name": "Smithsonian", "description": "Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records."},
     {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},
+    {"name": "arXiv", "description": "arXiv.org — full-text search of 2M+ scientific preprints (physics, math, CS/ML, biology, economics, statistics)."},
+    {"name": "Scholar", "description": "Google Scholar via the vendored sort-google-scholar — citation-ranked paper search. Brittle: Google blocks scraping (CAPTCHA/429)."},
     {"name": "Cross-Reference", "description": "Aggregators that join several sources for one company or politician."},
     {"name": "Admin", "description": "Operational endpoints (cache management)."},
 ]
@@ -777,6 +781,32 @@ async def wilson_documents(q: str = "", page: int = 1,
 async def wilson_document(slug: str):
     """Full record for one document by slug: title, source, subjects, download availability."""
     return await wilson.document(slug)
+
+
+# ── arXiv (scientific preprints) ─────────────────────────────────
+
+@app.get("/arxiv/search", tags=["arXiv"], summary="Full-text search arXiv preprints")
+async def arxiv_search(query: str, start: int = Query(0, ge=0),
+                       max_results: int = Query(10, ge=1, le=100),
+                       sort_by: str = "relevance", sort_order: str = "descending"):
+    """Search arXiv (physics, math, CS/ML, bio, econ). sort_by: relevance|lastUpdatedDate|submittedDate."""
+    return await arxiv.search(query, start, max_results, sort_by, sort_order)
+
+
+@app.get("/arxiv/{arxiv_id}", tags=["arXiv"], summary="Fetch arXiv paper(s) by id")
+async def arxiv_get(arxiv_id: str):
+    """Fetch one or more arXiv papers by id (e.g. 2301.00001, or comma-separated ids)."""
+    return await arxiv.get_by_id(arxiv_id)
+
+
+# ── Scholar (Google Scholar — vendored sort-google-scholar) ──────
+
+@app.get("/scholar/search", tags=["Scholar"], summary="Search Google Scholar, ranked by citations (brittle)")
+async def scholar_search(keyword: str, nresults: int = Query(20, ge=1, le=100),
+                         sort_by: str = "Citations", start_year: int | None = None,
+                         end_year: int | None = None):
+    """Citation-ranked Google Scholar search. Brittle: Google blocks scraping (CAPTCHA/429) → error-dict."""
+    return await scholar.search(keyword, nresults, sort_by, start_year, end_year)
 
 
 # ── Cross-Reference ──────────────────────────────────────────────

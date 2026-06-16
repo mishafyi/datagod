@@ -58,6 +58,8 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | US National Archives catalog records | NARA | `GET /nara/search` |
 | Declassified national-security documents | NSArchive / Wilson Center | `GET /nsarchive/search`, `GET /wilson/documents` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
+| Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
+| Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 
 
@@ -211,6 +213,20 @@ Cold War and international-history primary sources (Wilson Center Digital Archiv
 
 - **Endpoints:** `/wilson/document/{slug}` · `/wilson/documents`
 - **Detail:** `docs/WILSON_DIGITAL_ARCHIVE_API.md` · **params:** `docs/endpoints.csv`
+
+### arXiv
+
+Scientific preprints from arXiv.org — full-text search of 2M+ open-access papers in physics, math, computer science, machine learning and AI, quantitative biology, economics, and statistics; by topic, author, title, or arXiv id, with abstracts, authors, categories, and PDF links. Use for academic papers, research preprints, or scientific literature.
+
+- **Endpoints:** `/arxiv/search` · `/arxiv/{arxiv_id}`
+- **Detail:** `docs/ARXIV_API.md` · **params:** `docs/endpoints.csv`
+
+### Scholar
+
+Academic papers ranked by citations from Google Scholar (via the vendored sort-google-scholar). Search scholarly literature across all publishers and journals (not just arXiv) and rank by citation count, with title, authors, year, venue, and cites/year. BRITTLE: Google aggressively blocks scraping (CAPTCHA / HTTP 429 / IP block), so this often returns an error rather than data.
+
+- **Endpoints:** `/scholar/search`
+- **Detail:** `docs/SCHOLAR_API.md` · **params:** `docs/endpoints.csv`
 
 ### Cross-Reference
 
