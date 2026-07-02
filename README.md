@@ -1,22 +1,43 @@
 # DataGod
 
-A unified, async HTTP API over **21 free US‑government and markets data sources** plus a cross‑reference aggregator — thin pass‑throughs behind one consistent response envelope.
+One async HTTP API over **21 free data sources** — US government, markets, and research — behind a single consistent response envelope. Routes are thin pass‑throughs: each returns the upstream's JSON unchanged.
 
-**Live:** https://datagod.example.com · **Interactive docs:** [`/docs`](https://datagod.example.com/docs) (Swagger UI) and `/redoc`
+**Sources:** FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · NARA · National Security Archive · Smithsonian Open Access · Nasdaq.com · Yahoo Finance · arXiv · Google Scholar — plus `/cross-reference/*` aggregators.
 
 🧭 **API guide (for agents/consumers):** [`docs/API_GUIDE.md`](docs/API_GUIDE.md) — which endpoint for which information, with parameters (plus [`docs/endpoints.csv`](docs/endpoints.csv) for tooling). Architecture & conventions live in [`CLAUDE.md`](CLAUDE.md).
+
+## Quickstart (Docker)
+
+```bash
+cp .env.example .env   # set DATAGOD_API_KEY (e.g. `openssl rand -hex 32`); add upstream keys as needed
+docker build -t datagod .
+docker run -p 8000:8000 --env-file .env datagod
+curl http://localhost:8000/health
+```
+
+## Run locally (no Docker)
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env   # then fill in keys (at minimum DATAGOD_API_KEY)
+.venv/bin/uvicorn app.main:app --reload --port 8000
+open http://localhost:8000/docs
+```
+
+Only `DATAGOD_API_KEY` is required to start; per‑source upstream keys (`FRED_API_KEY`, `SEC_USER_AGENT`, …) unlock the sources that need them. See [`.env.example`](.env.example).
 
 ## Authentication
 
 Every data endpoint requires your API key in the **`X-API-Key`** header:
 
 ```bash
-curl -H "X-API-Key: $DATAGOD_API_KEY" https://datagod.example.com/fred/GDP
+curl -H "X-API-Key: $DATAGOD_API_KEY" http://localhost:8000/fred/GDP
 ```
 
 - `GET /health` is the only public route (no key).
 - A missing or wrong key returns **401**.
-- The interactive docs (`/docs`, `/redoc`, `/openapi.json`) are protected by **HTTP Basic** — username `datagod`, password = your `DATAGOD_API_KEY` (or set dedicated `DATAGOD_DOCS_USER` / `DATAGOD_DOCS_PASSWORD`).
+- The interactive docs (`/docs`, `/redoc`, `/openapi.json`) are protected by **HTTP Basic** — username `datagod`, password = `DATAGOD_DOCS_PASSWORD` (falls back to your `DATAGOD_API_KEY` when unset).
 
 ## Response envelope
 
@@ -32,21 +53,6 @@ Every response is wrapped; `data` is the upstream payload, unchanged:
 
 On failure `meta.status` is `"error"`, `error` holds the message, and the HTTP status mirrors the upstream (4xx pass through; 5xx / timeouts / connect errors → **502**).
 
-## Run locally
-
-```bash
-.venv/bin/pip install -r requirements.txt
-cp .env.example .env   # then fill in keys (at minimum DATAGOD_API_KEY)
-.venv/bin/uvicorn app.main:app --reload --port 8000
-open http://localhost:8000/docs
-```
-
-Only `DATAGOD_API_KEY` is required to start; per‑source upstream keys (`FRED_API_KEY`, `SEC_USER_AGENT`, …) unlock the sources that need them. See `app/config.py`.
-
-## Sources
-
-FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · JEFS (judicial disclosures) · NARA · National Security Archive · Smithsonian Open Access · Wilson Center Digital Archive · Nasdaq.com · Yahoo Finance — plus `/cross-reference/*` aggregators.
-
 ## Project layout
 
 - `app/main.py` — every route (grouped by source, tagged for Swagger).
@@ -57,6 +63,18 @@ FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · 
 - `docs/*.md` — per‑source deep‑dives on upstream quirks.
 - `CLAUDE.md` — architecture and conventions.
 
+Two sources ship disabled: **JEFS** (judicial disclosures; needs an interactive Playwright + reCAPTCHA session) and the **Wilson Center Digital Archive** (needs a local `data/wilson.db` mirror that isn't distributed). Both stay in the codebase — see the re-enable notes in `app/main.py`.
+
 ## Deploy
 
-Dockerfile + [Coolify](https://coolify.io) with auto‑deploy on push to `main`. See `DEPLOY-NEW-PROJECT-COOLIFY.md`.
+A single stateless container (see `Dockerfile`) — any Docker host works. All configuration is environment variables; `GET /health` is unauthenticated for liveness probes.
+
+## Disclaimers
+
+- Not affiliated with, or endorsed by, any US government agency or any of the upstream data providers.
+- The Nasdaq.com, National Security Archive, House Financial Disclosures, and Google Scholar sources rely on unofficial endpoints or HTML scraping: they can break without notice, and you are responsible for complying with each upstream's terms of service and rate limits.
+- SEC EDGAR requires a real `User-Agent`: set `SEC_USER_AGENT="Your Name your@email.com"` (SEC policy; EDGAR returns 403 without it).
+
+## License
+
+[MIT](LICENSE)

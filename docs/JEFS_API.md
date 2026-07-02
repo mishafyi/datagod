@@ -111,4 +111,4 @@ JEFS lets you check whether a federal judge held stock in a company that appeare
 
 ## Build history
 
-Methodology originally researched in `docs/CONVERSATION_LOG.md` (2026-03-16 session). The earlier `~/jefs-client/jefs_client.py` was lost; this is the rebuild inside DataGod.
+Methodology originally researched in a 2026-03-16 exploration session (private research log). The earlier standalone `jefs_client.py` was lost; this is the rebuild inside DataGod.

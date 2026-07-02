@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-DataGod is a FastAPI service that unifies 17 free US government data sources (FRED, SEC EDGAR, USAspending, Census, BLS, Treasury, FEC, Congress.gov, FDA, ClinicalTrials.gov, EIA, FEMA, Federal Register, House Financial Disclosures, Wilson Center Digital Archive, Smithsonian Open Access, National Archives (NARA)) plus 2 markets-data sources (Nasdaq.com, Yahoo Finance via yfinance) and the non-governmental National Security Archive (GWU; Virtual Reading Room scrape) behind one HTTP API. Routes are thin pass-throughs; each upstream gets a dedicated async client module that returns the upstream's JSON (or DataFrame-as-records, for yfinance) unchanged.
+DataGod is a FastAPI service that unifies 21 free data sources behind one HTTP API: 16 US government sources (FRED, SEC EDGAR, USAspending, Census, BLS, Treasury, FEC, Congress.gov, FDA, ClinicalTrials.gov, EIA, FEMA, Federal Register, House Financial Disclosures, Smithsonian Open Access, National Archives (NARA)), 2 markets sources (Nasdaq.com, Yahoo Finance via yfinance), 2 research sources (arXiv, Google Scholar), and the non-governmental National Security Archive (GWU; Virtual Reading Room scrape). Two more sources live in the codebase but are currently **disabled**: JEFS (judicial disclosures; needs Playwright + reCAPTCHA) and the Wilson Center Digital Archive (needs a local `data/wilson.db` mirror that isn't distributed). Routes are thin pass-throughs; each upstream gets a dedicated async client module that returns the upstream's JSON (or DataFrame-as-records, for yfinance) unchanged.
 
 ## Commands
 
@@ -24,7 +24,7 @@ docker run -p 8000:8000 --env-file .env datagod
 .venv/bin/python tests/test_nsarchive_search.py   # no server; needs network to nsarchive.gwu.edu
 
 # Interactive API exploration (server must be running)
-open http://localhost:8000/docs   # HTTP Basic prompt: user "datagod", password = your DATAGOD_API_KEY
+open http://localhost:8000/docs   # HTTP Basic prompt: user "datagod", password = DATAGOD_DOCS_PASSWORD (falls back to DATAGOD_API_KEY)
 ```
 
 Two test files (no unit-test runner, linter, or type-checker is configured):
@@ -33,10 +33,11 @@ Two test files (no unit-test runner, linter, or type-checker is configured):
 
 ## Available API clients
 
-22 client modules in `app/clients/`. Each has matching routes in `main.py` and (for non-trivial APIs) a deep-dive doc in `docs/`.
+24 client modules in `app/clients/`. Each has matching routes in `main.py` and (for non-trivial APIs) a deep-dive doc in `docs/`.
 
 | Module | What it covers | Routes (in `main.py`) | Per-source doc | Auth |
 |--------|---------------|----------------------|----------------|------|
+| **`arxiv.py`** | arXiv — 2M+ scientific preprints (Atom XML → records) | `/arxiv/search`, `/arxiv/{arxiv_id}` | `docs/ARXIV_API.md` | none |
 | **`bls.py`** | BLS — employment, wages, CPI, occupational | `/bls/{series_id}` | `docs/BLS.md` | `BLS_API_KEY` (optional) |
 | **`census.py`** | Census Bureau — demographics, ACS | `/census/population`, `/census/income`, `/census/acs` | `docs/CENSUS.md` | `CENSUS_API_KEY` (required; client now sends it — set a *valid* key) |
 | **`clinicaltrials.py`** | ClinicalTrials.gov — 500K+ trials | `/clinical-trials`, `/clinical-trials/{nct_id}` | `docs/CLINICAL_TRIALS.md` | none |
@@ -50,17 +51,18 @@ Two test files (no unit-test runner, linter, or type-checker is configured):
 | **`fema.py`** | OpenFEMA — disasters, grants, flood claims | `/fema/disasters`, `/fema/grants`, `/fema/flood-claims` | `docs/FEMA.md` | none |
 | **`fred.py`** | FRED — 800K+ economic time series | `/fred/{series_id}`, `/fred?q=...` | `docs/FRED.md` | `FRED_API_KEY` (required) |
 | **`house_fd.py`** | House Financial Disclosures — member/candidate trades | `/house-disclosures/members`, `/house-disclosures/candidates` | `docs/HOUSE_FD_API.md` | none (scrapes HTML) |
-| **`jefs.py`** | JEFS — Judicial Financial Disclosures (federal judges) | `/jefs/register`, `/jefs/facets`, `/jefs/search`, `/jefs/reset` | `docs/JEFS_API.md` | session + Playwright reCAPTCHA; user must provide real credentials |
+| **`jefs.py`** | JEFS — Judicial Financial Disclosures (federal judges) | **DISABLED 2026-06-11** (routes commented out in `main.py`) | `docs/JEFS_API.md` | session + Playwright reCAPTCHA; user must provide real credentials |
 | **`nara.py`** | NARA — US National Archives Catalog (all record groups + the 14 presidential libraries) | `/nara/search`, `/nara/record/{na_id}` | `docs/NARA_API.md` | none (keyless `/proxy` gateway) |
 | **`nasdaq.py`** | Nasdaq.com — quote, history, dividends (unofficial) | `/nasdaq/quote/{ticker}`, `/nasdaq/price/{ticker}`, `/nasdaq/history/{ticker}`, `/nasdaq/dividends/{ticker}` | `docs/NASDAQ_API.md` | browser-like `User-Agent` only |
 | **`nsarchive.py`** | National Security Archive (GWU NGO, ≠ NARA) — Virtual Reading Room declassified docs (HTML scrape, brittle) | `/nsarchive/search`, `/nsarchive/document/{doc_id}` | `docs/NSARCHIVE_API.md` | none (scrapes HTML) |
+| **`scholar.py`** | Google Scholar — citation-ranked paper search (vendored `sort-google-scholar`, brittle) | `/scholar/search` | `docs/SCHOLAR_API.md` | none (scrapes HTML; Google blocks with CAPTCHA/429) |
 | **`smithsonian.py`** | Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records | `/smithsonian/search`, `/smithsonian/object/{id}`, `/smithsonian/category/{category}/search`, `/smithsonian/terms/{category}`, `/smithsonian/stats` | `docs/SMITHSONIAN_API.md` | `SMITHSONIAN_API_KEY` (DEMO_KEY fallback) |
 | **`treasury.py`** | Treasury Fiscal Data — debt, rates, exchange | `/treasury/debt`, `/treasury/rates`, `/treasury/exchange` | `docs/TREASURY.md` | none |
 | **`usaspending.py`** | USAspending — federal contracts, grants ($6T+/yr) | `/usaspending/agencies`, `/usaspending/search`, `/usaspending/by-agency` | `docs/USASPENDING.md` | none |
-| **`wilson.py`** | Wilson Center Digital Archive — LOCAL mirror of 16,756 declassified documents (SQLite + FTS5; live site is DNS-dead) | `/wilson/documents`, `/wilson/document/{slug}` | `docs/WILSON_DIGITAL_ARCHIVE_API.md` | none (local data) |
+| **`wilson.py`** | Wilson Center Digital Archive — LOCAL mirror of 16,756 declassified documents (SQLite + FTS5; live site is DNS-dead) | **DISABLED 2026-07-02** (routes commented out in `main.py`; `data/wilson.db` not distributed) | `docs/WILSON_DIGITAL_ARCHIVE_API.md` | none (local data) |
 | **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
 
-**Total**: 21 upstream data sources + 1 cross-reference aggregator = **22 client modules, 72 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
+**Total**: 21 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **24 client modules, 82 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
 
 ## Reference documentation in `docs/`
 
@@ -81,8 +83,9 @@ Each file is a deep-dive on a specific upstream — quirks, undocumented behavio
 | `docs/NARA_API.md` | National Archives Catalog — keyless `catalog.archives.gov/proxy` gateway (the SPA's own endpoint), mandatory browser fetch headers, `records/search?q/limit/page` + `?naId=`, `body.hits.hits[]._source.record` envelope, `page` not `offset`. |
 | `docs/NSARCHIVE_API.md` | National Security Archive (GWU NGO, **not** NARA) — has no API; Drupal 10 Virtual Reading Room HTML scrape. `search_api_fulltext` GET search + `/document/{id-slug}` pages, selectolax parsing anchors, brittle; full corpus is the paywalled DNSA. |
 | `docs/YFINANCE_API.md` | yfinance Python wrapper — sync→async pattern, DataFrame→records conversion, period/interval values, options-chain mechanics. |
-| `docs/CONVERSATION_LOG.md` | Project research log — JEFS (judicial disclosures) findings, SEC EDGAR bulk-data exploration, government-APIs landscape, environment setup notes. |
-| `docs/obsidian-help/` | Cloned `obsidian-help` repo (full English locale at `docs/obsidian-help/en/`) — local reference for Obsidian features when working on the research vault at `research/`. |
+| `docs/ARXIV_API.md` | arXiv query API — single Atom-XML endpoint, `search_query` field prefixes, feedparser parsing, id-list fetches. |
+| `docs/SCHOLAR_API.md` | Google Scholar via vendored `sort-google-scholar` — scraping selectors, citation ranking, CAPTCHA/429 brittleness. |
+| `docs/obsidian-help/` | Local-only clone of the `obsidian-help` repo (git-ignored, not in the public repo) — reference for Obsidian features when working on the local research vault. |
 
 When adding a new API client, **write a new `docs/<SOURCE>_API.md`** alongside the code if the upstream has quirks worth remembering.
 
@@ -102,7 +105,7 @@ When adding a new API client, **write a new `docs/<SOURCE>_API.md`** alongside t
 - `app/routers/` — Empty placeholder. All routing is in `main.py`.
 - `docs/` — Per-source API reference docs. See the **Reference documentation** section above for the full list and what each covers.
 - `tests/` — `test_edgar_endpoints.py` (integration tests). `tests/reports/` holds historical run outputs.
-- `research/` — Ad-hoc analyses (e.g. `research/TSMC/tsmc_chip_filers.csv`). Not part of the runtime.
+- `research/` — Ad-hoc local analyses (git-ignored, not in the repo). Not part of the runtime.
 
 ### Client module contract
 
@@ -131,8 +134,10 @@ async def some_endpoint(arg: str) -> UpstreamJSON:
 - **yfinance**: synchronous library — all calls go through `asyncio.to_thread()`. DataFrames converted with `df.reset_index().to_dict(orient='records')`; NaN values become JSON `null`. yfinance is imported unmodified so `pip install --upgrade yfinance` propagates upstream fixes.
 - **Nasdaq.com**: unofficial API. Requires browser-like `User-Agent` header (returns 401 without). String fields like `MarketCap` come back as `"5,553,872,968,719"` — strip commas + cast to int.
 - **House Financial Disclosures**: upstream returns HTML, not JSON. Client parses tables with regex. Can't use `safe_get`; has its own try/except.
-- **Wilson Center**: serves a LOCAL mirror, not a live API (the live host is DNS-dead). Reads `data/wilson.db` (SQLite + FTS5) built once by `scripts/build_wilson_index.py` from a downloaded HTML scrape; sync `sqlite3` calls run via `asyncio.to_thread`. Returns locally-built JSON, not upstream JSON — an intentional exception to the pass-through rule. Downloads (11 GB) are metadata-only.
+- **Wilson Center** (*disabled 2026-07-02* — routes commented out in `main.py`): serves a LOCAL mirror, not a live API (the live host is DNS-dead). Reads `data/wilson.db` (SQLite + FTS5, not distributed with the repo) built once by `scripts/build_wilson_index.py` from a downloaded HTML scrape; sync `sqlite3` calls run via `asyncio.to_thread`. Returns locally-built JSON, not upstream JSON — an intentional exception to the pass-through rule.
 - **NSArchive**: HTML scrape of the GWU NGO's Virtual Reading Room (it has no API). Like `house_fd`, can't use `safe_get`; parses Drupal markup with `selectolax` and has its own try/except returning the error-dict. Brittle (markup changes break parsing). Distinct from `nara` (the government agency).
+- **arXiv**: upstream returns Atom XML, not JSON — parsed with `feedparser` into records; can't use `safe_get`. An intentional exception to the pass-through rule.
+- **Scholar**: vendored from `WittmannF/sort-google-scholar` (MIT) — the one deliberate exception to the "don't vendor" convention: upstream is an interactive CLI tool (its CAPTCHA fallback blocks on `input()`), unusable in a server unmodified. Google blocks scraping (CAPTCHA/429) → expect error-dicts. See the module docstring for what was kept vs dropped.
 
 ### Adding a new endpoint
 

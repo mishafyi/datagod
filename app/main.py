@@ -48,7 +48,7 @@ each returns the upstream's JSON unchanged, wrapped in a standard envelope.
 Every data endpoint requires your API key in the **`X-API-Key`** header:
 
 ```bash
-curl -H "X-API-Key: <your-key>" https://datagod.example.com/fred/GDP
+curl -H "X-API-Key: <your-key>" https://<your-datagod-host>/fred/GDP
 ```
 
 A missing or wrong key returns **401**. `GET /health` is the only public route.

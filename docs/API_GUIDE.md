@@ -2,8 +2,8 @@
 
 Find the right endpoint for the information you need, then call it.
 
-- **Base URL:** `https://datagod.example.com`
-- **Auth:** every call needs the header `X-API-Key: <your-key>` — only `GET /health` is public. On this machine the key is in `.env` as `DATAGOD_API_KEY`; see `docs/AGENT_QUICKSTART.md` for copy-paste setup.
+- **Base URL:** your DataGod deployment's origin — the examples below use `$DATAGOD_URL`.
+- **Auth:** every call needs the header `X-API-Key: <your-key>` — only `GET /health` is public. The key is whatever the deployment's `.env` sets as `DATAGOD_API_KEY`.
 - **Response:** read the payload from the `data` field of the `{meta, data, error}` envelope.
 - **Drill down:** each source below has a rich description, its endpoint paths, and a link to its detail doc. Per-endpoint **parameters** live in `docs/endpoints.csv` (flat, greppable); full response **schemas** via `GET /openapi.json` (HTTP Basic: user `datagod`, password = your key) or `/docs`.
 - **Limits:** a valid key has **no per-key usage or rate limit** on DataGod itself. Caveats: each endpoint's `limit` query param caps results **per call** (paginate for more), SEC EDGAR is throttled to ~10 req/sec (SEC's rule, shared across callers), and each upstream enforces its own rate limits (the DEMO_KEY-backed FEC / Congress / EIA / Smithsonian are low) — DataGod passes those through.
@@ -12,7 +12,7 @@ Find the right endpoint for the information you need, then call it.
 ## Example call
 
 ```bash
-curl -H "X-API-Key: $DATAGOD_API_KEY" "https://datagod.example.com/fred/GDP?limit=2"
+curl -H "X-API-Key: $DATAGOD_API_KEY" "$DATAGOD_URL/fred/GDP?limit=2"
 ```
 
 Returns the standard envelope — read the payload from `data`:

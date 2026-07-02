@@ -13,6 +13,11 @@ __pycache__/
 .claude/
 .DS_Store
 
+# Private local runbooks / machine-specific docs — kept on this machine,
+# deliberately not part of the public repo
+DEPLOY-NEW-PROJECT-COOLIFY.md
+docs/AGENT_QUICKSTART.md
+
 # Large local artifacts — NOT part of the runtime image
 # (Dockerfile only copies app/ + requirements.txt)
 data/
