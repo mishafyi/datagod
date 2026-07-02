@@ -20,16 +20,21 @@ docker build -t datagod .
 docker run -p 8000:8000 --env-file .env datagod
 
 # Integration tests
+.venv/bin/python tests/test_all_endpoints.py      # smoke-tests every endpoint; target = $DATAGOD_BASE_URL (default http://localhost:8000)
 .venv/bin/python tests/test_edgar_endpoints.py    # requires server running on localhost:8000
 .venv/bin/python tests/test_nsarchive_search.py   # no server; needs network to nsarchive.gwu.edu
+.venv/bin/python tests/test_arxiv.py              # no server; calls the arxiv client against live export.arxiv.org
+.venv/bin/python tests/test_scholar.py            # no server; live Google Scholar (expect CAPTCHA/429 failures)
 
 # Interactive API exploration (server must be running)
 open http://localhost:8000/docs   # HTTP Basic prompt: user "datagod", password = DATAGOD_DOCS_PASSWORD (falls back to DATAGOD_API_KEY)
 ```
 
-Two test files (no unit-test runner, linter, or type-checker is configured):
+Five test files (no unit-test runner, linter, or type-checker is configured):
+- `tests/test_all_endpoints.py` — smoke-tests every endpoint over HTTP (needs a running server + `DATAGOD_API_KEY` in `.env`), prints a grouped pass/fail table. JEFS and Wilson are skipped (disabled).
 - `tests/test_edgar_endpoints.py` — hits the running server with httpx, prints a pass/fail table, writes `tests/reports/edgar_test_results.json`.
 - `tests/test_nsarchive_search.py` — calls the `nsarchive` client directly against the live Virtual Reading Room (no server needed) and verifies its search behavior: the `search_api_fulltext` GET defaults to **OR** (the site's "Search Tips" wrongly say AND), while explicit `AND`/`OR`/`NOT`/parentheses/`*`/`"phrase"` and `field_date[max]` bounds all work; `sort_by` is ignored (always newest-first). See `docs/NSARCHIVE_API.md`.
+- `tests/test_arxiv.py` / `tests/test_scholar.py` — call those clients directly against the live upstreams (no server needed).
 
 ## Available API clients
 

@@ -5,8 +5,8 @@ pass/fail table.
     .venv/bin/python tests/test_all_endpoints.py
 
 PASS = HTTP 200 + meta.status "success". FAIL = anything else (unless expected).
-JEFS's 4 routes are disabled on the API (2026-06-11) and skipped here.
-Target host: $DATAGOD_BASE_URL or the production URL.
+JEFS (2026-06-11) and Wilson (2026-07-02) are disabled on the API and skipped here.
+Target host: $DATAGOD_BASE_URL, defaulting to http://localhost:8000.
 """
 
 import os
@@ -17,7 +17,7 @@ import httpx
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
-BASE = os.getenv("DATAGOD_BASE_URL", "https://datagod.example.com")
+BASE = os.getenv("DATAGOD_BASE_URL", "http://localhost:8000")
 HEADERS = {"X-API-Key": os.getenv("DATAGOD_API_KEY", "")}
 
 rows: list[tuple[str, str, object, str, str]] = []
@@ -182,11 +182,9 @@ hit("GET", f"/smithsonian/object/{sid}", "Smithsonian") if sid else skip(
 hit("GET", "/smithsonian/category/art_design/search?q=painting&rows=2", "Smithsonian")
 hit("GET", "/smithsonian/terms/culture", "Smithsonian")
 hit("GET", "/smithsonian/stats", "Smithsonian")
-# ── Wilson Center (local SQLite mirror; not shipped in the Docker image) ──
-wd = hit("GET", "/wilson/documents?q=korea&page=1", "Wilson")
-slug = find(wd, "slug")
-hit("GET", f"/wilson/document/{slug}", "Wilson") if slug else skip(
-    "Wilson", "GET /wilson/document/{slug}", "no slug from search")
+# ── Wilson Center (disabled on the API 2026-07-02 — routes commented out in main.py) ──
+skip("Wilson", "GET /wilson/documents", "Wilson disabled on the API (2026-07-02)")
+skip("Wilson", "GET /wilson/document/{slug}", "Wilson disabled on the API (2026-07-02)")
 # ── arXiv ──
 hit("GET", "/arxiv/search?query=electron&max_results=2", "arXiv")
 hit("GET", "/arxiv/2301.00001", "arXiv")
