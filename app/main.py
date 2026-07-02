@@ -40,9 +40,10 @@ from .clients import (
 from .middleware import ResponseEnvelopeMiddleware
 
 API_DESCRIPTION = """\
-**DataGod** unifies 21 free US-government and markets data sources (plus a
-cross-reference aggregator) behind one HTTP API. Routes are thin pass-throughs —
-each returns the upstream's JSON unchanged, wrapped in a standard envelope.
+**DataGod** unifies 21 free US-government, markets, and research data sources
+(plus a cross-reference aggregator) behind one HTTP API. Routes are thin
+pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
+standard envelope.
 
 ## Authentication
 Every data endpoint requires your API key in the **`X-API-Key`** header:

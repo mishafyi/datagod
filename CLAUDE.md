@@ -43,29 +43,29 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 | Module | What it covers | Routes (in `main.py`) | Per-source doc | Auth |
 |--------|---------------|----------------------|----------------|------|
 | **`arxiv.py`** | arXiv — 2M+ scientific preprints (Atom XML → records) | `/arxiv/search`, `/arxiv/{arxiv_id}` | `docs/ARXIV_API.md` | none |
-| **`bls.py`** | BLS — employment, wages, CPI, occupational | `/bls/{series_id}` | `docs/BLS.md` | `BLS_API_KEY` (optional) |
+| **`bls.py`** | BLS — employment, wages, CPI, occupational | `/bls/{series_id}`, `POST /bls/batch` | `docs/BLS.md` | `BLS_API_KEY` (optional) |
 | **`census.py`** | Census Bureau — demographics, ACS | `/census/population`, `/census/income`, `/census/acs` | `docs/CENSUS.md` | `CENSUS_API_KEY` (required; client now sends it — set a *valid* key) |
 | **`clinicaltrials.py`** | ClinicalTrials.gov — 500K+ trials | `/clinical-trials`, `/clinical-trials/{nct_id}` | `docs/CLINICAL_TRIALS.md` | none |
 | **`congress_gov.py`** | Congress.gov — bills, members, votes | `/congress/bills`, `/congress/bill/...`, `/congress/members`, `/congress/votes` | `docs/CONGRESS.md` | `CONGRESS_API_KEY` (DEMO_KEY fallback) |
 | **`cross_reference.py`** | Cross-source aggregator | `/cross-reference/company/{name}`, `/cross-reference/politician/{last_name}` | — | inherits from underlying clients |
-| **`edgar.py`** | SEC EDGAR — corporate filings, XBRL, full-text search | `/edgar/company/{cik}`, `/edgar/financials/{cik}`, `/edgar/concept/{cik}/{concept}`, `/edgar/frames/{concept}`, `/edgar/search` | `docs/EDGAR_API.md` | `SEC_USER_AGENT` (required, "Name email") |
+| **`edgar.py`** | SEC EDGAR — corporate filings, XBRL, full-text search, raw documents | `/edgar/company/{cik}`, `/edgar/financials/{cik}`, `/edgar/concept/{cik}/{concept}`, `/edgar/frames/{concept}`, `/edgar/search`, `/edgar/submissions/{filename}`, `/edgar/document/{cik}/{accession}/{document}`, `/edgar/cik/{ticker}` | `docs/EDGAR_API.md` | `SEC_USER_AGENT` (required, "Name email") |
 | **`eia.py`** | EIA — energy production, prices, electricity, gas | `/eia`, `/eia/gas-prices`, `/eia/electricity`, `/eia/{route:path}` | `docs/EIA.md` | `EIA_API_KEY` (DEMO_KEY fallback) |
 | **`fda.py`** | openFDA — drug events, recalls, food recalls | `/fda/drug-events`, `/fda/drug-recalls`, `/fda/food-recalls` | `docs/FDA.md` | none |
 | **`fec.py`** | FEC — campaign finance, candidates, contributions | `/fec/candidates`, `/fec/contributions`, `/fec/totals` | `docs/FEC.md` | `FEC_API_KEY` (DEMO_KEY fallback) |
 | **`federal_register.py`** | Federal Register — rules, notices, executive orders | `/federal-register`, `/federal-register/{doc_number}` | `docs/FEDERAL_REGISTER.md` | none |
 | **`fema.py`** | OpenFEMA — disasters, grants, flood claims | `/fema/disasters`, `/fema/grants`, `/fema/flood-claims` | `docs/FEMA.md` | none |
-| **`fred.py`** | FRED — 800K+ economic time series | `/fred/{series_id}`, `/fred?q=...` | `docs/FRED.md` | `FRED_API_KEY` (required) |
-| **`house_fd.py`** | House Financial Disclosures — member/candidate trades | `/house-disclosures/members`, `/house-disclosures/candidates` | `docs/HOUSE_FD_API.md` | none (scrapes HTML) |
+| **`fred.py`** | FRED — 800K+ economic time series | `/fred/{series_id}`, `/fred/series/{series_id}`, `/fred?q=...` | `docs/FRED.md` | `FRED_API_KEY` (required) |
+| **`house_fd.py`** | House Financial Disclosures — member/candidate trades, report PDFs | `/house-disclosures/members`, `/house-disclosures/candidates`, `/house-disclosures/pdf` | `docs/HOUSE_FD_API.md` | none (scrapes HTML) |
 | **`jefs.py`** | JEFS — Judicial Financial Disclosures (federal judges) | **DISABLED 2026-06-11** (routes commented out in `main.py`) | `docs/JEFS_API.md` | session + Playwright reCAPTCHA; user must provide real credentials |
 | **`nara.py`** | NARA — US National Archives Catalog (all record groups + the 14 presidential libraries) | `/nara/search`, `/nara/record/{na_id}` | `docs/NARA_API.md` | none (keyless `/proxy` gateway) |
-| **`nasdaq.py`** | Nasdaq.com — quote, history, dividends (unofficial) | `/nasdaq/quote/{ticker}`, `/nasdaq/price/{ticker}`, `/nasdaq/history/{ticker}`, `/nasdaq/dividends/{ticker}` | `docs/NASDAQ_API.md` | browser-like `User-Agent` only |
+| **`nasdaq.py`** | Nasdaq.com — quote, history, dividends, financials, insider trades, calendars, screener (unofficial) | `/nasdaq/quote/{ticker}`, `/nasdaq/price/{ticker}`, `/nasdaq/history/{ticker}`, `/nasdaq/dividends/{ticker}`, `/nasdaq/financials/{ticker}`, `/nasdaq/insider-trades/{ticker}`, `/nasdaq/earnings-surprise/{ticker}`, `/nasdaq/calendar/earnings`, `/nasdaq/calendar/ipo`, `/nasdaq/screener` | `docs/NASDAQ_API.md` | browser-like `User-Agent` only |
 | **`nsarchive.py`** | National Security Archive (GWU NGO, ≠ NARA) — Virtual Reading Room declassified docs (HTML scrape, brittle) | `/nsarchive/search`, `/nsarchive/document/{doc_id}` | `docs/NSARCHIVE_API.md` | none (scrapes HTML) |
 | **`scholar.py`** | Google Scholar — citation-ranked paper search (vendored `sort-google-scholar`, brittle) | `/scholar/search` | `docs/SCHOLAR_API.md` | none (scrapes HTML; Google blocks with CAPTCHA/429) |
 | **`smithsonian.py`** | Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records | `/smithsonian/search`, `/smithsonian/object/{id}`, `/smithsonian/category/{category}/search`, `/smithsonian/terms/{category}`, `/smithsonian/stats` | `docs/SMITHSONIAN_API.md` | `SMITHSONIAN_API_KEY` (DEMO_KEY fallback) |
 | **`treasury.py`** | Treasury Fiscal Data — debt, rates, exchange | `/treasury/debt`, `/treasury/rates`, `/treasury/exchange` | `docs/TREASURY.md` | none |
 | **`usaspending.py`** | USAspending — federal contracts, grants ($6T+/yr) | `/usaspending/agencies`, `/usaspending/search`, `/usaspending/by-agency` | `docs/USASPENDING.md` | none |
 | **`wilson.py`** | Wilson Center Digital Archive — LOCAL mirror of 16,756 declassified documents (SQLite + FTS5; live site is DNS-dead) | **DISABLED 2026-07-02** (routes commented out in `main.py`; `data/wilson.db` not distributed) | `docs/WILSON_DIGITAL_ARCHIVE_API.md` | none (local data) |
-| **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
+| **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings, earnings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/earnings/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
 
 **Total**: 21 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **24 client modules, 82 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
 
@@ -104,7 +104,7 @@ When adding a new API client, **write a new `docs/<SOURCE>_API.md`** alongside t
 - `app/clients/cross_reference.py` — Aggregates multiple upstreams (used by `/cross-reference/*` routes). Calls other client modules via `asyncio.gather` wrapped in `_safe(...)` so one bad source doesn't break the response.
 - `app/clients/yfin.py` — yfinance wrapper. yfinance is synchronous; each call is dispatched via `asyncio.to_thread()` to keep the event loop free. DataFrames are converted to records-orientation lists.
 - `app/config.py` — Loads `.env` at import time and exposes a `cfg` singleton with API keys.
-- `app/middleware.py` — `ResponseEnvelopeMiddleware` rewrites every JSON response into `{meta: {source, endpoint, timestamp, status}, data, error}`. Skips `/openapi.json`, `/docs`, `/redoc`, `/docs/oauth2-redirect` (FastAPI's auto-doc paths must pass through raw).
+- `app/middleware.py` — `ResponseEnvelopeMiddleware` rewrites every JSON response into `{meta: {source, endpoint, timestamp, status}, data, error}`. Skips `/openapi.json`, `/docs`, `/redoc`, `/docs/oauth2-redirect` (FastAPI's auto-doc paths must pass through raw). Non-JSON content-types also pass through unwrapped — the raw-bytes routes (`/edgar/document/...`, `/house-disclosures/pdf`) rely on this.
 - `app/cache.py` — In-memory TTL cache and `@cached(ttl_seconds)` decorator. **Defined but not wired** to any client; TTL constants documented per source.
 - `app/resilience.py` — Tenacity-based retry helpers (`resilient_get`, `resilient_post`). **Defined but not used** — every client uses `get_client().get(...)` directly via `safe_get`.
 - `app/routers/` — Empty placeholder. All routing is in `main.py`.
@@ -154,7 +154,7 @@ async def some_endpoint(arg: str) -> UpstreamJSON:
 
 ### Environment
 
-`.env` is loaded from the project root by `app/config.py`. Keys are listed there; `FEC_API_KEY`, `CONGRESS_API_KEY`, and `EIA_API_KEY` fall back to `"DEMO_KEY"` (works with low rate limits), the rest default to empty strings. `SEC_USER_AGENT` is required by the SEC and must be a real `"Name email"` string — EDGAR returns 403 without it.
+`.env` is loaded from the project root by `app/config.py`. Keys are listed there; `FEC_API_KEY`, `CONGRESS_API_KEY`, `EIA_API_KEY`, and `SMITHSONIAN_API_KEY` fall back to `"DEMO_KEY"` (works with low rate limits), the rest default to empty strings. `SEC_USER_AGENT` is required by the SEC and must be a real `"Name email"` string — EDGAR returns 403 without it.
 
 **API-key auth (DataGod's own endpoints).** `DATAGOD_API_KEY` gates every route: requests must send an `X-API-Key: <key>` header. Enforced by `app/auth.py` (FastAPI's built-in `APIKeyHeader`) wired as an app-level dependency in `main.py`. Public (no auth): `/health` (`auth.PUBLIC_PATHS`). The interactive docs (`/docs`, `/redoc`, `/openapi.json`) are custom routes protected by **HTTP Basic** (`auth.require_docs_auth`: user `DATAGOD_DOCS_USER`, password `DATAGOD_DOCS_PASSWORD` — both fall back to `datagod` / `DATAGOD_API_KEY`), and are exempt from the `X-API-Key` check (`auth.DOCS_PATHS`). A missing/invalid key returns **401** in the standard error envelope. Set it in `.env` locally and as a Coolify env var in production; the service fails **closed** if the key is unset. The `.env` file is git-ignored — never commit it.
 

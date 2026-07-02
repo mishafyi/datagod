@@ -1,0 +1,7 @@
+# The image only needs app/ + requirements.txt (see Dockerfile).
+# Everything else is excluded from the build context — without this, local
+# builds ship the multi-GB git-ignored dirs (data/, research/, …) to the daemon.
+*
+!app/
+!requirements.txt
+**/__pycache__
