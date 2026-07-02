@@ -7,6 +7,11 @@ routes: "/wilson/document/{slug}, /wilson/documents"
 
 # Wilson Center Digital Archive — Local Mirror
 
+> **DISABLED (2026-07-02):** the `/wilson/*` routes are commented out in
+> `app/main.py` because `data/wilson.db` (228 MB) is not distributed with the
+> repo. To re-enable, provision the DB as described below, then follow the
+> re-enable note in the Wilson block of `app/main.py`.
+
 **Source**: a downloaded mirror of <https://digitalarchive.wilsoncenter.org/search>, captured ~2025-03-16, stored at `data/digitalarchive wilsoncenter/`.
 **Why local**: the live site became unreachable (its DNS returns NODATA — no A record from any resolver, including Cloudflare's own 1.1.1.1). The `wilson.py` client was therefore rewritten to serve the mirror instead of the live `/srv/*.json` API. There is **no network call** in this client.
 

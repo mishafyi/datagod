@@ -56,7 +56,7 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | Federal rules, notices, executive orders | Federal Register | `GET /federal-register` |
 | US House members' stock trades | House Disclosures | `GET /house-disclosures/members` |
 | US National Archives catalog records | NARA | `GET /nara/search` |
-| Declassified national-security documents | NSArchive / Wilson Center | `GET /nsarchive/search`, `GET /wilson/documents` |
+| Declassified national-security documents | NSArchive | `GET /nsarchive/search` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
@@ -206,13 +206,6 @@ Museum and archive collections (Smithsonian Open Access, 11M+ objects) — art a
 
 - **Endpoints:** `/smithsonian/category/{category}/search` · `/smithsonian/object/{object_id}` · `/smithsonian/search` · `/smithsonian/stats` · `/smithsonian/terms/{category}`
 - **Detail:** `docs/SMITHSONIAN_API.md` · **params:** `docs/endpoints.csv`
-
-### Wilson Center
-
-Cold War and international-history primary sources (Wilson Center Digital Archive, local mirror) — 16,756 declassified documents on diplomacy, foreign policy, and international relations (cables, telegrams). Use for primary-source Cold War and foreign-relations documents.
-
-- **Endpoints:** `/wilson/document/{slug}` · `/wilson/documents`
-- **Detail:** `docs/WILSON_DIGITAL_ARCHIVE_API.md` · **params:** `docs/endpoints.csv`
 
 ### arXiv
 

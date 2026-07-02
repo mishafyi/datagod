@@ -1,5 +1,5 @@
 """
-DataGod — Unified API for 15 US Government data sources + Nasdaq.com.
+DataGod — one API over 21 free US-government, markets, and research data sources.
 
 One API, all the data. Free.
 """
@@ -34,7 +34,7 @@ from .clients import (
     smithsonian,
     treasury,
     usaspending,
-    wilson,
+    # wilson,  # disabled 2026-07-02 — see the Wilson route block below
     yfin,
 )
 from .middleware import ResponseEnvelopeMiddleware
@@ -97,7 +97,7 @@ API_TAGS = [
     {"name": "NARA", "description": "US National Archives Catalog — all record groups plus the 14 presidential libraries."},
     {"name": "NSArchive", "description": "National Security Archive (GWU NGO, not NARA) — Virtual Reading Room declassified docs (HTML scrape)."},
     {"name": "Smithsonian", "description": "Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records."},
-    {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},
+    # {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},  # disabled 2026-07-02
     {"name": "arXiv", "description": "arXiv.org — full-text search of 2M+ scientific preprints (physics, math, CS/ML, biology, economics, statistics)."},
     {"name": "Scholar", "description": "Google Scholar via the vendored sort-google-scholar — citation-ranked paper search. Brittle: Google blocks scraping (CAPTCHA/429)."},
     {"name": "Cross-Reference", "description": "Aggregators that join several sources for one company or politician."},
@@ -170,7 +170,7 @@ async def root():
             "energy": ["/eia"],
             "disasters": ["/fema"],
             "regulations": ["/federal-register"],
-            "history": ["/wilson"],
+            # "history": ["/wilson"],  # Wilson disabled 2026-07-02
             "museums": ["/smithsonian"],
             "archives": ["/nara", "/nsarchive"],
             "cross_reference": ["/cross-reference/company", "/cross-reference/politician"],
@@ -768,19 +768,26 @@ async def smithsonian_stats():
     return await smithsonian.stats()
 
 
-# ── Wilson Center Digital Archive (local mirror) ─────────────────
+# ── Wilson Center Digital Archive (local mirror) — DISABLED 2026-07-02 ───
+#
+# The Wilson source serves a LOCAL SQLite mirror (data/wilson.db, 228 MB) that
+# is not distributed with the repo, so the routes are off by default. To
+# re-enable: provision data/wilson.db (see docs/WILSON_DIGITAL_ARCHIVE_API.md),
+# then uncomment the block below, the `wilson` import near the top of this
+# file, the Wilson entry in API_TAGS, and the "history" entry in the root
+# endpoint map. The client stays in app/clients/wilson.py.
 
-@app.get("/wilson/documents", tags=["Wilson Center"], summary="Search the Wilson Center mirror")
-async def wilson_documents(q: str = "", page: int = 1,
-                           items_per_page: int = Query(10, le=100)):
-    """Full-text search the local Wilson Center mirror (16,756 declassified documents)."""
-    return await wilson.search_documents(q, page, items_per_page)
+# @app.get("/wilson/documents", tags=["Wilson Center"], summary="Search the Wilson Center mirror")
+# async def wilson_documents(q: str = "", page: int = 1,
+#                            items_per_page: int = Query(10, le=100)):
+#     """Full-text search the local Wilson Center mirror (16,756 declassified documents)."""
+#     return await wilson.search_documents(q, page, items_per_page)
 
 
-@app.get("/wilson/document/{slug}", tags=["Wilson Center"], summary="Single Wilson document by slug")
-async def wilson_document(slug: str):
-    """Full record for one document by slug: title, source, subjects, download availability."""
-    return await wilson.document(slug)
+# @app.get("/wilson/document/{slug}", tags=["Wilson Center"], summary="Single Wilson document by slug")
+# async def wilson_document(slug: str):
+#     """Full record for one document by slug: title, source, subjects, download availability."""
+#     return await wilson.document(slug)
 
 
 # ── arXiv (scientific preprints) ─────────────────────────────────

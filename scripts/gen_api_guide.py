@@ -57,10 +57,11 @@ Returns the standard envelope — read the payload from `data`:
 No key (or a wrong one) returns `401`; an upstream failure returns `meta.status: "error"` with the message in `error` (HTTP 4xx passed through, 5xx/timeout → 502).
 """
 
-# NOTE: JEFS routes are disabled in app/main.py (2026-06-11), so JEFS auto-drops from
-# the route-driven Sources section + endpoints.csv. Its entries in the dicts below are
-# kept for easy re-enable (they don't render while the routes are off). If you re-enable
-# JEFS, also restore its row in the QUICK_INDEX table here.
+# NOTE: JEFS (2026-06-11) and Wilson Center (2026-07-02) routes are disabled in
+# app/main.py, so both auto-drop from the route-driven Sources section +
+# endpoints.csv. Their entries in the dicts below are kept for easy re-enable
+# (they don't render while the routes are off). If you re-enable one, also
+# restore its row in the QUICK_INDEX table here.
 QUICK_INDEX = """\
 ## Which source for which information
 
@@ -84,7 +85,7 @@ QUICK_INDEX = """\
 | Federal rules, notices, executive orders | Federal Register | `GET /federal-register` |
 | US House members' stock trades | House Disclosures | `GET /house-disclosures/members` |
 | US National Archives catalog records | NARA | `GET /nara/search` |
-| Declassified national-security documents | NSArchive / Wilson Center | `GET /nsarchive/search`, `GET /wilson/documents` |
+| Declassified national-security documents | NSArchive | `GET /nsarchive/search` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |

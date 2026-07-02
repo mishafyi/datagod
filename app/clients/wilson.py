@@ -1,5 +1,8 @@
 """Wilson Center Digital Archive — served from a LOCAL mirror, not the live API.
 
+Currently DISABLED: the /wilson routes are commented out in app/main.py
+(2026-07-02) because data/wilson.db is not distributed with the repo.
+
 The live site (digitalarchive.wilsoncenter.org) is no longer queried. This client reads
 a SQLite + FTS5 index (data/wilson.db) built by scripts/build_wilson_index.py from a
 downloaded mirror of 16,756 declassified document pages. Build the index once before use.
