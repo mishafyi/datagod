@@ -17,6 +17,7 @@ __pycache__/
 # deliberately not part of the public repo
 DEPLOY-NEW-PROJECT-COOLIFY.md
 docs/AGENT_QUICKSTART.md
+USE-DATAGOD-FROM-COOLIFY.md
 
 # Large local artifacts — NOT part of the runtime image
 # (Dockerfile only copies app/ + requirements.txt)
