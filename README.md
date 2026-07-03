@@ -75,6 +75,17 @@ A single stateless container (see `Dockerfile`) — any Docker host works. All c
 - The Nasdaq.com, National Security Archive, House Financial Disclosures, and Google Scholar sources rely on unofficial endpoints or HTML scraping: they can break without notice, and you are responsible for complying with each upstream's terms of service and rate limits.
 - SEC EDGAR requires a real `User-Agent`: set `SEC_USER_AGENT="Your Name your@email.com"` (SEC policy; EDGAR returns 403 without it).
 
+## Acknowledgments
+
+DataGod stands on open source:
+
+- [`sort-google-scholar`](https://github.com/WittmannF/sort-google-scholar) by Fernando Marcos Wittmann (MIT) — the `/scholar` source is vendored and adapted from it (see `app/clients/scholar.py` for what was kept vs. dropped).
+- [yfinance](https://github.com/ranaroussi/yfinance) — powers every `/yfinance` endpoint, used unmodified.
+- The web stack: [FastAPI](https://github.com/fastapi/fastapi), [Starlette](https://github.com/encode/starlette), [Pydantic](https://github.com/pydantic/pydantic), [Uvicorn](https://github.com/encode/uvicorn), [HTTPX](https://github.com/encode/httpx).
+- Parsing & data: [pandas](https://github.com/pandas-dev/pandas), [selectolax](https://github.com/rushter/selectolax), [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), [lxml](https://github.com/lxml/lxml), [feedparser](https://github.com/kurtmckee/feedparser), [Requests](https://github.com/psf/requests), [python-dotenv](https://github.com/theskumar/python-dotenv), [Tenacity](https://github.com/jd/tenacity).
+
+And thanks to the agencies and services that publish the free data this project merely passes through.
+
 ## License
 
 [MIT](LICENSE)
