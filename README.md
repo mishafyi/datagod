@@ -1,8 +1,8 @@
 # DataGod
 
-One async HTTP API over **21 free data sources** — US government, markets, and research — behind a single consistent response envelope. Routes are thin pass‑throughs: each returns the upstream's JSON unchanged.
+One async HTTP API over **22 free data sources** — US government, markets, research, and trending — behind a single consistent response envelope. Routes are thin pass‑throughs: each returns the upstream's JSON unchanged.
 
-**Sources:** FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · NARA · National Security Archive · Smithsonian Open Access · Nasdaq.com · Yahoo Finance · arXiv · Google Scholar — plus `/cross-reference/*` aggregators.
+**Sources:** FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · NARA · National Security Archive · Smithsonian Open Access · Nasdaq.com · Yahoo Finance · arXiv · Google Scholar · NewsNow (trending boards) — plus `/cross-reference/*` aggregators.
 
 🧭 **API guide (for agents/consumers):** [`docs/API_GUIDE.md`](docs/API_GUIDE.md) — which endpoint for which information, with parameters (plus [`docs/endpoints.csv`](docs/endpoints.csv) for tooling). Architecture & conventions live in [`CLAUDE.md`](CLAUDE.md).
 

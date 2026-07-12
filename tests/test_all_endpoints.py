@@ -190,6 +190,9 @@ hit("GET", "/arxiv/search?query=electron&max_results=2", "arXiv")
 hit("GET", "/arxiv/2301.00001", "arXiv")
 # ── Scholar (Google blocks server IPs → expected error, not a hard fail) ──
 hit("GET", "/scholar/search?keyword=transformer+neural+network&nresults=3", "Scholar", expect_error=True)
+# ── Trending (NewsNow — self-hosted; needs NEWSNOW_BASE_URL reachable from the API) ──
+hit("GET", "/trending", "Trending")
+hit("GET", "/trending/hackernews", "Trending")
 # ── Cross-Reference (fans out to several upstreams) ──
 hit("GET", "/cross-reference/company/apple", "CrossRef", timeout=90)
 hit("GET", "/cross-reference/politician/pelosi", "CrossRef", timeout=90)

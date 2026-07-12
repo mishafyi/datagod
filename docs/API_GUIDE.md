@@ -60,6 +60,7 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
+| What's trending right now (HN, GitHub, Product Hunt, Weibo/Zhihu, CN tech + finance boards) | Trending | `GET /trending/hackernews` (board ids: `GET /trending`) |
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 
 
@@ -220,6 +221,13 @@ Academic papers ranked by citations from Google Scholar (via the vendored sort-g
 
 - **Endpoints:** `/scholar/search`
 - **Detail:** `docs/SCHOLAR_API.md` · **params:** `docs/endpoints.csv`
+
+### Trending
+
+What's hot right now across ~50 boards, via a self-hosted [NewsNow](https://github.com/ourongxing/newsnow) instance: Hacker News front page, GitHub trending repos, Product Hunt launches, plus Chinese platforms — Weibo/Douyin/Baidu/Toutiao hot searches, Zhihu hot list, Bilibili, and CN finance wires (CLS, WallStreetCN, Xueqiu hot stocks). Items are `{title, url, extra}` ranked by list position (rank 1 = hottest); many Chinese boards surface China tech/space/AI stories before English-language media. `GET /trending` lists the valid board ids.
+
+- **Endpoints:** `/trending` · `/trending/{source_id}`
+- **params:** `docs/endpoints.csv`
 
 ### Cross-Reference
 

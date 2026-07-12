@@ -1,5 +1,5 @@
 """
-DataGod — one API over 21 free US-government, markets, and research data sources.
+DataGod — one API over 22 free US-government, markets, research, and trending data sources.
 
 One API, all the data. Free.
 """
@@ -29,6 +29,7 @@ from .clients import (
     # jefs,  # disabled 2026-06-11 — see the JEFS route block below
     nara,
     nasdaq,
+    newsnow,
     nsarchive,
     scholar,
     smithsonian,
@@ -40,8 +41,8 @@ from .clients import (
 from .middleware import ResponseEnvelopeMiddleware
 
 API_DESCRIPTION = """\
-**DataGod** unifies 21 free US-government, markets, and research data sources
-(plus a cross-reference aggregator) behind one HTTP API. Routes are thin
+**DataGod** unifies 22 free US-government, markets, research, and trending data
+sources (plus a cross-reference aggregator) behind one HTTP API. Routes are thin
 pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
 standard envelope.
 
@@ -101,6 +102,7 @@ API_TAGS = [
     # {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},  # disabled 2026-07-02
     {"name": "arXiv", "description": "arXiv.org — full-text search of 2M+ scientific preprints (physics, math, CS/ML, biology, economics, statistics)."},
     {"name": "Scholar", "description": "Google Scholar via the vendored sort-google-scholar — citation-ranked paper search. Brittle: Google blocks scraping (CAPTCHA/429)."},
+    {"name": "Trending", "description": "NewsNow (self-hosted) — ~50 trending/hot boards: Hacker News, GitHub trending, Product Hunt, plus Weibo/Zhihu/Douyin hot searches and CN finance wires. Ranked title+URL items."},
     {"name": "Cross-Reference", "description": "Aggregators that join several sources for one company or politician."},
     {"name": "Admin", "description": "Operational endpoints (cache management)."},
 ]
@@ -160,7 +162,7 @@ async def root():
     return {
         "name": "DataGod",
         "version": "1.0.0",
-        "sources": 21,
+        "sources": 22,
         "endpoints": {
             "economy": ["/fred", "/bls", "/treasury"],
             "markets": ["/edgar", "/nasdaq", "/yfinance"],
@@ -174,6 +176,7 @@ async def root():
             # "history": ["/wilson"],  # Wilson disabled 2026-07-02
             "museums": ["/smithsonian"],
             "archives": ["/nara", "/nsarchive"],
+            "trending": ["/trending"],
             "cross_reference": ["/cross-reference/company", "/cross-reference/politician"],
         },
     }
@@ -815,6 +818,20 @@ async def scholar_search(keyword: str, nresults: int = Query(20, ge=1, le=100),
                          end_year: int | None = None):
     """Citation-ranked Google Scholar search. Brittle: Google blocks scraping (CAPTCHA/429) → error-dict."""
     return await scholar.search(keyword, nresults, sort_by, start_year, end_year)
+
+
+# ── Trending (NewsNow, self-hosted) ──────────────────────────────
+
+@app.get("/trending", tags=["Trending"], summary="List available trending-board ids")
+async def trending_boards():
+    """Board ids servable by /trending/{source_id} (pinned newsnow release — see app/clients/newsnow.py)."""
+    return {"sources": list(newsnow.SOURCES)}
+
+
+@app.get("/trending/{source_id}", tags=["Trending"], summary="One trending board — ranked title+URL items")
+async def trending_board(source_id: str, latest: bool = True):
+    """Hot list for one board (ids: GET /trending). Rank = item position; latest=false accepts newsnow's cache."""
+    return await newsnow.source(source_id, latest)
 
 
 # ── Cross-Reference ──────────────────────────────────────────────

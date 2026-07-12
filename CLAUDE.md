@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-DataGod is a FastAPI service that unifies 21 free data sources behind one HTTP API: 16 US government sources (FRED, SEC EDGAR, USAspending, Census, BLS, Treasury, FEC, Congress.gov, FDA, ClinicalTrials.gov, EIA, FEMA, Federal Register, House Financial Disclosures, Smithsonian Open Access, National Archives (NARA)), 2 markets sources (Nasdaq.com, Yahoo Finance via yfinance), 2 research sources (arXiv, Google Scholar), and the non-governmental National Security Archive (GWU; Virtual Reading Room scrape). Two more sources live in the codebase but are currently **disabled**: JEFS (judicial disclosures; needs Playwright + reCAPTCHA) and the Wilson Center Digital Archive (needs a local `data/wilson.db` mirror that isn't distributed). Routes are thin pass-throughs; each upstream gets a dedicated async client module that returns the upstream's JSON (or DataFrame-as-records, for yfinance) unchanged.
+DataGod is a FastAPI service that unifies 22 free data sources behind one HTTP API: 16 US government sources (FRED, SEC EDGAR, USAspending, Census, BLS, Treasury, FEC, Congress.gov, FDA, ClinicalTrials.gov, EIA, FEMA, Federal Register, House Financial Disclosures, Smithsonian Open Access, National Archives (NARA)), 2 markets sources (Nasdaq.com, Yahoo Finance via yfinance), 2 research sources (arXiv, Google Scholar), the non-governmental National Security Archive (GWU; Virtual Reading Room scrape), and NewsNow (self-hosted trending-boards aggregator — ~50 hot lists: Hacker News, GitHub trending, Product Hunt, Weibo/Zhihu/Douyin and other CN boards; served at `/trending`). Two more sources live in the codebase but are currently **disabled**: JEFS (judicial disclosures; needs Playwright + reCAPTCHA) and the Wilson Center Digital Archive (needs a local `data/wilson.db` mirror that isn't distributed). Routes are thin pass-throughs; each upstream gets a dedicated async client module that returns the upstream's JSON (or DataFrame-as-records, for yfinance) unchanged.
 
 ## Commands
 
@@ -38,7 +38,7 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 
 ## Available API clients
 
-24 client modules in `app/clients/`. Each has matching routes in `main.py` and (for non-trivial APIs) a deep-dive doc in `docs/`.
+25 client modules in `app/clients/`. Each has matching routes in `main.py` and (for non-trivial APIs) a deep-dive doc in `docs/`.
 
 | Module | What it covers | Routes (in `main.py`) | Per-source doc | Auth |
 |--------|---------------|----------------------|----------------|------|
@@ -59,6 +59,7 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 | **`jefs.py`** | JEFS — Judicial Financial Disclosures (federal judges) | **DISABLED 2026-06-11** (routes commented out in `main.py`) | `docs/JEFS_API.md` | session + Playwright reCAPTCHA; user must provide real credentials |
 | **`nara.py`** | NARA — US National Archives Catalog (all record groups + the 14 presidential libraries) | `/nara/search`, `/nara/record/{na_id}` | `docs/NARA_API.md` | none (keyless `/proxy` gateway) |
 | **`nasdaq.py`** | Nasdaq.com — quote, history, dividends, financials, insider trades, calendars, screener (unofficial) | `/nasdaq/quote/{ticker}`, `/nasdaq/price/{ticker}`, `/nasdaq/history/{ticker}`, `/nasdaq/dividends/{ticker}`, `/nasdaq/financials/{ticker}`, `/nasdaq/insider-trades/{ticker}`, `/nasdaq/earnings-surprise/{ticker}`, `/nasdaq/calendar/earnings`, `/nasdaq/calendar/ipo`, `/nasdaq/screener` | `docs/NASDAQ_API.md` | browser-like `User-Agent` only |
+| **`newsnow.py`** | NewsNow (self-hosted, image pinned `v0.0.41`) — ~50 trending/hot boards: HN, GitHub trending, Product Hunt, Weibo/Zhihu/Douyin hot searches, CN finance wires | `/trending`, `/trending/{source_id}` | — | `NEWSNOW_BASE_URL` (required; Coolify-internal `http://newsnow:4444`) |
 | **`nsarchive.py`** | National Security Archive (GWU NGO, ≠ NARA) — Virtual Reading Room declassified docs (HTML scrape, brittle) | `/nsarchive/search`, `/nsarchive/document/{doc_id}` | `docs/NSARCHIVE_API.md` | none (scrapes HTML) |
 | **`scholar.py`** | Google Scholar — citation-ranked paper search (vendored `sort-google-scholar`, brittle) | `/scholar/search` | `docs/SCHOLAR_API.md` | none (scrapes HTML; Google blocks with CAPTCHA/429) |
 | **`smithsonian.py`** | Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records | `/smithsonian/search`, `/smithsonian/object/{id}`, `/smithsonian/category/{category}/search`, `/smithsonian/terms/{category}`, `/smithsonian/stats` | `docs/SMITHSONIAN_API.md` | `SMITHSONIAN_API_KEY` (DEMO_KEY fallback) |
@@ -67,7 +68,7 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 | **`wilson.py`** | Wilson Center Digital Archive — LOCAL mirror of 16,756 declassified documents (SQLite + FTS5; live site is DNS-dead) | **DISABLED 2026-07-02** (routes commented out in `main.py`; `data/wilson.db` not distributed) | `docs/WILSON_DIGITAL_ARCHIVE_API.md` | none (local data) |
 | **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings, earnings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/earnings/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
 
-**Total**: 21 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **24 client modules, 82 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
+**Total**: 22 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **25 client modules, 84 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
 
 ## Reference documentation in `docs/`
 

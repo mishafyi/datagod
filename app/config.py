@@ -46,5 +46,9 @@ class Config:
     # Smithsonian Open Access (EDAN) — api.data.gov key; DEMO_KEY works at low limits
     SMITHSONIAN_API_KEY = os.getenv("SMITHSONIAN_API_KEY", "DEMO_KEY")
 
+    # NewsNow — self-hosted trending-boards aggregator (github.com/ourongxing/newsnow).
+    # Base URL of the instance, e.g. http://newsnow:4444 (Coolify-internal) — required for /trending.
+    NEWSNOW_BASE_URL = os.getenv("NEWSNOW_BASE_URL", "")
+
 
 cfg = Config()
