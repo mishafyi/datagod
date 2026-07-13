@@ -227,7 +227,7 @@ Academic papers ranked by citations from Google Scholar (via the vendored sort-g
 What's hot right now across ~50 boards, via a self-hosted [NewsNow](https://github.com/ourongxing/newsnow) instance: Hacker News front page, GitHub trending repos, Product Hunt launches, plus Chinese platforms — Weibo/Douyin/Baidu/Toutiao hot searches, Zhihu hot list, Bilibili, and CN finance wires (CLS, WallStreetCN, Xueqiu hot stocks). Items are `{title, url, extra}` ranked by list position (rank 1 = hottest); many Chinese boards surface China tech/space/AI stories before English-language media. `GET /trending` lists the valid board ids.
 
 - **Endpoints:** `/trending` · `/trending/{source_id}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/NEWSNOW_API.md` · **params:** `docs/endpoints.csv`
 
 ### Cross-Reference
 
