@@ -224,10 +224,32 @@ Academic papers ranked by citations from Google Scholar (via the vendored sort-g
 
 ### Trending
 
-What's hot right now across ~50 boards, via a self-hosted [NewsNow](https://github.com/ourongxing/newsnow) instance: Hacker News front page, GitHub trending repos, Product Hunt launches, plus Chinese platforms — Weibo/Douyin/Baidu/Toutiao hot searches, Zhihu hot list, Bilibili, and CN finance wires (CLS, WallStreetCN, Xueqiu hot stocks). Items are `{title, url, extra}` ranked by list position (rank 1 = hottest); many Chinese boards surface China tech/space/AI stories before English-language media. `GET /trending` lists the valid board ids.
+What's hot right now across ~50 boards, via a self-hosted [NewsNow](https://github.com/ourongxing/newsnow) instance: Hacker News front page, GitHub trending repos, Product Hunt launches, plus Chinese platforms — Weibo/Douyin/Baidu/Toutiao hot searches, Zhihu hot list, Bilibili, and CN finance wires (CLS, WallStreetCN, Xueqiu hot stocks). Items are ranked title+URL tuples — **rank = 1-based list position, hottest first**; titles only, so fetch the linked article separately for content. Many Chinese boards surface China tech/space/AI stories hours-to-days before English-language media. `GET /trending` lists the valid board ids.
+
+Unlike every other source, the upstream here is **infrastructure you run**, not a third-party API: NewsNow does the actual scraping (guest cookies, reverse-engineered signing, per-board parsers) and DataGod only proxies it.
+
+**Upstream / self-host:**
+- `NEWSNOW_BASE_URL` (required) — base URL of your instance; unset → 502 `"NEWSNOW_BASE_URL not configured"`. DataGod calls `GET {base}/api/s?id=<board>&latest=true`.
+- Run `ghcr.io/ourongxing/newsnow:<tag>` — **pin a release tag** (CI publishes on `v*` tags; the client's board list matches `v0.0.41`). Minimal env: `HOST=0.0.0.0`, `PORT=4444`, `INIT_TABLE=true`, `ENABLE_CACHE=true`; persist `/usr/app/.data`.
+- No accounts anywhere. Run **without** the GitHub-OAuth env vars — login-disabled instances honor `latest` for anonymous callers. Optional `PRODUCTHUNT_API_TOKEN` on the instance upgrades Product Hunt from RSS to GraphQL (adds vote counts).
+- NewsNow caches per board (refresh 2 min–1 h by board, default 10 min; TTL 30 min); DataGod adds no cache layer. `latest=false` accepts its cache.
+
+**Response `data` (upstream payload, unchanged):** `{status: "success"|"cache", id, updatedTime, items: [{id, title, url, mobileUrl?, pubDate?, extra?}]}` — `items[i]` rank = `i + 1`; `extra.info` is the board-specific metric (HN points, GitHub `✰ stars`, Zhihu heat), `extra.hover` the GitHub repo description. Invalid board id → upstream 500 → DataGod **502** envelope.
+
+**Boards (52, newsnow `v0.0.41`;** source of truth: `SOURCES` in `app/clients/newsnow.py`**):**
+- *Tech (English):* `hackernews` · `producthunt` · `github-trending-today`
+- *Tech (Chinese):* `v2ex-share` · `coolapk` · `ithome` · `solidot` · `sspai` · `juejin` · `aihot` · `36kr-quick` · `36kr-renqi` · `pcbeta-windows11` · `freebuf` · `nowcoder`
+- *China social / general:* `zhihu` · `weibo` · `douyin` · `baidu` · `toutiao` · `tieba` · `thepaper` · `ifeng` · `tencent-hot` · `bilibili-hot-search` · `bilibili-hot-video` · `bilibili-ranking` · `kuaishou` · `douban` · `qqvideo-tv-hotsearch` · `iqiyi-hot-ranklist` · `chongbuluo-latest` · `chongbuluo-hot`
+- *Finance (CN wires + hot lists):* `wallstreetcn-quick` · `wallstreetcn-news` · `wallstreetcn-hot` · `cls-telegraph` · `cls-depth` · `cls-hot` · `xueqiu-hotstock` · `gelonghui` · `fastbull-express` · `fastbull-news` · `jin10` · `mktnews-flash`
+- *World news (Chinese-language):* `zaobao` · `cankaoxiaoxi` · `sputniknewscn` · `kaopu`
+- *Sports / other:* `hupu` · `dongqiudi` · `steam`
+
+Two flavors: **hottest** boards are ranked lists (weibo, zhihu, hackernews); **realtime** boards are newest-first flash feeds (cls-telegraph, jin10, mktnews-flash, gelonghui — 2–5 min cadence).
+
+**Quirks:** board ids track the pinned newsnow release — bumping the image can add/remove boards (upstream catalog: `shared/pre-sources.ts` at the tag), so update `SOURCES` and this section together. On a login-enabled instance, anonymous `latest=true` silently downgrades to cache. Some boards fail only when newsnow itself runs on Cloudflare Pages (`kuaishou`, `bilibili-hot-video`, `bilibili-ranking`, `36kr-*`); Node/Docker self-hosts serve them all. Scrapes are unofficial — a platform reshuffling markup breaks that board until the next newsnow release. Editorial note: `sputniknewscn` is Russian state media; `cankaoxiaoxi`/`zaobao` are state-adjacent digests; the CN finance wires (CLS, WallStreetCN) are the most factual-dense boards.
 
 - **Endpoints:** `/trending` · `/trending/{source_id}`
-- **Detail:** `docs/NEWSNOW_API.md` · **params:** `docs/endpoints.csv`
+- **params:** `docs/endpoints.csv`
 
 ### Cross-Reference
 
