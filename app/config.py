@@ -46,6 +46,11 @@ class Config:
     # Smithsonian Open Access (EDAN) — api.data.gov key; DEMO_KEY works at low limits
     SMITHSONIAN_API_KEY = os.getenv("SMITHSONIAN_API_KEY", "DEMO_KEY")
 
+    # UCDP — Uppsala Conflict Data Program. The API was keyless until 2026; upstream
+    # now requires a free access token (register at ucdp.uu.se) sent as the
+    # x-ucdp-access-token header. Empty => request goes keyless and upstream 401s.
+    UCDP_ACCESS_TOKEN = os.getenv("UCDP_ACCESS_TOKEN", "")
+
     # NewsNow — self-hosted trending-boards aggregator (github.com/ourongxing/newsnow).
     # Base URL of the instance, e.g. http://newsnow:4444 (Coolify-internal) — required for /trending.
     NEWSNOW_BASE_URL = os.getenv("NEWSNOW_BASE_URL", "")

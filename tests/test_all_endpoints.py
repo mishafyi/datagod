@@ -193,6 +193,32 @@ hit("GET", "/scholar/search?keyword=transformer+neural+network&nresults=3", "Sch
 # ── Trending (NewsNow — self-hosted; needs NEWSNOW_BASE_URL reachable from the API) ──
 hit("GET", "/trending", "Trending")
 hit("GET", "/trending/hackernews", "Trending")
+# ── World Bank ──
+hit("GET", "/worldbank/countries?per_page=5", "WorldBank")
+hit("GET", "/worldbank/NY.GDP.MKTP.CD?countries=us;cn&date_range=2020:2023", "WorldBank")
+# ── IMF (legacy SDMX host dataservices.imf.org is DNS-dead as of 2026-07 — expected error until it answers again) ──
+hit("GET", "/imf/structure/IFS", "IMF", expect_error=True, timeout=60)
+hit("GET", "/imf/IFS/M.US.PCPI_IX?start_period=2023&end_period=2024", "IMF", expect_error=True, timeout=60)
+# ── Eurostat ──
+hit("GET", "/eurostat/tps00001?geo=DE&time=2024", "Eurostat")
+# ── ECB ──
+hit("GET", "/ecb/EXR/D.USD.EUR.SP00.A?start_period=2026-07-01&end_period=2026-07-10", "ECB")
+# ── Comtrade (keyless public preview — ≤500 records, rate-limited) ──
+hit("GET", "/comtrade?reporterCode=842&period=2023&partnerCode=0&cmdCode=TOTAL&flowCode=M", "Comtrade")
+# ── UCDP (upstream began requiring a free token in 2026 — 401 unless UCDP_ACCESS_TOKEN is set) ──
+hit("GET", "/ucdp/gedevents?country=369&start_date=2023-01-01&end_date=2023-12-31&pagesize=2", "UCDP",
+    expect_error=not os.getenv("UCDP_ACCESS_TOKEN"))
+# ── USGS ──
+hit("GET", "/usgs/earthquakes?minmagnitude=5&limit=2", "USGS")
+# ── NWS ──
+hit("GET", "/nws/alerts?area=CA", "NWS")
+# ── EONET ──
+hit("GET", "/eonet/events?category=wildfires&status=open&limit=2", "EONET")
+hit("GET", "/eonet/categories", "EONET")
+# ── Wikipedia ──
+hit("GET", "/wikipedia/summary/Albert_Einstein", "Wikipedia")
+hit("GET", "/wikipedia/search?q=quantum+computing&limit=3", "Wikipedia")
+hit("GET", "/wikipedia/pageviews/Albert_Einstein?start=20260701&end=20260707", "Wikipedia")
 # ── Cross-Reference (fans out to several upstreams) ──
 hit("GET", "/cross-reference/company/apple", "CrossRef", timeout=90)
 hit("GET", "/cross-reference/politician/pelosi", "CrossRef", timeout=90)

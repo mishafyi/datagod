@@ -1,5 +1,5 @@
 """
-DataGod — one API over 22 free US-government, markets, research, and trending data sources.
+DataGod — one API over 32 free US-government, global, markets, research, and trending data sources.
 
 One API, all the data. Free.
 """
@@ -16,34 +16,44 @@ from .clients import (
     bls,
     census,
     clinicaltrials,
+    comtrade,
     congress_gov as congress,
     cross_reference,
+    ecb,
     edgar,
     eia,
+    eonet,
+    eurostat,
     fec,
     federal_register,
     fema,
     fda,
     fred,
     house_fd,
+    imf,
     # jefs,  # disabled 2026-06-11 — see the JEFS route block below
     nara,
     nasdaq,
     newsnow,
     nsarchive,
+    nws,
     scholar,
     smithsonian,
     treasury,
+    ucdp,
     usaspending,
+    usgs,
+    wikipedia,
     # wilson,  # disabled 2026-07-02 — see the Wilson route block below
+    worldbank,
     yfin,
 )
 from .middleware import ResponseEnvelopeMiddleware
 
 API_DESCRIPTION = """\
-**DataGod** unifies 22 free US-government, markets, research, and trending data
-sources (plus a cross-reference aggregator) behind one HTTP API. Routes are thin
-pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
+**DataGod** unifies 32 free US-government, global, markets, research, and trending
+data sources (plus a cross-reference aggregator) behind one HTTP API. Routes are
+thin pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
 standard envelope.
 
 ## Authentication
@@ -103,6 +113,16 @@ API_TAGS = [
     {"name": "arXiv", "description": "arXiv.org — full-text search of 2M+ scientific preprints (physics, math, CS/ML, biology, economics, statistics)."},
     {"name": "Scholar", "description": "Google Scholar via the vendored sort-google-scholar — citation-ranked paper search. Brittle: Google blocks scraping (CAPTCHA/429)."},
     {"name": "Trending", "description": "NewsNow (self-hosted) — ~50 trending/hot boards: Hacker News, GitHub trending, Product Hunt, plus Weibo/Zhihu/Douyin hot searches and CN finance wires. Ranked title+URL items."},
+    {"name": "World Bank", "description": "World Bank Open Data — development indicators for every country (GDP, population, poverty, trade)."},
+    {"name": "IMF", "description": "IMF SDMX-JSON — macroeconomic time series (IFS, DOT, BOP…). Upstream is slow and flaky."},
+    {"name": "Eurostat", "description": "Eurostat — official EU statistics (JSON-stat); dimension filters pass through."},
+    {"name": "ECB", "description": "ECB Data Portal — euro-area exchange rates, inflation, and interest rates via SDMX."},
+    {"name": "Comtrade", "description": "UN Comtrade — global goods-trade flows (keyless public preview, ≤500 records, rate-limited)."},
+    {"name": "UCDP", "description": "Uppsala Conflict Data Program — georeferenced armed-conflict events worldwide."},
+    {"name": "USGS", "description": "USGS Earthquake Hazards — worldwide earthquake catalog (GeoJSON)."},
+    {"name": "NWS", "description": "US National Weather Service — active weather alerts (keyless, User-Agent required)."},
+    {"name": "EONET", "description": "NASA EONET — global natural events: wildfires, severe storms, volcanoes."},
+    {"name": "Wikipedia", "description": "Wikipedia — page summaries, full-text search, and pageview statistics."},
     {"name": "Cross-Reference", "description": "Aggregators that join several sources for one company or politician."},
     {"name": "Admin", "description": "Operational endpoints (cache management)."},
 ]
@@ -162,9 +182,10 @@ async def root():
     return {
         "name": "DataGod",
         "version": "1.0.0",
-        "sources": 22,
+        "sources": 32,
         "endpoints": {
             "economy": ["/fred", "/bls", "/treasury"],
+            "economy_global": ["/worldbank", "/imf", "/eurostat", "/ecb", "/comtrade"],
             "markets": ["/edgar", "/nasdaq", "/yfinance"],
             "spending": ["/usaspending"],
             "politics": ["/fec", "/congress", "/house-disclosures"],
@@ -172,10 +193,12 @@ async def root():
             "health": ["/fda", "/clinical-trials"],
             "energy": ["/eia"],
             "disasters": ["/fema"],
+            "conflicts_disasters": ["/ucdp", "/usgs", "/nws", "/eonet"],
             "regulations": ["/federal-register"],
             # "history": ["/wilson"],  # Wilson disabled 2026-07-02
             "museums": ["/smithsonian"],
             "archives": ["/nara", "/nsarchive"],
+            "reference": ["/wikipedia"],
             "trending": ["/trending"],
             "cross_reference": ["/cross-reference/company", "/cross-reference/politician"],
         },
@@ -832,6 +855,141 @@ async def trending_boards():
 async def trending_board(source_id: str, latest: bool = True):
     """Hot list for one board (ids: GET /trending). Rank = item position; latest=false accepts newsnow's cache."""
     return await newsnow.source(source_id, latest)
+
+
+# ── World Bank ───────────────────────────────────────────────────
+
+@app.get("/worldbank/countries", tags=["World Bank"], summary="List all countries (region, income level)")
+async def worldbank_countries(per_page: int = Query(300, le=400)):
+    """All countries/aggregates with region, income level, and ISO codes."""
+    return await worldbank.countries(per_page)
+
+
+@app.get("/worldbank/{indicator}", tags=["World Bank"], summary="One indicator across countries")
+async def worldbank_indicator(indicator: str,
+                              countries: str = Query("all", description='ISO2 codes joined with ";" (e.g. us;cn;fr) or "all"'),
+                              date_range: str = Query("", description="Year bounds as YYYY:YYYY"),
+                              per_page: int = Query(200, le=1000)):
+    """Indicator series, e.g. NY.GDP.MKTP.CD (GDP, current US$), SP.POP.TOTL
+    (population). Response is [paging-metadata, rows]."""
+    return await worldbank.indicator(indicator, countries, date_range, per_page)
+
+
+# ── IMF ──────────────────────────────────────────────────────────
+
+@app.get("/imf/structure/{database}", tags=["IMF"], summary="Dataflow structure (dimensions + code lists)")
+async def imf_structure(database: str):
+    """Dimensions and code lists for a database (e.g. IFS). Slow upstream."""
+    return await imf.structure(database)
+
+
+@app.get("/imf/{database}/{key}", tags=["IMF"], summary="CompactData time series by SDMX key")
+async def imf_series(database: str, key: str, start_period: str = "", end_period: str = ""):
+    """Series from an IMF database, e.g. /imf/IFS/M.US.PCPI_IX (monthly US CPI
+    index). Upstream is slow and flaky — expect occasional 502s."""
+    return await imf.compact_data(database, key, start_period, end_period)
+
+
+# ── Eurostat ─────────────────────────────────────────────────────
+
+@app.get("/eurostat/{dataset}", tags=["Eurostat"], summary="Eurostat dataset (JSON-stat) with dimension filters")
+async def eurostat_dataset(dataset: str, request: Request):
+    """One dataset (e.g. tps00001 = population). Every query param passes through
+    as a dimension filter (?geo=EU27_2020&time=2024; a dimension may repeat).
+    Unfiltered big datasets are rejected upstream."""
+    return await eurostat.dataset(dataset, list(request.query_params.multi_items()))
+
+
+# ── ECB ──────────────────────────────────────────────────────────
+
+@app.get("/ecb/{flow_ref}/{key}", tags=["ECB"], summary="SDMX series from an ECB dataflow")
+async def ecb_series(flow_ref: str, key: str, start_period: str = "", end_period: str = ""):
+    """One series, e.g. /ecb/EXR/D.USD.EUR.SP00.A (daily USD/EUR reference rate).
+    Periods are YYYY-MM-DD (or YYYY / YYYY-MM per frequency)."""
+    return await ecb.series(flow_ref, key, start_period, end_period)
+
+
+# ── Comtrade ─────────────────────────────────────────────────────
+
+@app.get("/comtrade", tags=["Comtrade"], summary="Global goods-trade flows (keyless preview, ≤500 records)")
+async def comtrade_preview(reporter_code: str = Query("", alias="reporterCode", description="UN M49 numeric, e.g. 842=USA, 156=China"),
+                           period: str = Query("", description="Year, e.g. 2023"),
+                           partner_code: str = Query("", alias="partnerCode", description="UN M49 numeric; 0=World"),
+                           cmd_code: str = Query("", alias="cmdCode", description="HS code or TOTAL"),
+                           flow_code: str = Query("", alias="flowCode", description="M=imports, X=exports")):
+    """Annual HS goods trade (public preview: ≤500 records, rate-limited, no key)."""
+    return await comtrade.preview(reporter_code, period, partner_code, cmd_code, flow_code)
+
+
+# ── UCDP ─────────────────────────────────────────────────────────
+
+@app.get("/ucdp/gedevents", tags=["UCDP"], summary="Georeferenced conflict events (GED)")
+async def ucdp_gedevents(country: str = Query("", description="Gleditsch-Ward numeric id(s), comma-separated (369=Ukraine, 365=Russia)"),
+                         start_date: str = Query("", description="YYYY-MM-DD lower bound"),
+                         end_date: str = Query("", description="YYYY-MM-DD upper bound"),
+                         pagesize: int = Query(10, le=1000), page: int = Query(0, ge=0),
+                         version: str = "24.1"):
+    """Organized-violence events with locations, actors, and fatality estimates."""
+    return await ucdp.gedevents(country, start_date, end_date, pagesize, page, version)
+
+
+# ── USGS ─────────────────────────────────────────────────────────
+
+@app.get("/usgs/earthquakes", tags=["USGS"], summary="Worldwide earthquake catalog (GeoJSON)")
+async def usgs_earthquakes(starttime: str = Query("", description="YYYY-MM-DD (default: last 30 days)"),
+                           endtime: str = Query("", description="YYYY-MM-DD"),
+                           minmagnitude: float = Query(0.0, ge=0),
+                           orderby: str = Query("time", pattern="^(time|time-asc|magnitude|magnitude-asc)$"),
+                           limit: int = Query(10, le=1000)):
+    """Earthquakes as GeoJSON features (magnitude, place, time, coordinates)."""
+    return await usgs.earthquakes(starttime, endtime, minmagnitude, orderby, limit)
+
+
+# ── NWS ──────────────────────────────────────────────────────────
+
+@app.get("/nws/alerts", tags=["NWS"], summary="Active US weather alerts")
+async def nws_alerts(area: str = Query("", description="Two-letter state/marine code, e.g. CA"),
+                     severity: str = Query("", description="Extreme, Severe, Moderate, Minor, Unknown")):
+    """Active alerts (GeoJSON features with headline, severity, areas)."""
+    return await nws.alerts(area, severity)
+
+
+# ── EONET ────────────────────────────────────────────────────────
+
+@app.get("/eonet/events", tags=["EONET"], summary="Global natural events (wildfires, storms, volcanoes)")
+async def eonet_events(category: str = Query("", description="e.g. wildfires, severeStorms, volcanoes — see /eonet/categories"),
+                       status: str = Query("open", pattern="^(open|closed|all)$"),
+                       limit: int = Query(10, le=1000), days: int = Query(0, ge=0)):
+    """Natural events with geometry and source links. days=N limits to the last N days."""
+    return await eonet.events(category, status, limit, days)
+
+
+@app.get("/eonet/categories", tags=["EONET"], summary="EONET event categories")
+async def eonet_categories():
+    """All event categories with ids and descriptions."""
+    return await eonet.categories()
+
+
+# ── Wikipedia ────────────────────────────────────────────────────
+
+@app.get("/wikipedia/summary/{title}", tags=["Wikipedia"], summary="Page summary (lead section)")
+async def wikipedia_summary(title: str):
+    """Lead-section summary. Use underscores in the title, e.g. Albert_Einstein."""
+    return await wikipedia.summary(title)
+
+
+@app.get("/wikipedia/search", tags=["Wikipedia"], summary="Full-text article search")
+async def wikipedia_search(q: str, limit: int = Query(10, ge=1, le=50)):
+    """Full-text search of English Wikipedia; hits under query.search."""
+    return await wikipedia.search(q, limit)
+
+
+@app.get("/wikipedia/pageviews/{title}", tags=["Wikipedia"], summary="Daily pageview counts for an article")
+async def wikipedia_pageviews(title: str,
+                              start: str = Query(..., description="YYYYMMDD"),
+                              end: str = Query(..., description="YYYYMMDD")):
+    """Daily pageviews (all access, all agents) between start and end, inclusive."""
+    return await wikipedia.pageviews(title, start, end)
 
 
 # ── Cross-Reference ──────────────────────────────────────────────

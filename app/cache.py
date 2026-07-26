@@ -8,6 +8,9 @@ TTL = {
     "federal_register": 3600, "house_fd": 3600, "nasdaq": 60,
     "wilson": 86400 * 7, "smithsonian": 86400 * 7, "nara": 86400,
     "nsarchive": 3600,
+    "worldbank": 86400, "imf": 86400, "eurostat": 86400, "ecb": 3600 * 4,
+    "comtrade": 86400, "ucdp": 86400, "usgs": 300, "nws": 60,
+    "eonet": 300, "wikipedia": 3600,
 }
 
 _cache: dict[str, tuple[float, object]] = {}
