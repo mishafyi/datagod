@@ -196,9 +196,9 @@ hit("GET", "/trending/hackernews", "Trending")
 # ── World Bank ──
 hit("GET", "/worldbank/countries?per_page=5", "WorldBank")
 hit("GET", "/worldbank/NY.GDP.MKTP.CD?countries=us;cn&date_range=2020:2023", "WorldBank")
-# ── IMF (legacy SDMX host dataservices.imf.org is DNS-dead as of 2026-07 — expected error until it answers again) ──
-hit("GET", "/imf/structure/IFS", "IMF", expect_error=True, timeout=60)
-hit("GET", "/imf/IFS/M.US.PCPI_IX?start_period=2023&end_period=2024", "IMF", expect_error=True, timeout=60)
+# ── IMF (via DBnomics — the legacy SDMX host was decommissioned in 2026) ──
+hit("GET", "/imf/structure/WEO", "IMF", timeout=60)
+hit("GET", "/imf/WEO/USA.NGDP_RPCH?limit=50", "IMF", timeout=60)
 # ── Eurostat ──
 hit("GET", "/eurostat/tps00001?geo=DE&time=2024", "Eurostat")
 # ── ECB ──

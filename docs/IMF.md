@@ -1,29 +1,36 @@
----
-name: imf
-description: "IMF SDMX-JSON — macroeconomic time series from IMF databases (IFS International Financial Statistics, DOT Direction of Trade, BOP Balance of Payments, GFS…): CPI, exchange rates, reserves, trade. Use for IMF-sourced country macro series."
-keywords: "IMF, International Financial Statistics, IFS, CPI, balance of payments, direction of trade, SDMX, macroeconomic time series"
-routes: "/imf/{database}/{key}, /imf/structure/{database}"
----
+# IMF (via DBnomics)
 
-# IMF
+IMF macroeconomic time series — WEO, IFS, BOP, GFS and the rest of the IMF
+catalog — served keyless as JSON.
 
-IMF SDMX-JSON service — CompactData time series + dataflow structures. Keyless.
+**Why DBnomics:** the IMF's legacy SDMX host (`dataservices.imf.org`) went
+NXDOMAIN in 2026 and its replacement (`api.imf.org`) renamed every dataflow
+behind an XML-first interface. DBnomics (db.nomics.world, CEPREMAP's open
+macro-data aggregator) mirrors the full IMF catalog with stable codes. The
+numbers and semantics are the IMF's; DBnomics is transport.
 
-## Endpoints
+## Routes
 
-### `GET /imf/{database}/{key}`
+- `GET /imf/{dataset}/{key}` — one series with observations.
+  `dataset` = IMF dataset code (latest vintage is used), `key` = the series
+  mask. Example: `/imf/WEO/USA.NGDP_RPCH` → US real GDP growth (%), annual,
+  including IMF forecast years (~5 ahead).
+- `GET /imf/structure/{dataset}` — dataset metadata: dimensions, code lists.
 
-Time series by SDMX key, e.g. `/imf/IFS/M.US.PCPI_IX` (monthly US CPI index).
+## Common WEO series keys
 
-**Params:** `start_period`, `end_period` (years like `2020`, or `2020-01`)
+| Key | Meaning |
+| --- | --- |
+| `{ISO3}.NGDP_RPCH` | Real GDP growth, % |
+| `{ISO3}.PCPIPCH` | Inflation, average CPI, % |
+| `{ISO3}.LUR` | Unemployment rate, % |
+| `{ISO3}.GGXWDG_NGDP` | Gross government debt, % of GDP |
+| `{ISO3}.BCA_NGDPD` | Current account balance, % of GDP |
 
-### `GET /imf/structure/{database}`
+ISO3 examples: USA, CHN, DEU, FRA, GBR, IND, JPN.
 
-Data structure (dimensions + code lists) for a database, e.g. `IFS`.
+## Upstream
 
-## Quirks & notes
-
-- Upstream base `http://dataservices.imf.org/REST/SDMX_JSON.svc` (plain HTTP).
-- **Slow and flaky by reputation** — long stalls and frequent 5xx; calls ride the shared 30s timeout and surface failures as the standard error-dict (502).
-- **Currently DNS-dead (checked 2026-07-25):** `dataservices.imf.org` no longer resolves (NXDOMAIN on 1.1.1.1 and 8.8.8.8). The IMF migrated to its new data portal (data.imf.org); the legacy SDMX_JSON host appears decommissioned. Routes stay wired to the documented contract and return 502 until the host answers again — rewire to the new portal's API if it stays dead.
-- Series data lives under `CompactData.DataSet.Series.Obs`; keys are frequency-prefixed (`M.` monthly, `Q.`, `A.`).
+- Base: `https://api.db.nomics.world/v22`
+- Keyless; `:latest` dataset refs redirect to the newest vintage
+  (`follow_redirects` is on in the client).

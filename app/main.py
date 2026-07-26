@@ -877,17 +877,18 @@ async def worldbank_indicator(indicator: str,
 
 # ── IMF ──────────────────────────────────────────────────────────
 
-@app.get("/imf/structure/{database}", tags=["IMF"], summary="Dataflow structure (dimensions + code lists)")
-async def imf_structure(database: str):
-    """Dimensions and code lists for a database (e.g. IFS). Slow upstream."""
-    return await imf.structure(database)
+@app.get("/imf/structure/{dataset}", tags=["IMF"], summary="IMF dataset metadata (dimensions + code lists)")
+async def imf_structure(dataset: str):
+    """Dimensions and code lists for an IMF dataset code (e.g. WEO, BOP)."""
+    return await imf.structure(dataset)
 
 
-@app.get("/imf/{database}/{key}", tags=["IMF"], summary="CompactData time series by SDMX key")
-async def imf_series(database: str, key: str, start_period: str = "", end_period: str = ""):
-    """Series from an IMF database, e.g. /imf/IFS/M.US.PCPI_IX (monthly US CPI
-    index). Upstream is slow and flaky — expect occasional 502s."""
-    return await imf.compact_data(database, key, start_period, end_period)
+@app.get("/imf/{dataset}/{key}", tags=["IMF"], summary="IMF time series (via DBnomics; latest vintage)")
+async def imf_series(dataset: str, key: str, limit: int = 100):
+    """Series from an IMF dataset, e.g. /imf/WEO/USA.NGDP_RPCH (US real GDP
+    growth, %, incl. IMF forecast years). Transport is DBnomics — the IMF's
+    own legacy SDMX host was decommissioned in 2026."""
+    return await imf.series(dataset, key, limit)
 
 
 # ── Eurostat ─────────────────────────────────────────────────────

@@ -1,26 +1,37 @@
-"""IMF SDMX-JSON — macroeconomic time series (IFS, DOT, BOP, GFS…) + dataflow structures.
+"""IMF macroeconomic series via DBnomics — WEO, IFS, BOP, GFS and every other
+IMF dataset, keyless JSON.
 
-Upstream is notoriously slow and flaky (long stalls, frequent 5xx). Calls ride the
-shared 30s client timeout; failures surface as the standard error-dict via safe_get.
+The IMF's legacy SDMX host (dataservices.imf.org) was decommissioned in 2026
+(NXDOMAIN), and its replacement (api.imf.org) renamed every dataflow behind an
+XML-first interface. DBnomics (db.nomics.world — the open macroeconomic data
+aggregator run by CEPREMAP) mirrors the full IMF catalog with stable dataset
+codes, so it is the transport; the data and the series semantics are the IMF's.
+
+Series keys are DBnomics masks, e.g. dataset WEO, series USA.NGDP_RPCH
+(US real GDP growth, %) — see docs/IMF.md for the common ones.
 """
 
 from . import UpstreamJSON, safe_get
 
-BASE = "http://dataservices.imf.org/REST/SDMX_JSON.svc"
+BASE = "https://api.db.nomics.world/v22"
 
 
-async def compact_data(database: str, key: str, start_period: str = "",
-                       end_period: str = "") -> UpstreamJSON:
-    """Time series from a database (e.g. IFS) by SDMX key (e.g. M.US.PCPI_IX =
-    monthly US CPI index). Periods are years like 2020 (or 2020-01)."""
-    params: dict = {}
-    if start_period:
-        params["startPeriod"] = start_period
-    if end_period:
-        params["endPeriod"] = end_period
-    return await safe_get(f"{BASE}/CompactData/{database}/{key}", "imf", params=params)
+async def series(dataset: str, key: str, limit: int = 100) -> UpstreamJSON:
+    """One IMF series with observations. dataset e.g. WEO (latest vintage),
+    key e.g. USA.NGDP_RPCH. Periods include IMF forecast years where the
+    dataset carries them (WEO runs ~5 years ahead)."""
+    return await safe_get(
+        f"{BASE}/series/IMF/{dataset}:latest/{key}",
+        "imf",
+        params={"observations": 1, "limit": limit},
+        follow_redirects=True,
+    )
 
 
-async def structure(database: str) -> UpstreamJSON:
-    """Data structure (dimensions + code lists) for a database (e.g. IFS)."""
-    return await safe_get(f"{BASE}/DataStructure/{database}", "imf")
+async def structure(dataset: str) -> UpstreamJSON:
+    """Dataset metadata (dimensions, code lists) for an IMF dataset code."""
+    return await safe_get(
+        f"{BASE}/datasets/IMF/{dataset}:latest",
+        "imf",
+        follow_redirects=True,
+    )
