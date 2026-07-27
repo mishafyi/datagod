@@ -89,6 +89,9 @@ QUICK_INDEX = """\
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
+| Public-domain space/science video & imagery | NASA Images | `GET /nasa/search` |
+| Archival / public-domain footage (newsreels, Prelinger) | Internet Archive | `GET /archive/search` |
+| CC-licensed video files with direct URLs | Commons | `GET /commons/search` |
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 """
 
@@ -167,6 +170,11 @@ DESCRIPTIONS = {
     "/arxiv/search": "Full-text search arXiv.org scientific preprints (physics, math, computer science, machine learning/AI, quantitative biology, economics, statistics). Use for: academic papers, research preprints, scientific literature by topic/author/title. sort_by relevance|lastUpdatedDate|submittedDate; page with start (max_results le 100).",
     "/arxiv/{arxiv_id}": "Fetch one or more arXiv papers by arXiv id (e.g. 2301.00001; comma-separated for several): title, authors, abstract, categories, PDF link, DOI.",
     "/scholar/search": "Search Google Scholar and rank papers by citation count (scholarly literature across all publishers, not just arXiv). Use for: most-cited papers on a topic, citation counts, academic impact. BRITTLE — Google blocks automated access (CAPTCHA/429), so this often returns an error rather than data.",
+    "/nasa/search": "Search the NASA Image and Video Library (images.nasa.gov) — public-domain space and science videos, images, and audio: launches, missions (Apollo, Artemis, ISS), planets, astronauts, Earth observation. media_type video|image|audio (default video); each hit's data[].nasa_id feeds /nasa/asset. Credit 'NASA'.",
+    "/nasa/asset/{nasa_id}": "All downloadable renditions for one NASA asset — direct file URLs (mp4 in several sizes, srt captions, thumbnails) under collection.items[].href.",
+    "/archive/search": "Search the Internet Archive (archive.org) — archival films, newsreels, public-domain footage (prelinger, newsreels collections), old TV and movies. Free-text q is scoped to mediatype:movies unless q sets mediatype:. Returns identifier/title/year/licenseurl/mediatype per doc; license is PER ITEM — check licenseurl.",
+    "/archive/item/{identifier}": "One Internet Archive item's full metadata incl. files[] with direct download paths — fetch a file as https://archive.org/download/{identifier}/{file.name}; license in metadata.licenseurl.",
+    "/commons/search": "Search Wikimedia Commons video files — free/CC-licensed clips (nature, cities, events, science). Each page carries imageinfo[0].url (direct file URL), size, mime, and extmetadata with LicenseShortName (CC-BY / CC-BY-SA / PD) and Artist — credit per file.",
     "/cross-reference/company/{name}": "Aggregate a company across EDGAR + USAspending + FEC in one call: SEC filings + federal contracts + political contributions.",
     "/cross-reference/politician/{last_name}": "Aggregate a politician across House disclosures + FEC: stock trades + campaign finance.",
     "/admin/clear-cache": "Clear the in-memory cache (operational endpoint).",
@@ -200,6 +208,9 @@ SOURCE_DESC = {
     "Wilson Center": "Cold War and international-history primary sources (Wilson Center Digital Archive, local mirror) — 16,756 declassified documents on diplomacy, foreign policy, and international relations (cables, telegrams). Use for primary-source Cold War and foreign-relations documents.",
     "arXiv": "Scientific preprints from arXiv.org — full-text search of 2M+ open-access papers in physics, math, computer science, machine learning and AI, quantitative biology, economics, and statistics; by topic, author, title, or arXiv id, with abstracts, authors, categories, and PDF links. Use for academic papers, research preprints, or scientific literature.",
     "Scholar": "Academic papers ranked by citations from Google Scholar (via the vendored sort-google-scholar). Search scholarly literature across all publishers and journals (not just arXiv) and rank by citation count, with title, authors, year, venue, and cites/year. BRITTLE: Google aggressively blocks scraping (CAPTCHA / HTTP 429 / IP block), so this often returns an error rather than data.",
+    "NASA Images": "Public-domain space and science media (NASA Image and Video Library, images.nasa.gov) — videos, images, and audio of launches, missions (Apollo, Artemis, ISS, Mars rovers), astronauts, planets, and Earth observation, with direct downloadable mp4 renditions per asset. Everything is public domain (credit 'NASA'). Use for keyless space/science footage.",
+    "Internet Archive": "Archival video and film (Internet Archive, archive.org) — newsreels, public-domain footage (prelinger archives), historical broadcasts, old movies and TV, searchable by keyword with per-item file lists and direct download paths. License is per item (licenseurl) — the public-domain collections are the harvest target. Use for historical or public-domain footage.",
+    "Commons": "Free-licensed video files (Wikimedia Commons) — CC-BY / CC-BY-SA / public-domain clips of nature, cities, events, science, and people, each with a direct file URL, size, mime type, and per-file license + author metadata (extmetadata). Use for reusable CC video clips; credit per file.",
     "Cross-Reference": "Aggregators that combine several sources in one call — a company profile (SEC filings + federal contracts + political contributions) or a politician profile (House stock disclosures + campaign finance). Use to cross-reference a company or politician across sources at once.",
     "Admin": "Operational endpoints (cache management). Not a data source.",
 }
@@ -215,6 +226,8 @@ SOURCE_DOC = {
     "NSArchive": "docs/NSARCHIVE_API.md", "Smithsonian": "docs/SMITHSONIAN_API.md",
     "Wilson Center": "docs/WILSON_DIGITAL_ARCHIVE_API.md",
     "arXiv": "docs/ARXIV_API.md", "Scholar": "docs/SCHOLAR_API.md",
+    "NASA Images": "docs/NASA_IMAGES_API.md", "Internet Archive": "docs/INTERNET_ARCHIVE_API.md",
+    "Commons": "docs/COMMONS_API.md",
 }
 
 # Literal search terms per source — the grep/recall index. Include the obvious
@@ -245,6 +258,9 @@ SOURCE_KEYWORDS = {
     "arXiv": "arxiv, preprints, scientific papers, research papers, academic papers, physics, math, computer science, machine learning, AI, quantitative biology, economics, statistics, scholarly articles, abstracts, PDF",
     "Scholar": "google scholar, citations, cited by, academic papers, scholarly papers, research papers, citation count, most cited, bibliometrics, literature search",
     "Cross-Reference": "company profile, politician profile, aggregate, combined, cross-reference, multi-source",
+    "NASA Images": "NASA, space, video, videos, footage, images, photos, audio, public domain, launches, rockets, Apollo, Artemis, ISS, Mars, astronauts, planets, Earth observation, mp4, downloadable media",
+    "Internet Archive": "internet archive, archive.org, video, footage, films, movies, newsreels, prelinger, public domain, archival, historical broadcasts, old TV, download, mp4, license",
+    "Commons": "wikimedia commons, video, videos, clips, footage, free license, creative commons, CC-BY, CC-BY-SA, public domain, direct file URL, webm, nature, cities, events, attribution",
 }
 
 _HTTP_METHODS = ("get", "post", "put", "delete", "patch")

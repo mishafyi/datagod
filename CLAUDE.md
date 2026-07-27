@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-DataGod is a FastAPI service that unifies 32 free data sources behind one HTTP API: 16 US government sources (FRED, SEC EDGAR, USAspending, Census, BLS, Treasury, FEC, Congress.gov, FDA, ClinicalTrials.gov, EIA, FEMA, Federal Register, House Financial Disclosures, Smithsonian Open Access, National Archives (NARA)), 10 global/international sources (World Bank, IMF, Eurostat, ECB, UN Comtrade, UCDP, USGS Earthquakes, NWS, NASA EONET, Wikipedia), 2 markets sources (Nasdaq.com, Yahoo Finance via yfinance), 2 research sources (arXiv, Google Scholar), the non-governmental National Security Archive (GWU; Virtual Reading Room scrape), and NewsNow (self-hosted trending-boards aggregator — ~50 hot lists: Hacker News, GitHub trending, Product Hunt, Weibo/Zhihu/Douyin and other CN boards; served at `/trending`). Two more sources live in the codebase but are currently **disabled**: JEFS (judicial disclosures; needs Playwright + reCAPTCHA) and the Wilson Center Digital Archive (needs a local `data/wilson.db` mirror that isn't distributed). Routes are thin pass-throughs; each upstream gets a dedicated async client module that returns the upstream's JSON (or DataFrame-as-records, for yfinance) unchanged.
+DataGod is a FastAPI service that unifies 35 free data sources behind one HTTP API: 16 US government sources (FRED, SEC EDGAR, USAspending, Census, BLS, Treasury, FEC, Congress.gov, FDA, ClinicalTrials.gov, EIA, FEMA, Federal Register, House Financial Disclosures, Smithsonian Open Access, National Archives (NARA)), 10 global/international sources (World Bank, IMF, Eurostat, ECB, UN Comtrade, UCDP, USGS Earthquakes, NWS, NASA EONET, Wikipedia), 2 markets sources (Nasdaq.com, Yahoo Finance via yfinance), 2 research sources (arXiv, Google Scholar), 3 keyless media/video sources (NASA Image and Video Library, Internet Archive, Wikimedia Commons — public-domain/CC video harvesting, served under `/nasa`, `/archive`, `/commons`), the non-governmental National Security Archive (GWU; Virtual Reading Room scrape), and NewsNow (self-hosted trending-boards aggregator — ~50 hot lists: Hacker News, GitHub trending, Product Hunt, Weibo/Zhihu/Douyin and other CN boards; served at `/trending`). Two more sources live in the codebase but are currently **disabled**: JEFS (judicial disclosures; needs Playwright + reCAPTCHA) and the Wilson Center Digital Archive (needs a local `data/wilson.db` mirror that isn't distributed). Routes are thin pass-throughs; each upstream gets a dedicated async client module that returns the upstream's JSON (or DataFrame-as-records, for yfinance) unchanged.
 
 ## Commands
 
@@ -38,7 +38,7 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 
 ## Available API clients
 
-35 client modules in `app/clients/`. Each has matching routes in `main.py` and (for non-trivial APIs) a deep-dive doc in `docs/`.
+38 client modules in `app/clients/`. Each has matching routes in `main.py` and (for non-trivial APIs) a deep-dive doc in `docs/`.
 
 | Module | What it covers | Routes (in `main.py`) | Per-source doc | Auth |
 |--------|---------------|----------------------|----------------|------|
@@ -46,6 +46,7 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 | **`bls.py`** | BLS — employment, wages, CPI, occupational | `/bls/{series_id}`, `POST /bls/batch` | `docs/BLS.md` | `BLS_API_KEY` (optional) |
 | **`census.py`** | Census Bureau — demographics, ACS | `/census/population`, `/census/income`, `/census/acs` | `docs/CENSUS.md` | `CENSUS_API_KEY` (required; client now sends it — set a *valid* key) |
 | **`clinicaltrials.py`** | ClinicalTrials.gov — 500K+ trials | `/clinical-trials`, `/clinical-trials/{nct_id}` | `docs/CLINICAL_TRIALS.md` | none |
+| **`commons.py`** | Wikimedia Commons — video-file search with direct file URLs + per-file license (CC-BY/CC-BY-SA/PD) | `/commons/search` | `docs/COMMONS_API.md` | none (client sends a polite User-Agent) |
 | **`comtrade.py`** | UN Comtrade — global goods-trade flows (keyless public preview, ≤500 records, rate-limited) | `/comtrade` | `docs/COMTRADE.md` | none |
 | **`congress_gov.py`** | Congress.gov — bills, members, votes | `/congress/bills`, `/congress/bill/...`, `/congress/members`, `/congress/votes` | `docs/CONGRESS.md` | `CONGRESS_API_KEY` (DEMO_KEY fallback) |
 | **`cross_reference.py`** | Cross-source aggregator | `/cross-reference/company/{name}`, `/cross-reference/politician/{last_name}` | — | inherits from underlying clients |
@@ -61,8 +62,10 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 | **`fred.py`** | FRED — 800K+ economic time series | `/fred/{series_id}`, `/fred/series/{series_id}`, `/fred?q=...` | `docs/FRED.md` | `FRED_API_KEY` (required) |
 | **`house_fd.py`** | House Financial Disclosures — member/candidate trades, report PDFs | `/house-disclosures/members`, `/house-disclosures/candidates`, `/house-disclosures/pdf` | `docs/HOUSE_FD_API.md` | none (scrapes HTML) |
 | **`imf.py`** | IMF SDMX-JSON — macro time series (IFS, DOT, BOP…); legacy host currently DNS-dead — see doc | `/imf/{database}/{key}`, `/imf/structure/{database}` | `docs/IMF.md` | none |
+| **`internetarchive.py`** | Internet Archive — archival films/newsreels search (movies-scoped) + per-item files with download paths; license per item (`licenseurl`) | `/archive/search`, `/archive/item/{identifier}` | `docs/INTERNET_ARCHIVE_API.md` | none |
 | **`jefs.py`** | JEFS — Judicial Financial Disclosures (federal judges) | **DISABLED 2026-06-11** (routes commented out in `main.py`) | `docs/JEFS_API.md` | session + Playwright reCAPTCHA; user must provide real credentials |
 | **`nara.py`** | NARA — US National Archives Catalog (all record groups + the 14 presidential libraries) | `/nara/search`, `/nara/record/{na_id}` | `docs/NARA_API.md` | none (keyless `/proxy` gateway) |
+| **`nasa_images.py`** | NASA Image and Video Library — public-domain space/science media with direct mp4 renditions | `/nasa/search`, `/nasa/asset/{nasa_id}` | `docs/NASA_IMAGES_API.md` | none |
 | **`nasdaq.py`** | Nasdaq.com — quote, history, dividends, financials, insider trades, calendars, screener (unofficial) | `/nasdaq/quote/{ticker}`, `/nasdaq/price/{ticker}`, `/nasdaq/history/{ticker}`, `/nasdaq/dividends/{ticker}`, `/nasdaq/financials/{ticker}`, `/nasdaq/insider-trades/{ticker}`, `/nasdaq/earnings-surprise/{ticker}`, `/nasdaq/calendar/earnings`, `/nasdaq/calendar/ipo`, `/nasdaq/screener` | `docs/NASDAQ_API.md` | browser-like `User-Agent` only |
 | **`newsnow.py`** | NewsNow (self-hosted, image pinned `v0.0.41`) — ~50 trending/hot boards: HN, GitHub trending, Product Hunt, Weibo/Zhihu/Douyin hot searches, CN finance wires | `/trending`, `/trending/{source_id}` | `docs/API_GUIDE.md` § Trending | `NEWSNOW_BASE_URL` (required; Coolify-internal `http://newsnow:4444`) |
 | **`nsarchive.py`** | National Security Archive (GWU NGO, ≠ NARA) — Virtual Reading Room declassified docs (HTML scrape, brittle) | `/nsarchive/search`, `/nsarchive/document/{doc_id}` | `docs/NSARCHIVE_API.md` | none (scrapes HTML) |
@@ -78,7 +81,7 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 | **`worldbank.py`** | World Bank Open Data — 16K+ development indicators for every country | `/worldbank/{indicator}`, `/worldbank/countries` | `docs/WORLDBANK.md` | none |
 | **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings, earnings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/earnings/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
 
-**Total**: 32 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **35 client modules, 99 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
+**Total**: 35 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **38 client modules, 104 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
 
 ## Reference documentation in `docs/`
 
@@ -101,6 +104,9 @@ Each file is a deep-dive on a specific upstream — quirks, undocumented behavio
 | `docs/NSARCHIVE_API.md` | National Security Archive (GWU NGO, **not** NARA) — has no API; Drupal 10 Virtual Reading Room HTML scrape. `search_api_fulltext` GET search + `/document/{id-slug}` pages, selectolax parsing anchors, brittle; full corpus is the paywalled DNSA. |
 | `docs/YFINANCE_API.md` | yfinance Python wrapper — sync→async pattern, DataFrame→records conversion, period/interval values, options-chain mechanics. |
 | `docs/ARXIV_API.md` | arXiv query API — single Atom-XML endpoint, `search_query` field prefixes, feedparser parsing, id-list fetches. |
+| `docs/NASA_IMAGES_API.md` | NASA Image and Video Library — keyless `images-api.nasa.gov` search + `/asset/{nasa_id}` manifests of direct mp4/srt/thumbnail URLs; everything public domain (credit "NASA"). |
+| `docs/INTERNET_ARCHIVE_API.md` | Internet Archive — `advancedsearch.php` (Lucene queries, movies-scoped by default) + `/metadata/{identifier}` files list; download URL shape and the per-item `licenseurl` caveat (prelinger/newsreels are the PD targets). |
+| `docs/COMMONS_API.md` | Wikimedia Commons — `generator=search` video-file search with `imageinfo` (direct URL, size, mime) + `extmetadata` license/author; webm-not-mp4 and pages-keyed-by-pageid quirks. |
 | `docs/SCHOLAR_API.md` | Google Scholar via vendored `sort-google-scholar` — scraping selectors, citation ranking, CAPTCHA/429 brittleness. |
 | `docs/obsidian-help/` | Local-only clone of the `obsidian-help` repo (git-ignored, not in the public repo) — reference for Obsidian features when working on the local research vault. |
 
@@ -166,7 +172,7 @@ async def some_endpoint(arg: str) -> UpstreamJSON:
 
 ### Environment
 
-`.env` is loaded from the project root by `app/config.py`. Keys are listed there; `FEC_API_KEY`, `CONGRESS_API_KEY`, `EIA_API_KEY`, and `SMITHSONIAN_API_KEY` fall back to `"DEMO_KEY"` (works with low rate limits), the rest default to empty strings. `SEC_USER_AGENT` is required by the SEC and must be a real `"Name email"` string — EDGAR returns 403 without it. `UCDP_ACCESS_TOKEN` is optional but the UCDP upstream now 401s without it (free registration at ucdp.uu.se). The global-tier sources (World Bank, IMF, Eurostat, ECB, Comtrade, USGS, NWS, EONET, Wikipedia) are keyless; NWS and Wikipedia calls send the polite `DataGod/1.0 (github.com/mishafyi/datagod)` User-Agent from the client modules.
+`.env` is loaded from the project root by `app/config.py`. Keys are listed there; `FEC_API_KEY`, `CONGRESS_API_KEY`, `EIA_API_KEY`, and `SMITHSONIAN_API_KEY` fall back to `"DEMO_KEY"` (works with low rate limits), the rest default to empty strings. `SEC_USER_AGENT` is required by the SEC and must be a real `"Name email"` string — EDGAR returns 403 without it. `UCDP_ACCESS_TOKEN` is optional but the UCDP upstream now 401s without it (free registration at ucdp.uu.se). The global-tier sources (World Bank, IMF, Eurostat, ECB, Comtrade, USGS, NWS, EONET, Wikipedia) and the media/video sources (NASA Image and Video Library, Internet Archive, Wikimedia Commons) are keyless; NWS, Wikipedia, and Commons calls send the polite `DataGod/1.0 (github.com/mishafyi/datagod)` User-Agent from the client modules.
 
 **API-key auth (DataGod's own endpoints).** `DATAGOD_API_KEY` gates every route: requests must send an `X-API-Key: <key>` header. Enforced by `app/auth.py` (FastAPI's built-in `APIKeyHeader`) wired as an app-level dependency in `main.py`. Public (no auth): `/health` (`auth.PUBLIC_PATHS`). The interactive docs (`/docs`, `/redoc`, `/openapi.json`) are custom routes protected by **HTTP Basic** (`auth.require_docs_auth`: user `DATAGOD_DOCS_USER`, password `DATAGOD_DOCS_PASSWORD` — both fall back to `datagod` / `DATAGOD_API_KEY`), and are exempt from the `X-API-Key` check (`auth.DOCS_PATHS`). A missing/invalid key returns **401** in the standard error envelope. Set it in `.env` locally and as a Coolify env var in production; the service fails **closed** if the key is unset. The `.env` file is git-ignored — never commit it.
 
