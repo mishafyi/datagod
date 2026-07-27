@@ -1,5 +1,5 @@
 """
-DataGod — one API over 32 free US-government, global, markets, research, and trending data sources.
+DataGod — one API over 35 free US-government, global, markets, research, media, and trending data sources.
 
 One API, all the data. Free.
 """
@@ -16,6 +16,7 @@ from .clients import (
     bls,
     census,
     clinicaltrials,
+    commons,
     comtrade,
     congress_gov as congress,
     cross_reference,
@@ -31,8 +32,10 @@ from .clients import (
     fred,
     house_fd,
     imf,
+    internetarchive,
     # jefs,  # disabled 2026-06-11 — see the JEFS route block below
     nara,
+    nasa_images,
     nasdaq,
     newsnow,
     nsarchive,
@@ -51,7 +54,7 @@ from .clients import (
 from .middleware import ResponseEnvelopeMiddleware
 
 API_DESCRIPTION = """\
-**DataGod** unifies 32 free US-government, global, markets, research, and trending
+**DataGod** unifies 35 free US-government, global, markets, research, media, and trending
 data sources (plus a cross-reference aggregator) behind one HTTP API. Routes are
 thin pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
 standard envelope.
@@ -123,6 +126,9 @@ API_TAGS = [
     {"name": "NWS", "description": "US National Weather Service — active weather alerts (keyless, User-Agent required)."},
     {"name": "EONET", "description": "NASA EONET — global natural events: wildfires, severe storms, volcanoes."},
     {"name": "Wikipedia", "description": "Wikipedia — page summaries, full-text search, and pageview statistics."},
+    {"name": "NASA Images", "description": "NASA Image and Video Library — public-domain space/science videos, images, and audio with direct downloadable renditions (incl. mp4)."},
+    {"name": "Internet Archive", "description": "Internet Archive — keyless item search (movies by default) + per-item file metadata with direct download paths. License is per item (licenseurl)."},
+    {"name": "Commons", "description": "Wikimedia Commons — video-file search with direct file URLs and per-file license metadata (CC-BY / CC-BY-SA / PD)."},
     {"name": "Cross-Reference", "description": "Aggregators that join several sources for one company or politician."},
     {"name": "Admin", "description": "Operational endpoints (cache management)."},
 ]
@@ -182,7 +188,7 @@ async def root():
     return {
         "name": "DataGod",
         "version": "1.0.0",
-        "sources": 32,
+        "sources": 35,
         "endpoints": {
             "economy": ["/fred", "/bls", "/treasury"],
             "economy_global": ["/worldbank", "/imf", "/eurostat", "/ecb", "/comtrade"],
@@ -199,6 +205,7 @@ async def root():
             "museums": ["/smithsonian"],
             "archives": ["/nara", "/nsarchive"],
             "reference": ["/wikipedia"],
+            "video": ["/nasa", "/archive", "/commons"],
             "trending": ["/trending"],
             "cross_reference": ["/cross-reference/company", "/cross-reference/politician"],
         },
@@ -991,6 +998,51 @@ async def wikipedia_pageviews(title: str,
                               end: str = Query(..., description="YYYYMMDD")):
     """Daily pageviews (all access, all agents) between start and end, inclusive."""
     return await wikipedia.pageviews(title, start, end)
+
+
+# ── NASA Image and Video Library ─────────────────────────────────
+
+@app.get("/nasa/search", tags=["NASA Images"], summary="Search NASA's image/video/audio library (public domain)")
+async def nasa_search(q: str, media_type: str = Query("video", pattern="^(video|image|audio)$"),
+                      year_start: str = Query("", description="YYYY lower bound"),
+                      year_end: str = Query("", description="YYYY upper bound"),
+                      page: int = Query(1, ge=1), page_size: int = Query(10, ge=1, le=100)):
+    """Search images.nasa.gov. Hits under collection.items[]; each item's
+    data[0].nasa_id feeds /nasa/asset. All content is public domain (credit "NASA")."""
+    return await nasa_images.search(q, media_type, year_start, year_end, page, page_size)
+
+
+@app.get("/nasa/asset/{nasa_id}", tags=["NASA Images"], summary="Direct file URLs (incl. mp4 renditions) for one asset")
+async def nasa_asset(nasa_id: str):
+    """All downloadable renditions for a nasa_id — direct URLs under collection.items[].href."""
+    return await nasa_images.asset(nasa_id)
+
+
+# ── Internet Archive ─────────────────────────────────────────────
+
+@app.get("/archive/search", tags=["Internet Archive"], summary="Search Internet Archive items (movies by default)")
+async def archive_search(q: str, rows: int = Query(10, ge=1, le=50), page: int = Query(1, ge=1)):
+    """Advanced search; hits under response.docs[] with identifier/title/year/licenseurl/mediatype.
+    Free-text q is scoped to mediatype:movies unless q already sets mediatype:. Check licenseurl
+    per item — public-domain collections (prelinger, newsreels) are the harvest target."""
+    return await internetarchive.search(q, rows, page)
+
+
+@app.get("/archive/item/{identifier}", tags=["Internet Archive"], summary="Item metadata + files with download paths")
+async def archive_item(identifier: str):
+    """Full item metadata incl. files[]; download a file as
+    https://archive.org/download/{identifier}/{file.name}. License in metadata.licenseurl."""
+    return await internetarchive.item(identifier)
+
+
+# ── Wikimedia Commons ────────────────────────────────────────────
+
+@app.get("/commons/search", tags=["Commons"], summary="Search Wikimedia Commons video files")
+async def commons_search(q: str, limit: int = Query(10, ge=1, le=50)):
+    """Video-file search; pages carry imageinfo[0].url (direct file URL) + extmetadata.
+    License varies per file (CC-BY / CC-BY-SA / PD) — read extmetadata.LicenseShortName
+    and Artist, and credit accordingly."""
+    return await commons.search(q, limit)
 
 
 # ── Cross-Reference ──────────────────────────────────────────────

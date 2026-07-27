@@ -11,6 +11,7 @@ TTL = {
     "worldbank": 86400, "imf": 86400, "eurostat": 86400, "ecb": 3600 * 4,
     "comtrade": 86400, "ucdp": 86400, "usgs": 300, "nws": 60,
     "eonet": 300, "wikipedia": 3600,
+    "nasa_images": 86400, "internetarchive": 86400, "commons": 86400,
 }
 
 _cache: dict[str, tuple[float, object]] = {}

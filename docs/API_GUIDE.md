@@ -60,6 +60,9 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
+| Public-domain space/science video & imagery | NASA Images | `GET /nasa/search` |
+| Archival / public-domain footage (newsreels, Prelinger) | Internet Archive | `GET /archive/search` |
+| CC-licensed video files with direct URLs | Commons | `GET /commons/search` |
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 
 
@@ -297,6 +300,27 @@ Wikipedia — page summaries, full-text search, and pageview statistics.
 
 - **Endpoints:** `/wikipedia/pageviews/{title}` · `/wikipedia/search` · `/wikipedia/summary/{title}`
 - **params:** `docs/endpoints.csv`
+
+### NASA Images
+
+Public-domain space and science media (NASA Image and Video Library, images.nasa.gov) — videos, images, and audio of launches, missions (Apollo, Artemis, ISS, Mars rovers), astronauts, planets, and Earth observation, with direct downloadable mp4 renditions per asset. Everything is public domain (credit 'NASA'). Use for keyless space/science footage.
+
+- **Endpoints:** `/nasa/asset/{nasa_id}` · `/nasa/search`
+- **Detail:** `docs/NASA_IMAGES_API.md` · **params:** `docs/endpoints.csv`
+
+### Internet Archive
+
+Archival video and film (Internet Archive, archive.org) — newsreels, public-domain footage (prelinger archives), historical broadcasts, old movies and TV, searchable by keyword with per-item file lists and direct download paths. License is per item (licenseurl) — the public-domain collections are the harvest target. Use for historical or public-domain footage.
+
+- **Endpoints:** `/archive/item/{identifier}` · `/archive/search`
+- **Detail:** `docs/INTERNET_ARCHIVE_API.md` · **params:** `docs/endpoints.csv`
+
+### Commons
+
+Free-licensed video files (Wikimedia Commons) — CC-BY / CC-BY-SA / public-domain clips of nature, cities, events, science, and people, each with a direct file URL, size, mime type, and per-file license + author metadata (extmetadata). Use for reusable CC video clips; credit per file.
+
+- **Endpoints:** `/commons/search`
+- **Detail:** `docs/COMMONS_API.md` · **params:** `docs/endpoints.csv`
 
 ### Cross-Reference
 

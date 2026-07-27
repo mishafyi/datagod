@@ -219,6 +219,18 @@ hit("GET", "/eonet/categories", "EONET")
 hit("GET", "/wikipedia/summary/Albert_Einstein", "Wikipedia")
 hit("GET", "/wikipedia/search?q=quantum+computing&limit=3", "Wikipedia")
 hit("GET", "/wikipedia/pageviews/Albert_Einstein?start=20260701&end=20260707", "Wikipedia")
+# ── NASA Image and Video Library (resolve a nasa_id) ──
+nasr = hit("GET", "/nasa/search?q=apollo+11&media_type=video&page_size=2", "NASAImages")
+nasa_id = find(nasr, "nasa_id")
+hit("GET", f"/nasa/asset/{nasa_id}", "NASAImages") if nasa_id else skip(
+    "NASAImages", "GET /nasa/asset/{nasa_id}", "no nasa_id from search")
+# ── Internet Archive (resolve an identifier) ──
+iar = hit("GET", "/archive/search?q=moon+landing&rows=2", "InternetArchive")
+ia_id = find(iar, "identifier")
+hit("GET", f"/archive/item/{ia_id}", "InternetArchive") if ia_id else skip(
+    "InternetArchive", "GET /archive/item/{identifier}", "no identifier from search")
+# ── Wikimedia Commons ──
+hit("GET", "/commons/search?q=moon+landing&limit=2", "Commons")
 # ── Cross-Reference (fans out to several upstreams) ──
 hit("GET", "/cross-reference/company/apple", "CrossRef", timeout=90)
 hit("GET", "/cross-reference/politician/pelosi", "CrossRef", timeout=90)
