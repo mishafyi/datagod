@@ -1,5 +1,5 @@
 """
-DataGod — one API over 35 free US-government, global, markets, research, media, and trending data sources.
+DataGod — one API over 38 free US-government, global, markets, research, media, and trending data sources.
 
 One API, all the data. Free.
 """
@@ -15,6 +15,7 @@ from .clients import (
     arxiv,
     bls,
     census,
+    cia,
     clinicaltrials,
     commons,
     comtrade,
@@ -30,6 +31,7 @@ from .clients import (
     fema,
     fda,
     fred,
+    frus,
     house_fd,
     imf,
     internetarchive,
@@ -42,6 +44,7 @@ from .clients import (
     nws,
     scholar,
     smithsonian,
+    tna,
     treasury,
     ucdp,
     usaspending,
@@ -54,7 +57,7 @@ from .clients import (
 from .middleware import ResponseEnvelopeMiddleware
 
 API_DESCRIPTION = """\
-**DataGod** unifies 35 free US-government, global, markets, research, media, and trending
+**DataGod** unifies 38 free US-government, global, markets, research, media, and trending
 data sources (plus a cross-reference aggregator) behind one HTTP API. Routes are
 thin pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
 standard envelope.
@@ -203,7 +206,7 @@ async def root():
             "regulations": ["/federal-register"],
             # "history": ["/wilson"],  # Wilson disabled 2026-07-02
             "museums": ["/smithsonian"],
-            "archives": ["/nara", "/nsarchive"],
+            "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna"],
             "reference": ["/wikipedia"],
             "video": ["/nasa", "/archive", "/commons"],
             "trending": ["/trending"],
@@ -765,6 +768,59 @@ async def nsarchive_search(q: str = "", page: int = 1, field_date_min: str = "",
 async def nsarchive_document(doc_id: str):
     """One VRR document by its '{id}-{slug}' path (from search results)."""
     return await nsarchive.document(doc_id)
+
+
+# ── CIA FOIA Electronic Reading Room (via the Wayback mirror) ────
+
+@app.get("/cia/collections", tags=["CIA"], summary="Famous reading-room collections (curated registry)")
+async def cia_collections():
+    """The curated registry of famous CIA reading-room collections (static)."""
+    return await cia.collections()
+
+
+@app.get("/cia/collection/{slug}", tags=["CIA"], summary="A reading-room collection's documents")
+async def cia_collection(slug: str, page: int = 0):
+    """One collection page via the Wayback mirror: description + document list.
+    `page` forwards the site's 0-based listing pager."""
+    return await cia.collection(slug, page)
+
+
+@app.get("/cia/document/{doc_path}", tags=["CIA"], summary="Single reading-room document")
+async def cia_document(doc_path: str):
+    """One document by path segment (e.g. cia-rdp96-00788r001700210016-5):
+    title, field metadata, body text, PDF URLs (original + archived)."""
+    return await cia.document(doc_path)
+
+
+# ── FRUS (Foreign Relations of the United States) ────────────────
+
+@app.get("/frus/search", tags=["FRUS"], summary="Search FRUS (history.state.gov)")
+async def frus_search(q: str, start: int = 1):
+    """Full-text search across all FRUS volumes. `start` is the 1-based result
+    offset (10/page; next page = start+10)."""
+    return await frus.search(q, start)
+
+
+@app.get("/frus/document/{volume}/{doc}", tags=["FRUS"], summary="Single FRUS document")
+async def frus_document(volume: str, doc: int):
+    """One FRUS document by volume id + doc number, e.g. frus1969-76v21 / 7."""
+    return await frus.document(volume, doc)
+
+
+# ── UK National Archives (Discovery) ─────────────────────────────
+
+@app.get("/tna/search", tags=["TNA"], summary="Search UK National Archives Discovery")
+async def tna_search(q: str, page: int = 1, per_page: int = Query(20, le=100),
+                     series: str = Query("", description="Records series code, e.g. KV, HS, DEFE, CAB, PREM")):
+    """Full-text search of Discovery record descriptions (32M+ records, official
+    keyless API). `series` narrows to a series like KV (MI5) or HS (SOE)."""
+    return await tna.search(q, page, per_page, series)
+
+
+@app.get("/tna/record/{record_id}", tags=["TNA"], summary="Single Discovery record's details")
+async def tna_record(record_id: str):
+    """Full details for one record by Discovery id (from search results)."""
+    return await tna.record(record_id)
 
 
 # ── Smithsonian Open Access ──────────────────────────────────────
