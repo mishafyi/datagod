@@ -15,23 +15,19 @@ Consequences to be honest about:
   or arrive with a document path from another source (NSArchive, NARA, FRUS all
   cite CIA doc numbers). ponytail: revisit only if cia.gov drops the bot wall.
 
-Wayback rate-limits aggressively (429/503); _wb_get retries with backoff.
+Wayback rate-limits aggressively (429/503); the shared _wayback helper
+retries with backoff and skips stored-interstitial captures.
 """
 
-import asyncio
 import re
 
 from selectolax.parser import HTMLParser
 
-from . import UpstreamJSON, get_client
+from . import UpstreamJSON
+from ._wayback import WAYBACK, fetch_capture
 
-WAYBACK = "https://web.archive.org/web"
-CDX = "https://web.archive.org/cdx/search/cdx"
 ORIGIN = "https://www.cia.gov/readingroom"
-HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
 BODY_CAP = 8000
-RETRIES = (2.0, 5.0)  # backoff sleeps after 429/503
 
 # Famous reading-room collections, slug → display name. Static on purpose: the
 # set changes rarely and there is no listable index behind the bot wall.
@@ -64,52 +60,12 @@ def _unwrap(archived_href: str) -> str:
     return m.group(1) if m else archived_href
 
 
-async def _retrying(url: str, **kwargs) -> "object":
-    """GET with backoff on wayback throttling (429/503) and timeouts."""
-    last_exc: Exception | None = None
-    for attempt in range(len(RETRIES) + 1):
-        try:
-            r = await get_client().get(url, headers=HEADERS, timeout=60.0, **kwargs)
-            if r.status_code in (429, 503):
-                raise Exception(f"wayback throttled ({r.status_code})")
-            return r
-        except Exception as exc:
-            last_exc = exc
-            if attempt < len(RETRIES):
-                await asyncio.sleep(RETRIES[attempt])
-    raise last_exc  # type: ignore[misc]
-
-
-async def _wb_get(path: str) -> tuple[str | None, str | None, dict | None]:
-    """(html, snapshot_url, error). Newest USABLE capture of ORIGIN/path.
-
-    The naive "latest capture" fails two ways here (both seen live 2026-08-06):
-    recent captures are stored 403s (cia.gov walls the archive's crawler now),
-    and some "200" captures are actually Akamai's ~2KB bm-verify interstitial.
-    So: CDX lists the last 10 status-200 captures with payload sizes, and we
-    fetch newest-first among captures big enough to be a real page, skipping
-    any that still smell like the interstitial. `id_` = original bytes."""
-    clean = path.split("?", 1)[0]
-    query = ("?" + path.split("?", 1)[1]) if "?" in path else ""
-    try:
-        cdx = await _retrying(CDX,
-                              params={"url": f"{ORIGIN}/{clean}{query}", "output": "json",
-                                      "filter": "statuscode:200", "limit": "-10"})
-        rows = cdx.json() if cdx.status_code == 200 and cdx.text.strip() else []
-        # rows[0] is the header: [urlkey, timestamp, original, mimetype, statuscode, digest, length]
-        real = [r for r in rows[1:] if str(r[6]).isdigit() and int(r[6]) > 8000]
-        if not real:
-            return None, None, _err(404, f"No usable wayback capture of {ORIGIN}/{path}")
-        for row in reversed(real[-3:]):  # newest first, at most 3 fetches
-            snapshot = f"{WAYBACK}/{row[1]}id_/{ORIGIN}/{path}"
-            r = await _retrying(snapshot, follow_redirects=True)
-            if r.status_code != 200 or "bm-verify" in r.text[:2000]:
-                continue
-            return r.text, snapshot, None
-        return None, None, _err(404, f"Only interstitial captures of {ORIGIN}/{path}")
-    except Exception as exc:
-        status = getattr(getattr(exc, "response", None), "status_code", 0)
-        return None, None, _err(status, str(exc))
+async def _wb_get(path: str):
+    """(html, snapshot_url, error) for ORIGIN/path via the shared wayback helper."""
+    html, snapshot, err = await fetch_capture(f"{ORIGIN}/{path}")
+    if err:
+        return None, None, _err(err["upstream_status"], err["message"])
+    return html, snapshot, None
 
 
 def _doc_links(t: HTMLParser) -> list[dict]:

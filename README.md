@@ -1,6 +1,6 @@
 # DataGod
 
-One async HTTP API over **38 free data sources** — US government, global/international, markets, research, media/video, and trending — behind a single consistent response envelope. Routes are thin pass‑throughs: each returns the upstream's JSON unchanged.
+One async HTTP API over **39 free data sources** — US government, global/international, markets, research, media/video, and trending — behind a single consistent response envelope. Routes are thin pass‑throughs: each returns the upstream's JSON unchanged.
 
 **Sources:** FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · NARA · National Security Archive · Smithsonian Open Access · Nasdaq.com · Yahoo Finance · arXiv · Google Scholar · NewsNow (trending boards) · World Bank · IMF · Eurostat · ECB · UN Comtrade · UCDP · USGS Earthquakes · NWS Weather Alerts · NASA EONET · Wikipedia · NASA Image and Video Library · Internet Archive · Wikimedia Commons — plus `/cross-reference/*` aggregators.
 

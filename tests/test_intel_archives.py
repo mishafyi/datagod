@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.clients import cia, frus, tna  # noqa: E402
+from app.clients import cia, frus, tna, vault  # noqa: E402
 
 PASS, FAIL = [], []
 
@@ -67,6 +67,16 @@ async def main() -> None:
               f"n={len(c.get('documents', []))} title={c.get('title')}")
     reg = await cia.collections()
     check("cia.collections registry", len(reg.get("collections", [])) >= 8)
+
+    # ── FBI Vault (wayback-mirrored; tolerate throttling) ──
+    v = await vault.page("cointel-pro")
+    if v.get("error") and v.get("upstream_status") in (0, 429, 503):
+        check("vault.page (wayback throttled — soft pass)", True, v.get("message", ""))
+    else:
+        check("vault.page folders", len(v.get("folders", [])) > 0,
+              f"n={len(v.get('folders', []))} title={v.get('title')}")
+    vs = await vault.subjects()
+    check("vault.subjects registry", len(vs.get("subjects", [])) >= 8)
 
     print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
     sys.exit(1 if FAIL else 0)

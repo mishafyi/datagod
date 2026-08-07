@@ -1,5 +1,5 @@
 """
-DataGod — one API over 38 free US-government, global, markets, research, media, and trending data sources.
+DataGod — one API over 39 free US-government, global, markets, research, media, and trending data sources.
 
 One API, all the data. Free.
 """
@@ -49,6 +49,7 @@ from .clients import (
     ucdp,
     usaspending,
     usgs,
+    vault,
     wikipedia,
     # wilson,  # disabled 2026-07-02 — see the Wilson route block below
     worldbank,
@@ -57,7 +58,7 @@ from .clients import (
 from .middleware import ResponseEnvelopeMiddleware
 
 API_DESCRIPTION = """\
-**DataGod** unifies 38 free US-government, global, markets, research, media, and trending
+**DataGod** unifies 39 free US-government, global, markets, research, media, and trending
 data sources (plus a cross-reference aggregator) behind one HTTP API. Routes are
 thin pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
 standard envelope.
@@ -206,7 +207,7 @@ async def root():
             "regulations": ["/federal-register"],
             # "history": ["/wilson"],  # Wilson disabled 2026-07-02
             "museums": ["/smithsonian"],
-            "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna"],
+            "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna", "/vault"],
             "reference": ["/wikipedia"],
             "video": ["/nasa", "/archive", "/commons"],
             "trending": ["/trending"],
@@ -821,6 +822,21 @@ async def tna_search(q: str, page: int = 1, per_page: int = Query(20, le=100),
 async def tna_record(record_id: str):
     """Full details for one record by Discovery id (from search results)."""
     return await tna.record(record_id)
+
+
+# ── FBI Vault (via the Wayback mirror) ───────────────────────────
+
+@app.get("/vault/subjects", tags=["Vault"], summary="Famous FBI Vault subjects (curated registry)")
+async def vault_subjects():
+    """The curated registry of famous FBI Vault subjects (static)."""
+    return await vault.subjects()
+
+
+@app.get("/vault/page/{path:path}", tags=["Vault"], summary="One Vault page (subject, folder or file)")
+async def vault_page(path: str):
+    """One Vault page by path: title, description, sub-folders, file pages, PDFs.
+    The Vault nests (subject → folders → files) — walk it page by page."""
+    return await vault.page(path)
 
 
 # ── Smithsonian Open Access ──────────────────────────────────────
