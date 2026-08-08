@@ -27,7 +27,7 @@ from . import UpstreamJSON
 from ._wayback import WAYBACK, fetch_capture
 
 ORIGIN = "https://www.cia.gov/readingroom"
-BODY_CAP = 8000
+BODY_CAP = 16000  # raised 2026-08-08: the desk was truncating rich OCR at 8K chars
 
 # Famous reading-room collections, slug → display name. Static on purpose: the
 # set changes rarely and there is no listable index behind the bot wall.
