@@ -31,18 +31,20 @@ BODY_CAP = 40000  # generous: the DESK owns the final context slice; a Bay of Pi
 
 # Famous reading-room collections, slug → display name. Static on purpose: the
 # set changes rarely and there is no listable index behind the bot wall.
+# Every slug verified against the live client 2026-08-08 (dead guesses removed:
+# crest-25 renders 0 doc links, creating-intelligence has no capture,
+# presidents-daily-brief-1961-1969 has only interstitial captures).
 COLLECTIONS = {
-    "crest-25-year-program-archive": "CREST: 25-Year Program Archive",
     "stargate": "STARGATE (remote viewing)",
     "ufos-fact-or-fiction": "UFOs: Fact or Fiction?",
     "bay-pigs-release": "Bay of Pigs Release",
     "argentina-declassification-project-dirty-war-1976-83": "Argentina Declassification Project",
-    "creating-intelligence-community-founding-documents": "Founding Documents of the IC",
-    "presidents-daily-brief-1961-1969": "President's Daily Brief 1961-1969",
     "presidents-daily-brief-1969-1977": "President's Daily Brief 1969-1977",
     "vietnam-histories": "Vietnam Histories",
     "berlin-tunnel": "The Berlin Tunnel",
     "cia-analysis-soviet-navy": "CIA Analysis of the Soviet Navy",
+    "atomic-spies-ethel-and-julius-rosenberg": "Atomic Spies: Ethel and Julius Rosenberg",
+    "cia-analysis-warsaw-pact-forces": "CIA Analysis of Warsaw Pact Forces",
 }
 
 
