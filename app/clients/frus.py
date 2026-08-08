@@ -22,7 +22,7 @@ BASE = "https://history.state.gov"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
 PER_PAGE = 10
-BODY_CAP = 16000  # raised 2026-08-08: the desk was truncating rich OCR at 8K chars
+BODY_CAP = 40000  # generous: the DESK owns the final context slice (long memcons exceed 16K chars)
 
 
 def _err(status: int, message: str) -> dict:

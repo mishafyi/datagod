@@ -100,7 +100,7 @@ def _parse_document(html: str, doc_id: str) -> UpstreamJSON:
         "date_text": dtext,
         "source": _field(t, "field-source"),
         "description": _field(t, "field-description"),
-        "body": body_n.text(separator=" ", strip=True)[:5000] if body_n else None,
+        "body": body_n.text(separator=" ", strip=True)[:16000] if body_n else None,
         "pdf_url": pdf,
         "url": f"{BASE}/document/{doc_id}",
     }

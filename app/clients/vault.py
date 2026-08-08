@@ -19,7 +19,7 @@ from . import UpstreamJSON
 from ._wayback import fetch_capture
 
 ORIGIN = "https://vault.fbi.gov"
-BODY_CAP = 6000
+BODY_CAP = 16000
 
 # Famous Vault subjects, path → display name. Static on purpose: no listable
 # index behind the bot wall. A 404 from wayback just means "pick another".
