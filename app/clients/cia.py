@@ -42,7 +42,7 @@ COLLECTIONS = {
     "presidents-daily-brief-1969-1977": "President's Daily Brief 1969-1977",
     "vietnam-histories": "Vietnam Histories",
     "berlin-tunnel": "The Berlin Tunnel",
-    "intelligence-warning-soviet-invasion-czechoslovakia": "Soviet Invasion of Czechoslovakia",
+    "cia-analysis-soviet-navy": "CIA Analysis of the Soviet Navy",
 }
 
 
