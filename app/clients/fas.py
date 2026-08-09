@@ -63,6 +63,10 @@ async def index(path: str) -> UpstreamJSON:
     except Exception as exc:
         return _err(getattr(getattr(exc, "response", None), "status_code", 0), str(exc))
     t = HTMLParser(html)
+    # Nav links point UP out of the section ("../index.html", fas.org); real
+    # entries live at or below this directory — including child sub-indexes
+    # ("uk/index.html"), which is what /world and /congress are made of.
+    here = url if url.endswith("/") else url.rsplit("/", 1)[0] + "/"
     links: list[dict] = []
     seen: set[str] = set()
     for a in t.css("a[href]"):
@@ -71,15 +75,15 @@ async def index(path: str) -> UpstreamJSON:
         if not title or href.startswith(("#", "mailto:")):
             continue
         absu = urljoin(url, href)
-        if not absu.startswith(BASE) or absu.rstrip("/") == url.rstrip("/"):
+        if not absu.startswith(here) or absu.rstrip("/") == url.rstrip("/"):
             continue
         rel = absu[len(BASE):].lstrip("/")
-        # parent/nav links point up and out of the section
-        if "index.htm" in rel or rel in seen:
+        if rel in seen:
             continue
         seen.add(rel)
         links.append({"path": rel, "title": title, "url": absu,
-                      "is_pdf": rel.lower().endswith(".pdf")})
+                      "is_pdf": rel.lower().endswith(".pdf"),
+                      "is_index": rel.lower().endswith(("index.html", "index.htm"))})
     h = t.css_first("h1, h2")
     return {"path": path.strip("/"), "title": _clean(h.text()) if h else None,
             "url": url, "links": links}
