@@ -1,5 +1,5 @@
 """
-DataGod — one API over 39 free US-government, global, markets, research, media, and trending data sources.
+DataGod — one API over 40 free US-government, global, markets, research, media, and trending data sources.
 
 One API, all the data. Free.
 """
@@ -26,6 +26,7 @@ from .clients import (
     eia,
     eonet,
     eurostat,
+    fas,
     fec,
     federal_register,
     fema,
@@ -58,7 +59,7 @@ from .clients import (
 from .middleware import ResponseEnvelopeMiddleware
 
 API_DESCRIPTION = """\
-**DataGod** unifies 39 free US-government, global, markets, research, media, and trending
+**DataGod** unifies 40 free US-government, global, markets, research, media, and trending
 data sources (plus a cross-reference aggregator) behind one HTTP API. Routes are
 thin pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
 standard envelope.
@@ -207,7 +208,7 @@ async def root():
             "regulations": ["/federal-register"],
             # "history": ["/wilson"],  # Wilson disabled 2026-07-02
             "museums": ["/smithsonian"],
-            "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna", "/vault"],
+            "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna", "/vault", "/fas"],
             "reference": ["/wikipedia"],
             "video": ["/nasa", "/archive", "/commons"],
             "trending": ["/trending"],
@@ -822,6 +823,26 @@ async def tna_search(q: str, page: int = 1, per_page: int = Query(20, le=100),
 async def tna_record(record_id: str):
     """Full details for one record by Discovery id (from search results)."""
     return await tna.record(record_id)
+
+
+# ── FAS Intelligence Resource Program (irp.fas.org) ──────────────
+
+@app.get("/fas/sections", tags=["FAS"], summary="Verified IRP sections (curated registry)")
+async def fas_sections():
+    """The curated registry of verified FAS IRP sections (static)."""
+    return await fas.sections()
+
+
+@app.get("/fas/index/{path:path}", tags=["FAS"], summary="An IRP index page's links")
+async def fas_index(path: str):
+    """An IRP index page: title + same-site content links (nav filtered)."""
+    return await fas.index(path)
+
+
+@app.get("/fas/page/{path:path}", tags=["FAS"], summary="An IRP content page's full text")
+async def fas_page(path: str):
+    """An IRP content page: title, full text (capped) and PDF links."""
+    return await fas.page(path)
 
 
 # ── FBI Vault (via the Wayback mirror) ───────────────────────────
