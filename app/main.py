@@ -116,6 +116,11 @@ API_TAGS = [
     {"name": "House Disclosures", "description": "US House financial disclosures (member/candidate stock trades)."},
     {"name": "NARA", "description": "US National Archives Catalog — all record groups plus the 14 presidential libraries."},
     {"name": "NSArchive", "description": "National Security Archive (GWU NGO, not NARA) — Virtual Reading Room declassified docs (HTML scrape)."},
+    {"name": "CIA", "description": "CIA FOIA Electronic Reading Room — declassified CIA documents read from the Wayback Machine mirror (cia.gov blocks server-side clients); curated collections + single-document fetch, no full-text search."},
+    {"name": "FRUS", "description": "Foreign Relations of the United States (history.state.gov) — the official documentary record of US foreign policy; full-text search + single documents."},
+    {"name": "TNA", "description": "UK National Archives Discovery — catalog search of British government records."},
+    {"name": "Vault", "description": "FBI Vault (vault.fbi.gov) — the FBI's FOIA library; curated famous subjects + page fetch."},
+    {"name": "FAS", "description": "FAS Intelligence Resource Program (irp.fas.org) — mirrored intelligence-community documents: agency pages, programs, official documents."},
     {"name": "Smithsonian", "description": "Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records."},
     # {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},  # disabled 2026-07-02
     {"name": "arXiv", "description": "arXiv.org — full-text search of 2M+ scientific preprints (physics, math, CS/ML, biology, economics, statistics)."},

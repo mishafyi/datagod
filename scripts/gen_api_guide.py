@@ -86,6 +86,11 @@ QUICK_INDEX = """\
 | US House members' stock trades | House Disclosures | `GET /house-disclosures/members` |
 | US National Archives catalog records | NARA | `GET /nara/search` |
 | Declassified national-security documents | NSArchive | `GET /nsarchive/search` |
+| Declassified CIA documents & famous collections | CIA | `GET /cia/collections` |
+| Official US diplomatic record (FRUS volumes) | FRUS | `GET /frus/search` |
+| UK government records catalog | TNA | `GET /tna/search` |
+| FBI FOIA files on famous subjects | Vault | `GET /vault/subjects` |
+| Mirrored intelligence-community documents (IRP) | FAS | `GET /fas/sections` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |

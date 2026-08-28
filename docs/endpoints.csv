@@ -70,6 +70,18 @@ NARA,GET,/nara/record/{na_id},One National Archives catalog record by its Nation
 NARA,GET,/nara/search,Search the US National Archives Catalog — historical government records across all record groups and the 14 presidential libraries.,"q (query, string); page (query, integer, default 1); available_online (query, boolean, default False); type_of_materials (query, string); level_of_description (query, string)"
 NSArchive,GET,/nsarchive/document/{doc_id},One declassified Virtual Reading Room document by its id-slug.,"doc_id (path, string, required)"
 NSArchive,GET,/nsarchive/search,"Search the National Security Archive (GWU NGO) Virtual Reading Room — declassified documents on foreign policy, intelligence, and defense.","q (query, string); page (query, integer, default 1); field_date_min (query, string); field_date_max (query, string); searched_fields (query, string)"
+CIA,GET,/cia/collection/{slug},A reading-room collection's documents,"slug (path, string, required); page (query, integer, default 0)"
+CIA,GET,/cia/collections,Famous reading-room collections (curated registry),
+CIA,GET,/cia/document/{doc_path},Single reading-room document,"doc_path (path, string, required)"
+FRUS,GET,/frus/document/{volume}/{doc},Single FRUS document,"volume (path, string, required); doc (path, integer, required)"
+FRUS,GET,/frus/search,Search FRUS (history.state.gov),"q (query, string, required); start (query, integer, default 1)"
+TNA,GET,/tna/record/{record_id},Single Discovery record's details,"record_id (path, string, required)"
+TNA,GET,/tna/search,Search UK National Archives Discovery,"q (query, string, required); page (query, integer, default 1); per_page (query, integer, default 20, max 100); series (query, string)"
+Vault,GET,/vault/page/{path},"One Vault page (subject, folder or file)","path (path, string, required)"
+Vault,GET,/vault/subjects,Famous FBI Vault subjects (curated registry),
+FAS,GET,/fas/index/{path},An IRP index page's links,"path (path, string, required)"
+FAS,GET,/fas/page/{path},An IRP content page's full text,"path (path, string, required)"
+FAS,GET,/fas/sections,Verified IRP sections (curated registry),
 Smithsonian,GET,/smithsonian/category/{category}/search,"Search within a Smithsonian category: art_design, history_culture, or science_technology.","category (path, string, required); q (query, string); start (query, integer, default 0); rows (query, integer, default 10, max 100); sort (query, string); obj_type (query, string)"
 Smithsonian,GET,/smithsonian/object/{object_id},Full metadata record for one Smithsonian object by EDAN id.,"object_id (path, string, required)"
 Smithsonian,GET,/smithsonian/search,"Search Smithsonian Open Access — 11M+ museum, library, and archive objects (art, history, science specimens, photographs).","q (query, string); start (query, integer, default 0); rows (query, integer, default 10, max 100); sort (query, string); obj_type (query, string)"

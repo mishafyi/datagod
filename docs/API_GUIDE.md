@@ -57,6 +57,11 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | US House members' stock trades | House Disclosures | `GET /house-disclosures/members` |
 | US National Archives catalog records | NARA | `GET /nara/search` |
 | Declassified national-security documents | NSArchive | `GET /nsarchive/search` |
+| Declassified CIA documents & famous collections | CIA | `GET /cia/collections` |
+| Official US diplomatic record (FRUS volumes) | FRUS | `GET /frus/search` |
+| UK government records catalog | TNA | `GET /tna/search` |
+| FBI FOIA files on famous subjects | Vault | `GET /vault/subjects` |
+| Mirrored intelligence-community documents (IRP) | FAS | `GET /fas/sections` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
@@ -202,6 +207,41 @@ Declassified national-security documents (National Security Archive — a GWU NG
 
 - **Endpoints:** `/nsarchive/document/{doc_id}` · `/nsarchive/search`
 - **Detail:** `docs/NSARCHIVE_API.md` · **params:** `docs/endpoints.csv`
+
+### CIA
+
+CIA FOIA Electronic Reading Room — declassified CIA documents read from the Wayback Machine mirror (cia.gov blocks server-side clients); curated collections + single-document fetch, no full-text search.
+
+- **Endpoints:** `/cia/collection/{slug}` · `/cia/collections` · `/cia/document/{doc_path}`
+- **params:** `docs/endpoints.csv`
+
+### FRUS
+
+Foreign Relations of the United States (history.state.gov) — the official documentary record of US foreign policy; full-text search + single documents.
+
+- **Endpoints:** `/frus/document/{volume}/{doc}` · `/frus/search`
+- **params:** `docs/endpoints.csv`
+
+### TNA
+
+UK National Archives Discovery — catalog search of British government records.
+
+- **Endpoints:** `/tna/record/{record_id}` · `/tna/search`
+- **params:** `docs/endpoints.csv`
+
+### Vault
+
+FBI Vault (vault.fbi.gov) — the FBI's FOIA library; curated famous subjects + page fetch.
+
+- **Endpoints:** `/vault/page/{path}` · `/vault/subjects`
+- **params:** `docs/endpoints.csv`
+
+### FAS
+
+FAS Intelligence Resource Program (irp.fas.org) — mirrored intelligence-community documents: agency pages, programs, official documents.
+
+- **Endpoints:** `/fas/index/{path}` · `/fas/page/{path}` · `/fas/sections`
+- **params:** `docs/endpoints.csv`
 
 ### Smithsonian
 
