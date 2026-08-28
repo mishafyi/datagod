@@ -52,7 +52,7 @@ from .clients import (
     usgs,
     vault,
     wikipedia,
-    # wilson,  # disabled 2026-07-02 — see the Wilson route block below
+    wilson,
     worldbank,
     yfin,
 )
@@ -122,7 +122,7 @@ API_TAGS = [
     {"name": "Vault", "description": "FBI Vault (vault.fbi.gov) — the FBI's FOIA library; curated famous subjects + page fetch."},
     {"name": "FAS", "description": "FAS Intelligence Resource Program (irp.fas.org) — mirrored intelligence-community documents: agency pages, programs, official documents."},
     {"name": "Smithsonian", "description": "Smithsonian Open Access (EDAN) — 11M+ museum/library/archive records."},
-    # {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},  # disabled 2026-07-02
+    {"name": "Wilson Center", "description": "Wilson Center Digital Archive — local mirror of 16,756 declassified documents."},
     {"name": "arXiv", "description": "arXiv.org — full-text search of 2M+ scientific preprints (physics, math, CS/ML, biology, economics, statistics)."},
     {"name": "Scholar", "description": "Google Scholar via the vendored sort-google-scholar — citation-ranked paper search. Brittle: Google blocks scraping (CAPTCHA/429)."},
     {"name": "Trending", "description": "NewsNow (self-hosted) — ~50 trending/hot boards: Hacker News, GitHub trending, Product Hunt, plus Weibo/Zhihu/Douyin hot searches and CN finance wires. Ranked title+URL items."},
@@ -211,7 +211,7 @@ async def root():
             "disasters": ["/fema"],
             "conflicts_disasters": ["/ucdp", "/usgs", "/nws", "/eonet"],
             "regulations": ["/federal-register"],
-            # "history": ["/wilson"],  # Wilson disabled 2026-07-02
+            "history": ["/wilson"],
             "museums": ["/smithsonian"],
             "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna", "/vault", "/fas"],
             "reference": ["/wikipedia"],
@@ -900,26 +900,25 @@ async def smithsonian_stats():
     return await smithsonian.stats()
 
 
-# ── Wilson Center Digital Archive (local mirror) — DISABLED 2026-07-02 ───
+# ── Wilson Center Digital Archive (local mirror) — re-enabled 2026-08-27 ───
 #
-# The Wilson source serves a LOCAL SQLite mirror (data/wilson.db, 228 MB) that
-# is not distributed with the repo, so the routes are off by default. To
-# re-enable: provision data/wilson.db (see docs/WILSON_DIGITAL_ARCHIVE_API.md),
-# then uncomment the block below, the `wilson` import near the top of this
-# file, the Wilson entry in API_TAGS, and the "history" entry in the root
-# endpoint map. The client stays in app/clients/wilson.py.
+# Serves the LOCAL SQLite mirror (data/wilson.db, 228 MB), which is not in the
+# repo or image: the deployment mounts it via the Coolify volume
+# /data/datagod → /app/data. Rebuild locally with scripts/build_wilson_index.py
+# (see docs/WILSON_DIGITAL_ARCHIVE_API.md). Without the DB the routes return a
+# 503 envelope with a build hint.
 
-# @app.get("/wilson/documents", tags=["Wilson Center"], summary="Search the Wilson Center mirror")
-# async def wilson_documents(q: str = "", page: int = 1,
-#                            items_per_page: int = Query(10, le=100)):
-#     """Full-text search the local Wilson Center mirror (16,756 declassified documents)."""
-#     return await wilson.search_documents(q, page, items_per_page)
+@app.get("/wilson/documents", tags=["Wilson Center"], summary="Search the Wilson Center mirror")
+async def wilson_documents(q: str = "", page: int = 1,
+                           items_per_page: int = Query(10, le=100)):
+    """Full-text search the local Wilson Center mirror (16,756 declassified documents)."""
+    return await wilson.search_documents(q, page, items_per_page)
 
 
-# @app.get("/wilson/document/{slug}", tags=["Wilson Center"], summary="Single Wilson document by slug")
-# async def wilson_document(slug: str):
-#     """Full record for one document by slug: title, source, subjects, download availability."""
-#     return await wilson.document(slug)
+@app.get("/wilson/document/{slug}", tags=["Wilson Center"], summary="Single Wilson document by slug")
+async def wilson_document(slug: str):
+    """Full record for one document by slug: title, source, subjects, download availability."""
+    return await wilson.document(slug)
 
 
 # ── arXiv (scientific preprints) ─────────────────────────────────

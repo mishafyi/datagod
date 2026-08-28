@@ -91,6 +91,7 @@ QUICK_INDEX = """\
 | UK government records catalog | TNA | `GET /tna/search` |
 | FBI FOIA files on famous subjects | Vault | `GET /vault/subjects` |
 | Mirrored intelligence-community documents (IRP) | FAS | `GET /fas/sections` |
+| Translated Soviet-bloc / Cold War documents (16,756-doc local mirror) | Wilson Center | `GET /wilson/documents` |
 | Museum / library / archive objects | Smithsonian | `GET /smithsonian/search` |
 | Scientific preprints / research papers | arXiv | `GET /arxiv/search` |
 | Academic papers ranked by citations | Scholar | `GET /scholar/search` (brittle — Google blocks) |
