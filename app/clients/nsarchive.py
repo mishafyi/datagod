@@ -24,6 +24,19 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
 PER_PAGE = 20
 
 
+# The Reading Room form's <select name="search_api_fulltext_searched_fields"> takes
+# these VALUES; its visible labels ("Title", "Document Text") match nothing and
+# every search sent with one returned 0 hits (2026-09-18: "Iran" → 0 with
+# "Title", 11 with field_title, 951 with all). Labels are accepted and mapped.
+SEARCHED_FIELDS = {
+    "all": "all",
+    "title": "field_title",
+    "description": "field_description",
+    "document text": "field_extracted_text",
+    "source": "field_source",
+}
+
+
 def _err(status: int, message: str) -> dict:
     return {"error": True, "source": "nsarchive", "upstream_status": status, "message": message}
 
@@ -112,7 +125,8 @@ async def search(q: str = "", page: int = 1, field_date_min: str = "",
 
     `field_date_min`/`field_date_max` are `YYYY-MM-DD` bounds (forwarded as the upstream's
     `field_date[min]`/`field_date[max]`). `searched_fields` limits which field the full-text
-    query hits — one of: All, Title, Source, "Document Text", Description.
+    query hits — All, Title, Description, "Document Text" or Source (the form's labels),
+    or its own values: all, field_title, field_description, field_extracted_text, field_source.
     """
     params: dict = {"page": max(page - 1, 0)}  # site pager is 0-based
     if q:
@@ -122,7 +136,12 @@ async def search(q: str = "", page: int = 1, field_date_min: str = "",
     if field_date_max:
         params["field_date[max]"] = field_date_max
     if searched_fields:
-        params["search_api_fulltext_searched_fields"] = searched_fields
+        key = searched_fields.strip().lower()
+        field = SEARCHED_FIELDS.get(key.replace("_", " "), key if key in SEARCHED_FIELDS.values() else None)
+        if field is None:
+            allowed = ", ".join(f"{label!r} ({value})" for label, value in SEARCHED_FIELDS.items())
+            return _err(400, f"searched_fields must be one of {allowed}; got {searched_fields!r}")
+        params["search_api_fulltext_searched_fields"] = field
     try:
         r = await get_client().get(f"{BASE}/virtual-reading-room", params=params, headers=HEADERS)
         r.raise_for_status()

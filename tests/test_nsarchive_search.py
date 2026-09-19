@@ -99,6 +99,23 @@ async def run() -> list[tuple[str, bool, str]]:
            bounded_total > 0 and not over,
            f"total={bounded_total}, dated hits all <=1990 ({len(bounded_dates)} checked, {len(over)} over)")
 
+    # --- searched_fields: the form's values, and its labels mapped to them -----
+    # Sent raw, the label "Title" matched nothing (0 hits for any query) until
+    # 2026-09-18; the upstream wants field_title.
+    everywhere = await _total("Iran")
+    by_label = await nsarchive.search("Iran", 1, "", "", "Title")
+    by_value = await nsarchive.search("Iran", 1, "", "", "field_title")
+    label_total, value_total = by_label.get("total"), by_value.get("total")
+    record("searched_fields=Title narrows to titles",
+           isinstance(label_total, int) and 0 < label_total < everywhere,
+           f"Title={label_total} of all={everywhere}")
+    record("the label and the form's value agree", label_total == value_total,
+           f"Title={label_total}, field_title={value_total}")
+    bad = await nsarchive.search("Iran", 1, "", "", "headline")
+    record("an unknown field is a 400, not 0 hits",
+           isinstance(bad, dict) and bad.get("error") is True and bad.get("upstream_status") == 400,
+           f"{str(bad.get('message'))[:70]!r}")
+
     # --- single-document fetch --------------------------------------------
     doc = await nsarchive.document(KNOWN_DOC)
     ok_doc = (isinstance(doc, dict) and not doc.get("error")

@@ -164,7 +164,7 @@ DESCRIPTIONS = {
     "/house-disclosures/candidates": "US House candidates' financial disclosures.",
     "/nara/search": "Search the US National Archives Catalog — historical government records across all record groups and the 14 presidential libraries.",
     "/nara/record/{na_id}": "One National Archives catalog record by its National Archives Identifier (NAID).",
-    "/nsarchive/search": "Search the National Security Archive (GWU NGO) Virtual Reading Room — declassified documents on foreign policy, intelligence, and defense.",
+    "/nsarchive/search": "Search the National Security Archive (GWU NGO) Virtual Reading Room — declassified documents on foreign policy, intelligence, and defense. Plain words are OR-ed and results always come newest first: join words with AND or use a \"quoted phrase\"; searched_fields=Title (or Description) finds documents ABOUT a subject.",
     "/nsarchive/document/{doc_id}": "One declassified Virtual Reading Room document by its id-slug.",
     "/smithsonian/search": "Search Smithsonian Open Access — 11M+ museum, library, and archive objects (art, history, science specimens, photographs).",
     "/smithsonian/object/{object_id}": "Full metadata record for one Smithsonian object by EDAN id.",

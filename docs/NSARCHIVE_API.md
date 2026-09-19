@@ -31,7 +31,9 @@ routes: "/nsarchive/document/{doc_id}, /nsarchive/search"
 - **`field_date[min]` / `field_date[max]`** date bounds — `field_date[max]=1990-12-31` returns only ≤1990 documents.
 - **`sort_by` is ignored** — you cannot force relevance/oldest order; it is always newest-first.
 
-**Recipe to find a specific (e.g. Cold-War) document:** a distinctive **exact phrase** and/or explicit **`AND`**, plus a **`field_date[max]`** bound. The client's `search(q, page)` passes `q` straight through, so phrase/Boolean/wildcard all work inside `q`; the `field_date` bounds require hitting `/virtual-reading-room` directly (the client wires full-text + page only — extend if needed). The form also exposes `search_api_fulltext_searched_fields` = All/Description/Document Text/Source/Title.
+**Recipe to find a specific (e.g. Cold-War) document:** a distinctive **exact phrase** and/or explicit **`AND`**, plus a date bound. The client's `search(q, page, field_date_min, field_date_max, searched_fields)` passes `q` straight through, so phrase/Boolean/wildcard all work inside `q`, and forwards the bounds as `field_date[min]`/`field_date[max]`.
+
+**`searched_fields`** narrows the full-text match to one field. The form's `<select name="search_api_fulltext_searched_fields">` takes the VALUES `all`, `field_title`, `field_description`, `field_extracted_text` (Document Text) and `field_source` — its visible LABELS match nothing, and every search sent with `Title` returned 0 hits until 2026-09-18. The client accepts either spelling (labels case-insensitive, `document_text` too), maps labels to values, and answers anything else with a 400. `Title` is the way to find documents ABOUT a subject: "Iran" matches 11 titles, 95 descriptions, 925 document texts, 951 in all (2026-09-18).
 
 > The Reading Room is **not** the same corpus as NSArchive's curated **Electronic Briefing Books**. Many classic Cold-War EBB documents (e.g. the Robert Hultslander interview, IAFEATURE files) return **0 hits** here — they live on briefing-book pages outside this search index.
 
