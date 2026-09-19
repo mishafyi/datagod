@@ -344,9 +344,9 @@ NASA EONET — global natural events: wildfires, severe storms, volcanoes.
 
 ### Wikipedia
 
-Wikipedia — page summaries, full-text search, and pageview statistics.
+Wikipedia — page summaries, whole articles as plain text, full-text search, and pageview statistics.
 
-- **Endpoints:** `/wikipedia/pageviews/{title}` · `/wikipedia/search` · `/wikipedia/summary/{title}`
+- **Endpoints:** `/wikipedia/article/{title}` · `/wikipedia/pageviews/{title}` · `/wikipedia/search` · `/wikipedia/summary/{title}`
 - **params:** `docs/endpoints.csv`
 
 ### NASA Images

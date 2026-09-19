@@ -135,7 +135,7 @@ API_TAGS = [
     {"name": "USGS", "description": "USGS Earthquake Hazards — worldwide earthquake catalog (GeoJSON)."},
     {"name": "NWS", "description": "US National Weather Service — active weather alerts (keyless, User-Agent required)."},
     {"name": "EONET", "description": "NASA EONET — global natural events: wildfires, severe storms, volcanoes."},
-    {"name": "Wikipedia", "description": "Wikipedia — page summaries, full-text search, and pageview statistics."},
+    {"name": "Wikipedia", "description": "Wikipedia — page summaries, whole articles as plain text, full-text search, and pageview statistics."},
     {"name": "NASA Images", "description": "NASA Image and Video Library — public-domain space/science videos, images, and audio with direct downloadable renditions (incl. mp4)."},
     {"name": "Internet Archive", "description": "Internet Archive — keyless item search (movies by default) + per-item file metadata with direct download paths. License is per item (licenseurl)."},
     {"name": "Commons", "description": "Wikimedia Commons — video-file search with direct file URLs and per-file license metadata (CC-BY / CC-BY-SA / PD)."},
@@ -765,7 +765,7 @@ async def nara_record(na_id: str):
 @app.get("/nsarchive/search", tags=["NSArchive"], summary="Search the National Security Archive VRR")
 async def nsarchive_search(q: str = "", page: int = 1, field_date_min: str = "",
                             field_date_max: str = "",
-                            searched_fields: str = Query("", description='One of: All, Title, Source, "Document Text", Description')):
+                            searched_fields: str = Query("", description='All, Title, Description, "Document Text" or Source (or the site\'s own values: all, field_title, field_description, field_extracted_text, field_source)')):
     """Search the National Security Archive Virtual Reading Room (empty q browses). 20/page.
     field_date_min/field_date_max are YYYY-MM-DD bounds."""
     return await nsarchive.search(q, page, field_date_min, field_date_max, searched_fields)
@@ -1081,6 +1081,12 @@ async def eonet_categories():
 async def wikipedia_summary(title: str):
     """Lead-section summary. Use underscores in the title, e.g. Albert_Einstein."""
     return await wikipedia.summary(title)
+
+
+@app.get("/wikipedia/article/{title:path}", tags=["Wikipedia"], summary="Whole article as plain text")
+async def wikipedia_article(title: str):
+    """The full article as plain text, redirects followed — under query.pages[0].extract."""
+    return await wikipedia.article(title)
 
 
 @app.get("/wikipedia/search", tags=["Wikipedia"], summary="Full-text article search")

@@ -80,12 +80,12 @@ Five test files (no unit-test runner, linter, or type-checker is configured):
 | **`usaspending.py`** | USAspending — federal contracts, grants ($6T+/yr) | `/usaspending/agencies`, `/usaspending/search`, `/usaspending/by-agency` | `docs/USASPENDING.md` | none |
 | **`vault.py`** | FBI Vault — via the Wayback mirror (vault.fbi.gov 403s all server clients; shared `_wayback.py` picks the newest usable capture, gunzipping raw `id_` bodies) | `/vault/subjects`, `/vault/page/{path}` | — | none |
 | **`usgs.py`** | USGS Earthquake Hazards — worldwide earthquake catalog (GeoJSON) | `/usgs/earthquakes` | `docs/USGS.md` | none |
-| **`wikipedia.py`** | Wikipedia — page summaries, full-text search, Wikimedia pageviews | `/wikipedia/summary/{title}`, `/wikipedia/search`, `/wikipedia/pageviews/{title}` | `docs/WIKIPEDIA.md` | none (client sends a polite User-Agent) |
+| **`wikipedia.py`** | Wikipedia — page summaries, whole articles as plain text, full-text search, Wikimedia pageviews (every call waits out a 429) | `/wikipedia/summary/{title}`, `/wikipedia/article/{title}`, `/wikipedia/search`, `/wikipedia/pageviews/{title}` | `docs/WIKIPEDIA.md` | none (client sends a polite User-Agent) |
 | **`wilson.py`** | Wilson Center Digital Archive — LOCAL mirror of 16,756 declassified documents (SQLite + FTS5; live site is DNS-dead) | **DISABLED 2026-07-02** (routes commented out in `main.py`; `data/wilson.db` not distributed) | `docs/WILSON_DIGITAL_ARCHIVE_API.md` | none (local data) |
 | **`worldbank.py`** | World Bank Open Data — 16K+ development indicators for every country | `/worldbank/{indicator}`, `/worldbank/countries` | `docs/WORLDBANK.md` | none |
 | **`yfin.py`** | Yahoo Finance via `yfinance` — fundamentals, news, options, holdings, earnings | `/yfinance/info/{ticker}`, `/yfinance/history/{ticker}`, `/yfinance/news/{ticker}`, `/yfinance/recommendations/{ticker}`, `/yfinance/holders/{ticker}`, `/yfinance/financials/{ticker}`, `/yfinance/dividends/{ticker}`, `/yfinance/earnings/{ticker}`, `/yfinance/options/{ticker}` | `docs/YFINANCE_API.md` | none (crumb handled internally) |
 
-**Total**: 35 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **38 client modules, 104 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
+**Total**: 35 active upstream sources + 1 cross-reference aggregator + 2 disabled sources (JEFS, Wilson) = **38 client modules, 105 routes**. The interactive Swagger UI at `/docs` (HTTP Basic auth) is the always-in-sync endpoint reference; its rich app description documents the API key and the response envelope, and each source has a tag description.
 
 ## Reference documentation in `docs/`
 

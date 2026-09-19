@@ -217,6 +217,7 @@ hit("GET", "/eonet/events?category=wildfires&status=open&limit=2", "EONET")
 hit("GET", "/eonet/categories", "EONET")
 # ── Wikipedia ──
 hit("GET", "/wikipedia/summary/Albert_Einstein", "Wikipedia")
+hit("GET", "/wikipedia/article/Albert_Einstein", "Wikipedia")
 hit("GET", "/wikipedia/search?q=quantum+computing&limit=3", "Wikipedia")
 hit("GET", "/wikipedia/pageviews/Albert_Einstein?start=20260701&end=20260707", "Wikipedia")
 # ── NASA Image and Video Library (resolve a nasa_id) ──

@@ -69,7 +69,7 @@ House Disclosures,GET,/house-disclosures/pdf,Fetch a disclosure PDF by path,"pat
 NARA,GET,/nara/record/{na_id},One National Archives catalog record by its National Archives Identifier (NAID).,"na_id (path, string, required)"
 NARA,GET,/nara/search,Search the US National Archives Catalog — historical government records across all record groups and the 14 presidential libraries.,"q (query, string); page (query, integer, default 1); available_online (query, boolean, default False); type_of_materials (query, string); level_of_description (query, string)"
 NSArchive,GET,/nsarchive/document/{doc_id},One declassified Virtual Reading Room document by its id-slug.,"doc_id (path, string, required)"
-NSArchive,GET,/nsarchive/search,"Search the National Security Archive (GWU NGO) Virtual Reading Room — declassified documents on foreign policy, intelligence, and defense.","q (query, string); page (query, integer, default 1); field_date_min (query, string); field_date_max (query, string); searched_fields (query, string)"
+NSArchive,GET,/nsarchive/search,"Search the National Security Archive (GWU NGO) Virtual Reading Room — declassified documents on foreign policy, intelligence, and defense. Plain words are OR-ed and results always come newest first: join words with AND or use a ""quoted phrase""; searched_fields=Title (or Description) finds documents ABOUT a subject.","q (query, string); page (query, integer, default 1); field_date_min (query, string); field_date_max (query, string); searched_fields (query, string)"
 CIA,GET,/cia/collection/{slug},A reading-room collection's documents,"slug (path, string, required); page (query, integer, default 0)"
 CIA,GET,/cia/collections,Famous reading-room collections (curated registry),
 CIA,GET,/cia/document/{doc_path},Single reading-room document,"doc_path (path, string, required)"
@@ -106,6 +106,7 @@ USGS,GET,/usgs/earthquakes,Worldwide earthquake catalog (GeoJSON),"starttime (qu
 NWS,GET,/nws/alerts,Active US weather alerts,"area (query, string); severity (query, string)"
 EONET,GET,/eonet/categories,EONET event categories,
 EONET,GET,/eonet/events,"Global natural events (wildfires, storms, volcanoes)","category (query, string); status (query, string, default open); limit (query, integer, default 10, max 1000); days (query, integer, default 0)"
+Wikipedia,GET,/wikipedia/article/{title},Whole article as plain text,"title (path, string, required)"
 Wikipedia,GET,/wikipedia/pageviews/{title},Daily pageview counts for an article,"title (path, string, required); start (query, string, required); end (query, string, required)"
 Wikipedia,GET,/wikipedia/search,Full-text article search,"q (query, string, required); limit (query, integer, default 10, max 50)"
 Wikipedia,GET,/wikipedia/summary/{title},Page summary (lead section),"title (path, string, required)"
