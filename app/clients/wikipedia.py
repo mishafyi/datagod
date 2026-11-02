@@ -15,7 +15,7 @@ from . import UpstreamJSON, _error, get_client, safe_get
 REST_BASE = "https://en.wikipedia.org/api/rest_v1"
 ACTION_BASE = "https://en.wikipedia.org/w/api.php"
 PAGEVIEWS_BASE = "https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article"
-HEADERS = {"User-Agent": "DataGod/1.0 (github.com/mishafyi/datagod)"}
+HEADERS = {"User-Agent": "DataGod/1.0 (https://github.com/mishafyi/datagod)"}
 # Seconds to wait after a 429/503 that names no Retry-After; a named wait is capped at MAX_WAIT.
 BACKOFF = (2.0, 5.0)
 MAX_WAIT = 20.0

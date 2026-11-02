@@ -8,7 +8,7 @@ Wikimedia asks for a descriptive User-Agent on all API traffic.
 from . import UpstreamJSON, safe_get
 
 BASE = "https://commons.wikimedia.org/w/api.php"
-HEADERS = {"User-Agent": "DataGod/1.0 (github.com/mishafyi/datagod)"}
+HEADERS = {"User-Agent": "DataGod/1.0 (https://github.com/mishafyi/datagod)"}
 
 
 async def search(q: str, limit: int = 10) -> UpstreamJSON:
