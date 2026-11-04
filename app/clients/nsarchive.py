@@ -14,7 +14,7 @@ the standard error-dict contract on failure (an intentional exception to the pas
 import math
 import re
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
 from . import UpstreamJSON, _error, error_dict, get_client
 
@@ -60,7 +60,7 @@ def _date(scope) -> tuple[str | None, str | None]:
 
 
 def _parse_listing(html: str, page: int) -> UpstreamJSON:
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     results: list[dict] = []
     for art in t.css("article.media--type-document"):
         link = art.css_first(".field--name-field-title a")
@@ -89,7 +89,7 @@ def _parse_listing(html: str, page: int) -> UpstreamJSON:
 
 
 def _parse_document(html: str, doc_id: str) -> UpstreamJSON:
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     if not t.css_first("h1"):
         return _err(404, f"No document page for '{doc_id}'")
     pdf = None

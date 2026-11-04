@@ -2,7 +2,7 @@
 
 from urllib.parse import urljoin, urlsplit
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
 from . import UpstreamJSON, _error, error_dict, get_client
 
@@ -77,7 +77,7 @@ def _parse_html_table(html: str) -> list[dict]:
     each cell's data-label (name, office, filing_year/election_year, filing),
     plus the filing's absolute pdf_url. The header row has no cells and is skipped."""
     results: list[dict] = []
-    for row in HTMLParser(html).css("tr"):
+    for row in LexborHTMLParser(html).css("tr"):
         cells = row.css("td[data-label]")
         if not cells:
             continue

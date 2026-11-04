@@ -14,7 +14,7 @@ Documents: /historicaldocuments/{volume}/d{n}, TEI-classed HTML in div.content.
 
 import re
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
 from . import UpstreamJSON, _error, clean_text as _clean, error_dict, get_client
 
@@ -30,7 +30,7 @@ def _err(status: int, message: str) -> dict:
 
 
 def _parse_search(html: str, start: int) -> UpstreamJSON:
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     results: list[dict] = []
     for block in t.css("div.hsg-search-result"):
         a = block.css_first("h3.hsg-search-result-heading a")
@@ -53,7 +53,7 @@ def _parse_search(html: str, start: int) -> UpstreamJSON:
 
 
 def _parse_document(html: str, volume: str, doc: int) -> UpstreamJSON:
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     content = t.css_first("div.content")
     if not content:
         return _err(404, f"No document content for {volume}/d{doc}")

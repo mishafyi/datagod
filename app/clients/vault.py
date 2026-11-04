@@ -13,7 +13,7 @@ the curated registry of famous subjects in `subjects()`.
 
 import re
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
 from . import UpstreamJSON, clean_text as _clean, error_dict
 from ._wayback import fetch_capture, unwrap as _unwrap
@@ -43,7 +43,7 @@ def _err(status: int, message: str) -> dict:
     return error_dict("vault", status, message)
 
 
-def _entries(t: HTMLParser, kind: str) -> list[dict]:
+def _entries(t: LexborHTMLParser, kind: str) -> list[dict]:
     """Plone listing entries by content type ('folder' or 'file')."""
     out: list[dict] = []
     seen: set[str] = set()
@@ -65,7 +65,7 @@ async def page(path: str) -> UpstreamJSON:
     html, snapshot, err = await fetch_capture(url)
     if err or html is None:
         return _err((err or {}).get("upstream_status", 0), (err or {}).get("message", "No capture"))
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     h1 = t.css_first("h1")
     desc = t.css_first("#content .documentDescription, #content .description, #content p")
     pdfs: list[dict] = []

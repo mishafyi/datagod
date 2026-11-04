@@ -21,7 +21,7 @@ retries with backoff and skips stored-interstitial captures.
 
 import re
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
 from . import UpstreamJSON, clean_text as _clean, error_dict
 from ._wayback import fetch_capture, unwrap as _unwrap
@@ -60,7 +60,7 @@ async def _wb_get(path: str):
     return html, snapshot, None
 
 
-def _doc_links(t: HTMLParser) -> list[dict]:
+def _doc_links(t: LexborHTMLParser) -> list[dict]:
     """Every /readingroom/document/ link in a page, deduped, canonical URLs."""
     seen: set[str] = set()
     out: list[dict] = []
@@ -83,7 +83,7 @@ async def document(doc_path: str) -> UpstreamJSON:
     html, snapshot, err = await _wb_get(f"document/{doc_path}")
     if err:
         return err
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     h1 = t.css_first("h1")
     title = _clean(h1.text()) if h1 else None
     meta: dict[str, str] = {}
@@ -123,7 +123,7 @@ async def collection(slug: str, page: int = 0) -> UpstreamJSON:
     html, snapshot, err = await _wb_get(path)
     if err:
         return err
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     h1 = t.css_first("h1")
     title = _clean(h1.text()) if h1 else None
     desc = t.css_first(".field-name-body, .field--name-body")

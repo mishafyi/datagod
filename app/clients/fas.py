@@ -15,7 +15,7 @@ Two shapes: an INDEX page (a list of links) and a CONTENT page (text + PDFs).
 import re
 from urllib.parse import urljoin
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
 from . import UpstreamJSON, _error, clean_text as _clean, error_dict, get_client
 
@@ -66,7 +66,7 @@ async def index(path: str) -> UpstreamJSON:
         html, url = await _get(path)
     except Exception as exc:
         return _failed(exc)
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     # Nav links point UP out of the section ("../index.html", fas.org); real
     # entries live at or below this directory — including child sub-indexes
     # ("uk/index.html"), which is what /world and /congress are made of.
@@ -99,7 +99,7 @@ async def page(path: str) -> UpstreamJSON:
         html, url = await _get(path)
     except Exception as exc:
         return _failed(exc)
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     for kill in t.css("script, style"):
         kill.decompose()
     h = t.css_first("h1, h2")
