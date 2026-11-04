@@ -1,4 +1,7 @@
 # Offline unit tests: .venv/bin/python -m pytest  (async tests use anyio's plugin,
 # installed with httpx; upstreams are faked with httpx.MockTransport).
+# httpx2 is what Starlette's TestClient now prefers (it warns that httpx is deprecated
+# there); the app itself still uses httpx.
 -r requirements.txt
 pytest==9.2.0
+httpx2==2.16.0
