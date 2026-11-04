@@ -18,7 +18,7 @@ curl http://localhost:8000/health
 ## Run locally (no Docker)
 
 ```bash
-python3 -m venv .venv
+python3.15 -m venv .venv   # the Docker image's Python (python:3.15-slim); 3.12+ is the floor (numpy 2.5)
 .venv/bin/pip install -r requirements.txt
 cp .env.example .env   # then fill in keys (at minimum DATAGOD_API_KEY)
 .venv/bin/uvicorn app.main:app --reload --port 8000

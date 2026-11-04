@@ -12,7 +12,8 @@ DataGod is a FastAPI service that unifies 41 free data sources behind one HTTP A
 # Run the server (auto-reload during dev)
 .venv/bin/uvicorn app.main:app --reload --port 8000
 
-# Install deps (requirements-dev.txt adds pytest on top)
+# Install deps (requirements-dev.txt adds pytest + httpx2 on top). Make the venv with the
+# Dockerfile's Python (python3.15 -m venv .venv); 3.12 is the floor (numpy 2.5).
 .venv/bin/pip install -r requirements-dev.txt
 
 # Offline unit tests — no network, no server (upstreams faked with httpx.MockTransport)
@@ -181,7 +182,7 @@ Upstreams that report failure **inside a 200** must be translated to the error-d
 - **Nasdaq.com**: unofficial API. History only answers windows that reach the present (a one-month window that ended weeks ago returns `totalRecords: 0`). Requires browser-like `User-Agent` header (returns 401 without). String fields like `MarketCap` come back as `"5,553,872,968,719"` — strip commas + cast to int. Failures arrive as HTTP 200 + `status.rCode` (mapped to the error-dict). `/financials` takes `frequency=1|2` only (the route maps annual/A and quarterly/Q); the IPO calendar takes a month (`YYYY-MM`).
 - **House Financial Disclosures**: upstream returns HTML, not JSON. Client parses the result table with `selectolax` (entities decoded, `<th>` header row skipped). Can't use `safe_get`; has its own try/except. `/house-disclosures/pdf` resolves `path` against the disclosures host and refuses any other host (SSRF guard, 400).
 - **Wilson Center** (*re-enabled 2026-08-27*; the deployment mounts `data/wilson.db`): serves a LOCAL mirror, not a live API (the live host is DNS-dead). Reads `data/wilson.db` (SQLite + FTS5, not distributed with the repo) built once by `scripts/build_wilson_index.py` from a downloaded HTML scrape; sync `sqlite3` calls run via `asyncio.to_thread`. Returns locally-built JSON, not upstream JSON — an intentional exception to the pass-through rule.
-- **NSArchive**: HTML scrape of the GWU NGO's Virtual Reading Room (it has no API). Like `house_fd`, can't use `safe_get`; parses Drupal markup with `selectolax` and has its own try/except returning the error-dict. Brittle (markup changes break parsing). Distinct from `nara` (the government agency).
+- **NSArchive**: HTML scrape of the GWU NGO's Virtual Reading Room (it has no API). Like `house_fd`, can't use `safe_get`; parses Drupal markup with selectolax (Lexbor) and has its own try/except returning the error-dict. Brittle (markup changes break parsing). Distinct from `nara` (the government agency).
 - **BLS**: v1 without a key, v2 with `BLS_API_KEY` (v1 ignores `registrationkey`). `REQUEST_NOT_PROCESSED` bodies (HTTP 200) become the error-dict.
 - **FEMA**: dataset versions differ per dataset — disasters v2, HMGP grants v3, NFIP claims `NfipClaims` v3. Check `/api/open/v1/OpenFemaDataSets` (`version`, `depDate`) when one 404s. OData `$filter` literals are quote-escaped (`_quoted`).
 - **FAS**: static-HTML scrape; `_get` refuses non-HTML content types (index pages link PDFs/xlsx) with 415 + the direct URL instead of returning binary noise as text.
@@ -210,6 +211,8 @@ Upstreams that report failure **inside a 200** must be translated to the error-d
 - **No transformation of upstream responses.** Every client returns whatever the source returned. The envelope wrapping is the only mutation.
 - **Async only.** Every client function is `async`; sync libraries (yfinance, pandas) go through `asyncio.to_thread()`.
 - **One shared httpx client.** Don't create per-request clients — reuse `get_client()` so connection pooling works.
+- **Exact dependency pins.** `requirements.txt` is a full freeze of the runtime tree (all at their latest releases as of 2026-11-04, on Python 3.15 / `python:3.15-slim`). Regenerate it the way its header says — a clean venv on the Dockerfile's Python, the top-level packages, `pip freeze` — never by loosening pins. Starlette's TestClient prefers `httpx2` (dev-only); the app still uses `httpx`.
+- **HTML parsing uses selectolax's Lexbor engine** (`from selectolax.lexbor import LexborHTMLParser`). selectolax 1.0 removed the old Modest `selectolax.parser` module; outputs were verified identical across every scraper before the switch.
 - **Tag every route.** All `@app.get(...)` decorators include `tags=["X"]` so Swagger UI groups them in collapsible sections.
 - **HTTP semantics matter.** Don't return 200 with `error: true` body and call it done. The middleware translates `upstream_status` into proper HTTP codes; if you bypass the helper you bypass the codes.
 - **The EDGAR Frames endpoint is the cross-company killer feature** (one concept across all 2,600+ filers in one call). Preserve its shape when modifying.
