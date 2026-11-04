@@ -117,11 +117,11 @@ async def test_edgar_concept():
             resp = await client.get(f"{BASE_URL}/edgar/concept/AAPL/InvalidConcept")
             has_error = resp.status_code != 200 or "error" in resp.json().get("data", {})
             status = "PASS" if (resp.status_code != 200 or has_error) else "FAIL"
-            log_test("/edgar/concept/{cik}/{concept}", f"AAPL/InvalidConcept", status,
+            log_test("/edgar/concept/{cik}/{concept}", "AAPL/InvalidConcept", status,
                     f"Status: {resp.status_code}, Properly rejected: {has_error}")
-        except Exception as e:
-            log_test("/edgar/concept/{cik}/{concept}", f"AAPL/InvalidConcept", "PASS",
-                    f"Properly errored")
+        except Exception:
+            log_test("/edgar/concept/{cik}/{concept}", "AAPL/InvalidConcept", "PASS",
+                    "Properly errored")
 
         # Taxonomy parameter tests — a concept exists in one taxonomy only; SEC's 404
         # for the wrong one must pass through as 404.
@@ -176,11 +176,11 @@ async def test_edgar_frames():
             resp = await client.get(f"{BASE_URL}/edgar/frames/Revenues?period=CY9999")
             has_error = resp.status_code != 200 or "error" in resp.json().get("data", {})
             status = "PASS" if (resp.status_code != 200 or has_error) else "FAIL"
-            log_test("/edgar/frames/{concept}", f"Revenues?period=CY9999", status,
+            log_test("/edgar/frames/{concept}", "Revenues?period=CY9999", status,
                     f"Status: {resp.status_code}, Properly rejected: {has_error}")
-        except Exception as e:
-            log_test("/edgar/frames/{concept}", f"Revenues?period=CY9999", "PASS",
-                    f"Properly errored")
+        except Exception:
+            log_test("/edgar/frames/{concept}", "Revenues?period=CY9999", "PASS",
+                    "Properly errored")
 
 
 async def test_edgar_search():
@@ -222,8 +222,8 @@ async def test_edgar_search():
             status = "PASS" if (resp.status_code != 200 or has_error) else "FAIL"
             log_test("/edgar/search", "q=&forms=", status,
                     f"Status: {resp.status_code}, Properly rejected: {has_error}")
-        except Exception as e:
-            log_test("/edgar/search", "q=&forms=", "PASS", f"Properly errored")
+        except Exception:
+            log_test("/edgar/search", "q=&forms=", "PASS", "Properly errored")
 
 
 async def main():
