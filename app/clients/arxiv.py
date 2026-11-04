@@ -2,13 +2,13 @@
 
 arXiv exposes a single query endpoint (`export.arxiv.org/api/query`) that returns
 Atom 1.0 XML, NOT JSON. Like nsarchive/house_fd, this client therefore can't use
-`safe_get` (which calls `.json()`): it fetches the XML with the shared async httpx
+`safe_get` (which calls `.json()`): it fetches the XML with the shared async httpx2
 client, parses it with `feedparser`, builds clean records, and returns the standard
 error-dict contract on failure — an intentional exception to the pass-through rule.
 
 Quirks honored here (see docs/ARXIV_API.md):
   * The `http://` endpoint 301-redirects to `https://`; we use the https BASE and
-    also pass `follow_redirects=True` (httpx does NOT follow redirects by default,
+    also pass `follow_redirects=True` (httpx2 does NOT follow redirects by default,
     so without this the client would parse an empty 301 body).
   * arXiv asks callers to make at most one request every three seconds on a single
     connection (legacy-API Terms of Use). A module-level RateLimiter enforces 1/3s.

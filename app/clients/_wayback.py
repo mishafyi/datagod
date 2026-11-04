@@ -17,7 +17,7 @@ Content-Encoding header (vault.fbi.gov), so the body is gunzipped manually.
 import gzip
 import re
 
-import httpx
+import httpx2
 
 from ..resilience import get_with_retry
 from . import _error
@@ -29,9 +29,9 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
 RETRIES = (2.0, 5.0)  # backoff sleeps after wayback 429/503 throttling or a timeout
 
 
-async def retrying_get(url: str, **kwargs) -> httpx.Response:
+async def retrying_get(url: str, **kwargs) -> httpx2.Response:
     """GET with backoff on wayback throttling (429/503) and transport errors (timeouts)."""
-    return await get_with_retry(url, backoff=RETRIES, retry_on=(httpx.TransportError,),
+    return await get_with_retry(url, backoff=RETRIES, retry_on=(httpx2.TransportError,),
                                 headers=HEADERS, timeout=60.0, **kwargs)
 
 
@@ -41,7 +41,7 @@ def unwrap(archived_href: str) -> str:
     return m.group(1) if m else archived_href
 
 
-def _decode(r: httpx.Response) -> str:
+def _decode(r: httpx2.Response) -> str:
     """Capture body as text; id_ captures may be raw gzip with no header."""
     raw: bytes = r.content
     if raw[:2] == b"\x1f\x8b":

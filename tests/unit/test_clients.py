@@ -4,7 +4,7 @@ import json
 import sqlite3
 from datetime import date
 
-import httpx
+import httpx2
 import pytest
 
 from app.clients import (
@@ -56,14 +56,14 @@ def _nasdaq_body(code: int, message: str | None = None) -> dict:
 
 
 async def test_nasdaq_in_body_failure_becomes_error_dict(upstream):
-    upstream.add("https://api.nasdaq.com/", httpx.Response(200, json=_nasdaq_body(400, "Symbol not exists.")))
+    upstream.add("https://api.nasdaq.com/", httpx2.Response(200, json=_nasdaq_body(400, "Symbol not exists.")))
     err = await nasdaq.summary("NOTATICKER")
     assert err == {"error": True, "source": "nasdaq", "upstream_status": 400,
                    "message": "Symbol not exists."}
 
 
 async def test_nasdaq_success_passes_through(upstream):
-    upstream.add("https://api.nasdaq.com/", httpx.Response(200, json=_nasdaq_body(200)))
+    upstream.add("https://api.nasdaq.com/", httpx2.Response(200, json=_nasdaq_body(200)))
     assert (await nasdaq.info("AAPL"))["data"] == {"ok": 1}
 
 
@@ -71,7 +71,7 @@ async def test_nasdaq_success_passes_through(upstream):
     ("annual", "1"), ("A", "1"), ("1", "1"), ("quarterly", "2"), ("q", "2"), ("2", "2"),
 ])
 async def test_nasdaq_financials_frequency_mapping(upstream, given, sent):
-    upstream.add("https://api.nasdaq.com/", httpx.Response(200, json=_nasdaq_body(200)))
+    upstream.add("https://api.nasdaq.com/", httpx2.Response(200, json=_nasdaq_body(200)))
     await nasdaq.financials("NVDA", given)
     assert upstream.requests[-1].url.params["frequency"] == sent
 
@@ -82,7 +82,7 @@ async def test_nasdaq_financials_rejects_unknown_frequency_locally(upstream):
 
 
 async def test_nasdaq_ipo_calendar_sends_a_month(upstream):
-    upstream.add("https://api.nasdaq.com/", httpx.Response(200, json=_nasdaq_body(200)))
+    upstream.add("https://api.nasdaq.com/", httpx2.Response(200, json=_nasdaq_body(200)))
     await nasdaq.calendar_ipo("2026-06-15")
     assert upstream.requests[-1].url.params["date"] == "2026-06"
 
@@ -90,7 +90,7 @@ async def test_nasdaq_ipo_calendar_sends_a_month(upstream):
 # ── bls ─────────────────────────────────────────────────────────────────
 
 async def test_bls_uses_v1_without_key_and_v2_with_key(upstream, monkeypatch):
-    upstream.add("https://api.bls.gov/", httpx.Response(200, json={"status": "REQUEST_SUCCEEDED"}))
+    upstream.add("https://api.bls.gov/", httpx2.Response(200, json={"status": "REQUEST_SUCCEEDED"}))
     monkeypatch.setattr(cfg, "BLS_API_KEY", "")
     await bls.series("cpi", 2024, 2025)
     assert "/publicAPI/v1/" in str(upstream.requests[-1].url)
@@ -106,7 +106,7 @@ async def test_bls_uses_v1_without_key_and_v2_with_key(upstream, monkeypatch):
     ("The key:bogus provided by the User is invalid.", 400),
 ])
 async def test_bls_request_not_processed_is_an_error(upstream, message, status):
-    upstream.add("https://api.bls.gov/", httpx.Response(
+    upstream.add("https://api.bls.gov/", httpx2.Response(
         200, json={"status": "REQUEST_NOT_PROCESSED", "message": [message], "Results": {}}))
     err = await bls.series("cpi", 2024, 2025)
     assert err["error"] is True and err["upstream_status"] == status
@@ -115,7 +115,7 @@ async def test_bls_request_not_processed_is_an_error(upstream, message, status):
 # ── fema ────────────────────────────────────────────────────────────────
 
 async def test_fema_dataset_versions_and_odata_quoting(upstream):
-    upstream.add("https://www.fema.gov/", httpx.Response(200, json={}))
+    upstream.add("https://www.fema.gov/", httpx2.Response(200, json={}))
     await fema.flood_claims(1)
     await fema.grants(1)
     await fema.disasters(1, state="C'A")
@@ -136,7 +136,7 @@ def test_current_congress(day, congress):
 
 
 async def test_votes_default_to_current_congress(upstream):
-    upstream.add("https://api.congress.gov/", httpx.Response(200, json={}))
+    upstream.add("https://api.congress.gov/", httpx2.Response(200, json={}))
     await congress_gov.votes()
     assert upstream.requests[-1].url.path == f"/v3/house-vote/{congress_gov.current_congress()}"
 
@@ -146,7 +146,7 @@ async def test_votes_default_to_current_congress(upstream):
 async def test_imf_series_asks_api_imf_org_for_json(upstream):
     from app.clients import imf
 
-    upstream.add("https://api.imf.org/", httpx.Response(200, json={"dataSets": [], "structure": {}}))
+    upstream.add("https://api.imf.org/", httpx2.Response(200, json={"dataSets": [], "structure": {}}))
     await imf.series("WEO", "USA+CHN.NGDP_RPCH.A", "2024", "2027")
     request = upstream.requests[-1]
     assert request.url.path == "/external/sdmx/2.1/data/WEO/USA+CHN.NGDP_RPCH.A"
@@ -157,7 +157,7 @@ async def test_imf_series_asks_api_imf_org_for_json(upstream):
 async def test_imf_structure_includes_codelists(upstream):
     from app.clients import imf
 
-    upstream.add("https://api.imf.org/", httpx.Response(200, json={"data": {}}))
+    upstream.add("https://api.imf.org/", httpx2.Response(200, json={"data": {}}))
     await imf.structure("WEO")
     request = upstream.requests[-1]
     assert request.url.path == "/external/sdmx/2.1/dataflow/all/WEO/latest"
@@ -167,7 +167,7 @@ async def test_imf_structure_includes_codelists(upstream):
 async def test_ucdp_defaults_to_latest_ged_release(upstream):
     from app.clients import ucdp
 
-    upstream.add("https://ucdpapi.pcr.uu.se/", httpx.Response(200, json={"Result": []}))
+    upstream.add("https://ucdpapi.pcr.uu.se/", httpx2.Response(200, json={"Result": []}))
     await ucdp.gedevents("369")
     assert upstream.requests[-1].url.path == "/api/gedevents/26.1"
 
@@ -199,7 +199,7 @@ async def test_yfinance_info_requires_a_quote(monkeypatch, info, ok):
 
 @pytest.mark.parametrize("keyword", ["R&D spending", "C++ templates", "attention #1", '"exact phrase"'])
 def test_scholar_url_round_trips_the_keyword(keyword):
-    url = httpx.URL(scholar._build_url(keyword, 10, 2020, 2024))
+    url = httpx2.URL(scholar._build_url(keyword, 10, 2020, 2024))
     assert url.params["q"] == keyword
     assert url.params["start"] == "10" and url.params["as_ylo"] == "2020" and url.params["as_yhi"] == "2024"
     assert url.params["as_sdt"] == "0,5" and url.fragment == ""
@@ -225,12 +225,12 @@ def fresh_ticker_map(monkeypatch):
     ("appl", None), ("zz-no-such-co", None),
 ])
 async def test_resolve_company(upstream, fresh_ticker_map, query, cik):
-    upstream.add("https://www.sec.gov/files/company_tickers.json", httpx.Response(200, json=TICKERS))
+    upstream.add("https://www.sec.gov/files/company_tickers.json", httpx2.Response(200, json=TICKERS))
     assert await edgar.resolve_company(query) == cik
 
 
 async def test_ticker_map_failure_keeps_secs_status(upstream, fresh_ticker_map):
-    upstream.add("https://www.sec.gov/files/", httpx.Response(403, text="Undeclared Automated Tool"))
+    upstream.add("https://www.sec.gov/files/", httpx2.Response(403, text="Undeclared Automated Tool"))
     err = await edgar.company("AAPL")
     assert err["error"] is True and err["upstream_status"] == 403  # was 0 → 502 "Expecting value"
 
@@ -248,10 +248,10 @@ def test_latest_annual_prefers_newest_full_year_over_list_order():
 
 
 async def test_company_profile_counts_only_successes(upstream, fresh_ticker_map):
-    upstream.add("https://www.sec.gov/files/company_tickers.json", httpx.Response(200, json=TICKERS))
-    upstream.add("https://data.sec.gov/submissions/", httpx.Response(200, json={"name": "Apple Inc."}))
-    upstream.add("https://data.sec.gov/api/xbrl/companyconcept/", httpx.Response(404, text="NoSuchKey"))
-    upstream.add("https://api.usaspending.gov/", httpx.Response(200, json={"results": [{"Award ID": "X"}]}))
+    upstream.add("https://www.sec.gov/files/company_tickers.json", httpx2.Response(200, json=TICKERS))
+    upstream.add("https://data.sec.gov/submissions/", httpx2.Response(200, json={"name": "Apple Inc."}))
+    upstream.add("https://data.sec.gov/api/xbrl/companyconcept/", httpx2.Response(404, text="NoSuchKey"))
+    upstream.add("https://api.usaspending.gov/", httpx2.Response(200, json={"results": [{"Award ID": "X"}]}))
     profile = await cross_reference.company_profile("apple")
     assert profile["company"] == {"name": "Apple Inc."}
     assert profile["financials"] is None
@@ -261,8 +261,8 @@ async def test_company_profile_counts_only_successes(upstream, fresh_ticker_map)
 
 
 async def test_politician_profile_searches_fec_by_name(upstream):
-    upstream.add("https://disclosures-clerk.house.gov/", httpx.Response(200, text=HOUSE_HTML))
-    upstream.add("https://api.open.fec.gov/", httpx.Response(200, json={"results": [
+    upstream.add("https://disclosures-clerk.house.gov/", httpx2.Response(200, text=HOUSE_HTML))
+    upstream.add("https://api.open.fec.gov/", httpx2.Response(200, json={"results": [
         {"name": "PELOSI, NANCY"}, {"name": "PELOSI, PAUL"}, {"name": "SMITH, JOHN"}]}))
     profile = await cross_reference.politician_profile("pelosi", "nancy")
     fec_request = next(r for r in upstream.requests if r.url.host == "api.open.fec.gov")
@@ -272,8 +272,8 @@ async def test_politician_profile_searches_fec_by_name(upstream):
 
 
 async def test_politician_profile_reports_failed_sources(upstream):
-    upstream.add("https://disclosures-clerk.house.gov/", httpx.Response(503, text="down"))
-    upstream.add("https://api.open.fec.gov/", httpx.Response(429, json={"error": "OVER_RATE_LIMIT"}))
+    upstream.add("https://disclosures-clerk.house.gov/", httpx2.Response(503, text="down"))
+    upstream.add("https://api.open.fec.gov/", httpx2.Response(429, json={"error": "OVER_RATE_LIMIT"}))
     profile = await cross_reference.politician_profile("pelosi")
     assert profile["house_trades"] == [] and profile["campaign_finance"] == []
     assert set(profile["errors"]) == {"house_disclosures", "fec"}
@@ -323,7 +323,7 @@ async def test_fas_page_with_empty_body(monkeypatch):
 
 async def test_fas_refuses_non_html_documents(upstream):
     xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    upstream.add("https://irp.fas.org/", httpx.Response(200, content=b"PK\x03\x04...",
+    upstream.add("https://irp.fas.org/", httpx2.Response(200, content=b"PK\x03\x04...",
                                                         headers={"content-type": xlsx}))
     err = await fas.page("nsa/stinfo-finding-aid.xlsx")  # returned the zip bytes as "text"
     assert err["error"] is True and err["upstream_status"] == 415

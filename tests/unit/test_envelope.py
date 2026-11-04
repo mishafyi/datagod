@@ -1,6 +1,6 @@
 """ResponseEnvelopeMiddleware: status mapping, framework errors, headers, redaction."""
 
-import httpx
+import httpx2
 import pytest
 
 from app.middleware import envelope
@@ -52,15 +52,15 @@ def test_method_not_allowed_keeps_allow_header(api):
 
 
 def test_upstream_4xx_passes_through_and_5xx_becomes_502(api, upstream):
-    upstream.add("https://api.fda.gov/drug/event", httpx.Response(404, json={"error": {"code": "NOT_FOUND"}}))
-    upstream.add("https://api.fda.gov/drug/enforcement", httpx.Response(500, text="boom"))
+    upstream.add("https://api.fda.gov/drug/event", httpx2.Response(404, json={"error": {"code": "NOT_FOUND"}}))
+    upstream.add("https://api.fda.gov/drug/enforcement", httpx2.Response(500, text="boom"))
     assert api.get("/fda/drug-events").status_code == 404
     r = api.get("/fda/drug-recalls")
     assert r.status_code == 502 and r.json()["meta"]["status"] == "error"
 
 
 def test_non_json_upstream_body_is_a_named_error(api, upstream):
-    upstream.add("https://api.fda.gov/", httpx.Response(200, text="<html>maintenance</html>",
+    upstream.add("https://api.fda.gov/", httpx2.Response(200, text="<html>maintenance</html>",
                                                         headers={"content-type": "text/html"}))
     r = api.get("/fda/food-recalls")
     assert r.status_code == 502
@@ -68,7 +68,7 @@ def test_non_json_upstream_body_is_a_named_error(api, upstream):
 
 
 def test_raw_bytes_routes_are_not_wrapped(api, upstream):
-    upstream.add("https://disclosures-clerk.house.gov/", httpx.Response(
+    upstream.add("https://disclosures-clerk.house.gov/", httpx2.Response(
         200, content=b"%PDF-1.7 ...", headers={"content-type": "application/pdf"}))
     r = api.get("/house-disclosures/pdf", params={"path": "public_disc/ptr-pdfs/2024/1.pdf"})
     assert r.status_code == 200 and r.content.startswith(b"%PDF")

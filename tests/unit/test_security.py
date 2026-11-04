@@ -1,6 +1,6 @@
 """Credential redaction, the House-PDF SSRF guard, and API-key / docs auth."""
 
-import httpx
+import httpx2
 import pytest
 
 from app.clients import _error, house_fd
@@ -29,7 +29,7 @@ async def test_upstream_error_message_does_not_leak_api_key(upstream, monkeypatc
     from app.clients import fred
 
     monkeypatch.setattr(cfg, "FRED_API_KEY", "real-fred-key-123")
-    upstream.add("https://api.stlouisfed.org/", httpx.Response(
+    upstream.add("https://api.stlouisfed.org/", httpx2.Response(
         400, json={"error_code": 400, "error_message": "Bad Request. Series does not exist."}))
     err = await fred.get_series("NOPE")
     assert err["error"] is True and err["upstream_status"] == 400
@@ -39,8 +39,8 @@ async def test_upstream_error_message_does_not_leak_api_key(upstream, monkeypatc
 
 
 def test_error_message_is_never_empty():
-    request = httpx.Request("GET", "https://example.org/x?api_key=zzz")
-    err = _error("src", httpx.ReadTimeout("", request=request))
+    request = httpx2.Request("GET", "https://example.org/x?api_key=zzz")
+    err = _error("src", httpx2.ReadTimeout("", request=request))
     assert err["upstream_status"] == 0
     assert err["message"].startswith("ReadTimeout for https://example.org/x")
     assert "zzz" not in err["message"]

@@ -30,7 +30,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from urllib.parse import quote
 
-import httpx
+import httpx2
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
@@ -114,7 +114,7 @@ def hit(method: str, path: str, group: str, check: Callable[[object], str] | Non
     what came back and raises (or returns falsy) when the payload carries no data."""
     label = f"{method} {path.split('?')[0]}"
     try:
-        r = httpx.request(method, BASE + path, headers=HEADERS, timeout=timeout,
+        r = httpx2.request(method, BASE + path, headers=HEADERS, timeout=timeout,
                           follow_redirects=True, **kwargs)
     except Exception as exc:
         rows.append((group, label, "ERR", "EXP-ERR" if expect_error else "FAIL",
@@ -152,7 +152,7 @@ def expect(method: str, path: str, group: str, status: int, note: str, **kwargs)
     label = f"{method} {path.split('?')[0]}"
     headers = {**HEADERS, **kwargs.pop("headers", {})}
     try:
-        r = httpx.request(method, BASE + path, headers=headers, timeout=45, **kwargs)
+        r = httpx2.request(method, BASE + path, headers=headers, timeout=45, **kwargs)
         mstatus = (r.json().get("meta") or {}).get("status")
         ok = r.status_code == status and mstatus == "error"
         rows.append((group, label, r.status_code, "PASS" if ok else "FAIL",

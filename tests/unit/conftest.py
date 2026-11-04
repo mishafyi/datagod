@@ -1,6 +1,6 @@
 """Shared fixtures: an in-process fake for every upstream, and the app client.
 
-`upstream` swaps the shared httpx client for one on an httpx.MockTransport, so
+`upstream` swaps the shared httpx2 client for one on an httpx2.MockTransport, so
 no test touches the network: register a handler per URL prefix, inspect what
 was sent in `upstream.requests`.
 """
@@ -9,7 +9,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -27,15 +27,15 @@ def anyio_backend() -> str:
 
 class FakeUpstream:
     def __init__(self) -> None:
-        self.routes: list[tuple[str, Callable[[httpx.Request], httpx.Response]]] = []
-        self.requests: list[httpx.Request] = []
+        self.routes: list[tuple[str, Callable[[httpx2.Request], httpx2.Response]]] = []
+        self.requests: list[httpx2.Request] = []
 
-    def add(self, url_prefix: str, handler: Callable[[httpx.Request], httpx.Response] | httpx.Response):
+    def add(self, url_prefix: str, handler: Callable[[httpx2.Request], httpx2.Response] | httpx2.Response):
         """Answer requests whose URL starts with `url_prefix` (latest registration wins)."""
         fn = handler if callable(handler) else (lambda request, r=handler: r)
         self.routes.insert(0, (url_prefix, fn))
 
-    def __call__(self, request: httpx.Request) -> httpx.Response:
+    def __call__(self, request: httpx2.Request) -> httpx2.Response:
         self.requests.append(request)
         for prefix, fn in self.routes:
             if str(request.url).startswith(prefix):
@@ -46,7 +46,7 @@ class FakeUpstream:
 @pytest.fixture
 def upstream(monkeypatch: pytest.MonkeyPatch) -> FakeUpstream:
     fake = FakeUpstream()
-    monkeypatch.setattr(clients, "_client", httpx.AsyncClient(transport=httpx.MockTransport(fake)))
+    monkeypatch.setattr(clients, "_client", httpx2.AsyncClient(transport=httpx2.MockTransport(fake)))
     return fake
 
 

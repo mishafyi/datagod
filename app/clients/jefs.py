@@ -14,7 +14,7 @@ Architecture:
 The Playwright step is interactive — a browser window opens, the human solves
 reCAPTCHA and submits the registration form; on success JEFS closes the dialog
 and reloads "/", and the script captures the now-authorized cookies. After that,
-all calls go through httpx with the cookies set.
+all calls go through httpx2 with the cookies set.
 
 Because it needs a visible browser + a human-solved reCAPTCHA, registration only
 works where someone can see the window — it cannot run on a headless server.
@@ -28,7 +28,7 @@ explicitly supply real credentials at registration.
 
 import asyncio
 
-import httpx
+import httpx2
 
 from . import UpstreamJSON
 
@@ -41,7 +41,7 @@ class JEFSSession:
 
     def __init__(self) -> None:
         self._cookies: dict[str, str] = {}
-        self._client: httpx.AsyncClient | None = None
+        self._client: httpx2.AsyncClient | None = None
         self._lock = asyncio.Lock()
 
     def is_registered(self) -> bool:
@@ -117,9 +117,9 @@ class JEFSSession:
         if not self._cookies:
             raise RuntimeError("JEFS registration finished but no session cookie was captured")
 
-    async def _client_for_session(self) -> httpx.AsyncClient:
+    async def _client_for_session(self) -> httpx2.AsyncClient:
         if self._client is None:
-            self._client = httpx.AsyncClient(
+            self._client = httpx2.AsyncClient(
                 base_url=BASE,
                 cookies=self._cookies,
                 timeout=30.0,

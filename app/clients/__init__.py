@@ -5,11 +5,11 @@ import re
 import time
 from collections import deque
 
-import httpx
+import httpx2
 
 from ..config import redact
 
-_client: httpx.AsyncClient | None = None
+_client: httpx2.AsyncClient | None = None
 
 UpstreamJSON = dict | list
 
@@ -45,10 +45,10 @@ def clean_text(s: str | None) -> str | None:
     return re.sub(r"\s+", " ", s).strip() or None if s else None
 
 
-def get_client() -> httpx.AsyncClient:
+def get_client() -> httpx2.AsyncClient:
     global _client
     if _client is None:
-        _client = httpx.AsyncClient(timeout=30.0)
+        _client = httpx2.AsyncClient(timeout=30.0)
     return _client
 
 
@@ -61,7 +61,7 @@ def error_dict(source: str, upstream_status: int, message: str) -> dict:
 def _describe(exc: BaseException) -> str:
     """Caller-facing text for `exc`: status + URL for HTTP errors, plus the start
     of the upstream's own error body when it is JSON/text (not an HTML page)."""
-    if isinstance(exc, httpx.HTTPStatusError):
+    if isinstance(exc, httpx2.HTTPStatusError):
         r = exc.response
         message = f"{r.status_code} {r.reason_phrase} from {r.request.url}"
         ctype = r.headers.get("content-type", "")
@@ -70,7 +70,7 @@ def _describe(exc: BaseException) -> str:
             if detail:
                 message += f": {detail}"
         return message
-    if isinstance(exc, httpx.RequestError):
+    if isinstance(exc, httpx2.RequestError):
         try:
             where = f" for {exc.request.url}"
         except RuntimeError:  # request not attached
@@ -85,7 +85,7 @@ def _error(source: str, exc: BaseException) -> dict:
     return error_dict(source, upstream_status, _describe(exc))
 
 
-def json_or_error(r: httpx.Response, source: str) -> UpstreamJSON:
+def json_or_error(r: httpx2.Response, source: str) -> UpstreamJSON:
     """`r`'s JSON body, or the error-dict when it isn't JSON (e.g. an HTML
     error/SPA page served with a 200)."""
     try:

@@ -4,7 +4,7 @@ import asyncio
 import re
 from collections.abc import Callable
 
-import httpx
+import httpx2
 
 from ..config import cfg
 from . import RateLimiter, UpstreamJSON, _error, error_dict, get_client, safe_get
@@ -77,10 +77,10 @@ async def submissions_overflow(filename: str) -> UpstreamJSON:
     return await _gated_get(f"{BASE}/submissions/{filename}", headers=HEADERS)
 
 
-async def filing_document(cik: str, accession: str, document: str) -> httpx.Response | dict:
+async def filing_document(cik: str, accession: str, document: str) -> httpx2.Response | dict:
     """Fetch a RAW filing document from the EDGAR archives. `accession` is the accession
     number WITHOUT dashes (e.g. 000032019324000123); `document` is the filename from the
-    Submissions API's `primaryDocument` (e.g. aapl-20240928.htm). Returns the raw httpx
+    Submissions API's `primaryDocument` (e.g. aapl-20240928.htm). Returns the raw httpx2
     Response (caller returns its bytes) or the error-dict on failure."""
     await _limiter.acquire()
     url = f"{ARCHIVES}/{cik}/{accession}/{document}"
