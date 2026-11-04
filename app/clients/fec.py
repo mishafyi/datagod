@@ -1,15 +1,18 @@
 """FEC — Campaign finance. Candidates, donations, expenditures."""
 
-from . import UpstreamJSON, safe_get
 from ..config import cfg
+from . import UpstreamJSON, safe_get
 
 BASE = "https://api.open.fec.gov/v1"
 
 
 async def candidates(office: str = "", state: str = "",
-                     per_page: int = 10, page: int = 1) -> UpstreamJSON:
-    """Search candidates. office: P(resident), S(enate), H(ouse)."""
+                     per_page: int = 10, page: int = 1, name: str = "") -> UpstreamJSON:
+    """Search candidates. office: P(resident), S(enate), H(ouse); `name` is
+    FEC's candidate-name search (`q`)."""
     params: dict = {"api_key": cfg.FEC_API_KEY, "per_page": per_page, "page": page}
+    if name:
+        params["q"] = name
     if office:
         params["office"] = office
     if state:

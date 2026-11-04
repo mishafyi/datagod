@@ -32,6 +32,7 @@ FEMA grant and assistance awards.
 ## Quirks & notes
 
 - No key (OpenFEMA).
-- Datasets: disasters → `DisasterDeclarationsSummaries`, grants → `HazardMitigationGrantProgramDisasterSummaries`, flood-claims → `FimaNfipClaims`.
+- Datasets: disasters → `DisasterDeclarationsSummaries`, grants → `HazardMitigationGrantProgramDisasterSummaries` **v3**, flood-claims → `NfipClaims` **v3** (`FimaNfipClaims` v2 is gone — 404; HMGP v2 was frozen 2026-08-31 and deprecated 2026-10-15).
+- `state`/`declared_since` are sent as an OData `$filter` with quotes escaped.
 
 > Endpoint params are generated from the live OpenAPI schema (`/openapi.json`); the Quirks section is curated. Regenerate with `python -m scripts.gen_source_docs`.

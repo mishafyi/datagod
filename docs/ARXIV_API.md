@@ -74,7 +74,7 @@ On failure the client returns the error-dict instead: `{"error": true, "source":
 ## Quirks
 
 - **3-second rate limit.** arXiv's legacy-API Terms of Use ask callers to make no more than **one request every three seconds** on a single connection. The client enforces this with a module-level `RateLimiter(rate=1, period=3.0)`, so back-to-back calls (and the test suite) self-throttle.
-- **Redirect required.** httpx does not follow redirects by default; the `http://` host 301s to `https://`. The client uses the `https://` BASE *and* passes `follow_redirects=True` — without it the response body would be the empty 301 page and `total_results`/`entries` would come back empty.
+- **Redirect required.** httpx2 does not follow redirects by default; the `http://` host 301s to `https://`. The client uses the `https://` BASE *and* passes `follow_redirects=True` — without it the response body would be the empty 301 page and `total_results`/`entries` would come back empty.
 - **Malformed id → HTTP 400.** A badly-formed `id_list` value returns HTTP 400 with an error feed (surfaced as the error-dict, `upstream_status=400`). A well-formed but nonexistent id (e.g. `2301.99999`) returns HTTP 200 with `entries: []` and `total_results` 0.
 - **Paging.** `start` is an offset (not a page number) and `max_results` is the page size. arXiv allows up to 2000 results per request and recommends paging via `start` for large result sets; DataGod caps `max_results` at 100 to match sibling routes. The total available is `total_results` (OpenSearch `totalResults`).
 - **Sort.** `sortBy=relevance` is the default; `lastUpdatedDate` / `submittedDate` sort by the v-latest update / original submission date respectively. `sortOrder` defaults to `descending`.

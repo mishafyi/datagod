@@ -1,8 +1,8 @@
 # DataGod
 
-One async HTTP API over **39 free data sources** — US government, global/international, markets, research, media/video, and trending — behind a single consistent response envelope. Routes are thin pass‑throughs: each returns the upstream's JSON unchanged.
+One async HTTP API over **41 free data sources** — US government, global/international, markets, research, media/video, and trending — behind a single consistent response envelope. Routes are thin pass‑throughs: each returns the upstream's JSON unchanged.
 
-**Sources:** FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · NARA · National Security Archive · Smithsonian Open Access · Nasdaq.com · Yahoo Finance · arXiv · Google Scholar · NewsNow (trending boards) · World Bank · IMF · Eurostat · ECB · UN Comtrade · UCDP · USGS Earthquakes · NWS Weather Alerts · NASA EONET · Wikipedia · NASA Image and Video Library · Internet Archive · Wikimedia Commons — plus `/cross-reference/*` aggregators.
+**Sources:** FRED · SEC EDGAR · USAspending · US Census · BLS · Treasury Fiscal Data · FEC · Congress.gov · openFDA · ClinicalTrials.gov · EIA · FEMA · Federal Register · House Financial Disclosures · NARA · National Security Archive · CIA FOIA Reading Room · FBI Vault · FRUS (State Department) · UK National Archives · FAS Intelligence Resource Program · Wilson Center Digital Archive · Smithsonian Open Access · Nasdaq.com · Yahoo Finance · arXiv · Google Scholar · NewsNow (trending boards) · World Bank · IMF · Eurostat · ECB · UN Comtrade · UCDP · USGS Earthquakes · NWS Weather Alerts · NASA EONET · Wikipedia · NASA Image and Video Library · Internet Archive · Wikimedia Commons — plus `/cross-reference/*` aggregators.
 
 🧭 **API guide (for agents/consumers):** [`docs/API_GUIDE.md`](docs/API_GUIDE.md) — which endpoint for which information, with parameters (plus [`docs/endpoints.csv`](docs/endpoints.csv) for tooling). Architecture & conventions live in [`CLAUDE.md`](CLAUDE.md).
 
@@ -18,12 +18,22 @@ curl http://localhost:8000/health
 ## Run locally (no Docker)
 
 ```bash
-python3 -m venv .venv
+python3.15 -m venv .venv   # the Docker image's Python (python:3.15-slim); 3.12+ is the floor (numpy 2.5)
 .venv/bin/pip install -r requirements.txt
 cp .env.example .env   # then fill in keys (at minimum DATAGOD_API_KEY)
 .venv/bin/uvicorn app.main:app --reload --port 8000
 open http://localhost:8000/docs
 ```
+
+## Tests
+
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest                       # offline unit tests — no network, no keys
+DATAGOD_API_KEY=… .venv/bin/python tests/test_all_endpoints.py   # live: every endpoint must return data
+```
+
+The live smoke test checks that each endpoint actually returns information (row counts, titles, latest values — not just HTTP 200) and separates real failures from missing keys (`CONFIG`), upstream quotas (`LIMIT`) and networks an upstream blocks (`BLOCKED`). Point it at a deployment with `DATAGOD_BASE_URL`.
 
 Only `DATAGOD_API_KEY` is required to start; per‑source upstream keys (`FRED_API_KEY`, `SEC_USER_AGENT`, …) unlock the sources that need them. See [`.env.example`](.env.example).
 
@@ -63,7 +73,7 @@ On failure `meta.status` is `"error"`, `error` holds the message, and the HTTP s
 - `docs/*.md` — per‑source deep‑dives on upstream quirks.
 - `CLAUDE.md` — architecture and conventions.
 
-Two sources ship disabled: **JEFS** (judicial disclosures; needs an interactive Playwright + reCAPTCHA session) and the **Wilson Center Digital Archive** (needs a local `data/wilson.db` mirror that isn't distributed). Both stay in the codebase — see the re-enable notes in `app/main.py`.
+One source ships disabled: **JEFS** (judicial disclosures; needs an interactive Playwright + reCAPTCHA session) — it stays in the codebase, see the re-enable note in `app/main.py`. The **Wilson Center Digital Archive** is served from a local SQLite mirror (`data/wilson.db`) that isn't distributed: mount it (or build it with `scripts/build_wilson_index.py`), otherwise `/wilson/*` answers an error envelope with a build hint.
 
 ## Deploy
 
@@ -72,7 +82,7 @@ A single stateless container (see `Dockerfile`) — any Docker host works. All c
 ## Disclaimers
 
 - Not affiliated with, or endorsed by, any US government agency or any of the upstream data providers.
-- The Nasdaq.com, National Security Archive, House Financial Disclosures, and Google Scholar sources rely on unofficial endpoints or HTML scraping: they can break without notice, and you are responsible for complying with each upstream's terms of service and rate limits.
+- The Nasdaq.com, National Security Archive, House Financial Disclosures, FRUS, FAS and Google Scholar sources rely on unofficial endpoints or HTML scraping, and CIA / FBI Vault are read from the Internet Archive's Wayback Machine captures: they can break without notice, and you are responsible for complying with each upstream's terms of service and rate limits.
 - SEC EDGAR requires a real `User-Agent`: set `SEC_USER_AGENT="Your Name your@email.com"` (SEC policy; EDGAR returns 403 without it).
 
 ## Acknowledgments
@@ -81,7 +91,7 @@ DataGod stands on open source:
 
 - [`sort-google-scholar`](https://github.com/WittmannF/sort-google-scholar) by Fernando Marcos Wittmann (MIT) — the `/scholar` source is vendored and adapted from it (see `app/clients/scholar.py` for what was kept vs. dropped).
 - [yfinance](https://github.com/ranaroussi/yfinance) — powers every `/yfinance` endpoint, used unmodified.
-- The web stack: [FastAPI](https://github.com/fastapi/fastapi), [Starlette](https://github.com/encode/starlette), [Pydantic](https://github.com/pydantic/pydantic), [Uvicorn](https://github.com/encode/uvicorn), [HTTPX](https://github.com/encode/httpx).
+- The web stack: [FastAPI](https://github.com/fastapi/fastapi), [Starlette](https://github.com/encode/starlette), [Pydantic](https://github.com/pydantic/pydantic), [Uvicorn](https://github.com/encode/uvicorn), [HTTPX2](https://github.com/pydantic/httpx2).
 - Parsing & data: [pandas](https://github.com/pandas-dev/pandas), [selectolax](https://github.com/rushter/selectolax), [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), [lxml](https://github.com/lxml/lxml), [feedparser](https://github.com/kurtmckee/feedparser), [Requests](https://github.com/psf/requests), [python-dotenv](https://github.com/theskumar/python-dotenv), [Tenacity](https://github.com/jd/tenacity).
 
 And thanks to the agencies and services that publish the free data this project merely passes through.

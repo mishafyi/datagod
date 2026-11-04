@@ -8,14 +8,13 @@ Usage: .venv/bin/python scripts/build_wilson_index.py
 """
 
 import json
-import math
 import re
 import sqlite3
 import subprocess
 import tarfile
 from pathlib import Path
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
 ROOT = Path(__file__).resolve().parent.parent
 MIRROR = ROOT / "data" / "digitalarchive wilsoncenter"
@@ -33,7 +32,7 @@ def load_download_ids() -> set[str]:
 
 
 def parse_doc(slug: str, html: str) -> dict:
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
 
     def tx(node) -> str:
         return node.text(strip=True) if node else ""
@@ -64,7 +63,7 @@ def parse_doc(slug: str, html: str) -> dict:
 
 
 def main() -> None:
-    print(f"[*] download ids ...")
+    print("[*] download ids ...")
     dl_ids = load_download_ids()
     print(f"    {len(dl_ids)} documents have downloads")
 

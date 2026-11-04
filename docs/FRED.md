@@ -19,7 +19,7 @@ Keyword search across FRED's 800K-series catalog; returns series IDs to fetch ab
 
 ### `GET /fred/series/{series_id}`
 
-Fetch FRED series metadata
+Metadata for one FRED series — title, units, frequency, seasonal adjustment, observation date range, last update. Use to confirm what a series ID measures before fetching its observations.
 
 **Params:** `series_id` (path, string, required)
 

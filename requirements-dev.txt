@@ -1,0 +1,4 @@
+# Offline unit tests: .venv/bin/python -m pytest  (async tests use anyio's plugin,
+# installed with httpx2; upstreams are faked with httpx2.MockTransport).
+-r requirements.txt
+pytest==9.2.0

@@ -14,35 +14,34 @@ enough to be a real page, and skips interstitials. Captures fetched with the
 Content-Encoding header (vault.fbi.gov), so the body is gunzipped manually.
 """
 
-import asyncio
 import gzip
+import re
 
-from . import get_client
+import httpx2
+
+from ..resilience import get_with_retry
+from . import _error
 
 WAYBACK = "https://web.archive.org/web"
 CDX = "https://web.archive.org/cdx/search/cdx"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
-RETRIES = (2.0, 5.0)  # backoff sleeps after wayback 429/503 throttling
+RETRIES = (2.0, 5.0)  # backoff sleeps after wayback 429/503 throttling or a timeout
 
 
-async def retrying_get(url: str, **kwargs):
-    """GET with backoff on wayback throttling (429/503) and timeouts."""
-    last_exc: Exception | None = None
-    for attempt in range(len(RETRIES) + 1):
-        try:
-            r = await get_client().get(url, headers=HEADERS, timeout=60.0, **kwargs)
-            if r.status_code in (429, 503):
-                raise Exception(f"wayback throttled ({r.status_code})")
-            return r
-        except Exception as exc:
-            last_exc = exc
-            if attempt < len(RETRIES):
-                await asyncio.sleep(RETRIES[attempt])
-    raise last_exc  # type: ignore[misc]
+async def retrying_get(url: str, **kwargs) -> httpx2.Response:
+    """GET with backoff on wayback throttling (429/503) and transport errors (timeouts)."""
+    return await get_with_retry(url, backoff=RETRIES, retry_on=(httpx2.TransportError,),
+                                headers=HEADERS, timeout=60.0, **kwargs)
 
 
-def _decode(r) -> str:
+def unwrap(archived_href: str) -> str:
+    """Original URL from a wayback-rewritten href (/web/{ts}(id_)?/{original})."""
+    m = re.match(r"^(?:https?://web\.archive\.org)?/web/[^/]+/(https?://.+)$", archived_href)
+    return m.group(1) if m else archived_href
+
+
+def _decode(r: httpx2.Response) -> str:
     """Capture body as text; id_ captures may be raw gzip with no header."""
     raw: bytes = r.content
     if raw[:2] == b"\x1f\x8b":
@@ -78,5 +77,5 @@ async def fetch_capture(url: str, min_bytes: int = 8000,
         return None, None, {"upstream_status": 404,
                             "message": f"Only interstitial captures of {url}"}
     except Exception as exc:
-        status = getattr(getattr(exc, "response", None), "status_code", 0)
-        return None, None, {"upstream_status": status, "message": str(exc)}
+        err = _error("wayback", exc)
+        return None, None, {"upstream_status": err["upstream_status"], "message": err["message"]}

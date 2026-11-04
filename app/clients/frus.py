@@ -14,9 +14,9 @@ Documents: /historicaldocuments/{volume}/d{n}, TEI-classed HTML in div.content.
 
 import re
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser
 
-from . import UpstreamJSON, get_client
+from . import UpstreamJSON, _error, clean_text as _clean, error_dict, get_client
 
 BASE = "https://history.state.gov"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -26,21 +26,17 @@ BODY_CAP = 40000  # generous: the DESK owns the final context slice (long memcon
 
 
 def _err(status: int, message: str) -> dict:
-    return {"error": True, "source": "frus", "upstream_status": status, "message": message}
-
-
-def _clean(s: str | None) -> str | None:
-    return re.sub(r"\s+", " ", s).strip() if s else None
+    return error_dict("frus", status, message)
 
 
 def _parse_search(html: str, start: int) -> UpstreamJSON:
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     results: list[dict] = []
     for block in t.css("div.hsg-search-result"):
         a = block.css_first("h3.hsg-search-result-heading a")
         if not a:
             continue
-        href = a.attributes.get("href", "")
+        href = a.attributes.get("href") or ""
         m = re.match(r"/historicaldocuments/([^/]+)/d(\d+)$", href)
         summary = block.css_first("p.hsg-search-result-summary")
         results.append({
@@ -57,7 +53,7 @@ def _parse_search(html: str, start: int) -> UpstreamJSON:
 
 
 def _parse_document(html: str, volume: str, doc: int) -> UpstreamJSON:
-    t = HTMLParser(html)
+    t = LexborHTMLParser(html)
     content = t.css_first("div.content")
     if not content:
         return _err(404, f"No document content for {volume}/d{doc}")
@@ -69,7 +65,7 @@ def _parse_document(html: str, volume: str, doc: int) -> UpstreamJSON:
         "doc": doc,
         "title": _clean(head.text()) if head else None,
         "source_note": _clean(note.text(separator=" ")) if note else None,
-        "body": _clean(content.text(separator=" "))[:BODY_CAP],
+        "body": (_clean(content.text(separator=" ")) or "")[:BODY_CAP],
         "url": f"{BASE}/historicaldocuments/{volume}/d{doc}",
     }
 
@@ -84,7 +80,7 @@ async def search(q: str, start: int = 1) -> UpstreamJSON:
         r.raise_for_status()
         return _parse_search(r.text, start)
     except Exception as exc:
-        return _err(getattr(getattr(exc, "response", None), "status_code", 0), str(exc))
+        return _error("frus", exc)
 
 
 async def document(volume: str, doc: int) -> UpstreamJSON:
@@ -95,4 +91,4 @@ async def document(volume: str, doc: int) -> UpstreamJSON:
         r.raise_for_status()
         return _parse_document(r.text, volume, doc)
     except Exception as exc:
-        return _err(getattr(getattr(exc, "response", None), "status_code", 0), str(exc))
+        return _error("frus", exc)

@@ -32,7 +32,7 @@ Population by US state.
 ## Quirks & notes
 
 - **Requires a valid `CENSUS_API_KEY`** (free signup: https://api.census.gov/data/key_signup.html). A missing or invalid key 302-redirects to an HTML `invalid_key.html` page → JSON parse error → 502.
-- The client sends `cfg.CENSUS_API_KEY` as `key=`. Uses ACS 1-year (`acs/acs1`).
+- The client sends `cfg.CENSUS_API_KEY` as `key=`. Defaults to ACS 5-year (`acs/acs5`, supports tracts); `dataset=acs1` for 1-year (65k+ population geographies).
 - Response is a 2-D array: a header row followed by data rows.
 
 > Endpoint params are generated from the live OpenAPI schema (`/openapi.json`); the Quirks section is curated. Regenerate with `python -m scripts.gen_source_docs`.

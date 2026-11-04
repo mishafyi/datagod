@@ -1,45 +1,59 @@
-"""Retry logic with exponential backoff for all API clients."""
-import httpx
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
-from app.clients import get_client
+"""Retry-on-throttle for upstreams that rate-limit bursts (tenacity).
+
+Used by the Wayback mirror clients (cia, vault via clients/_wayback.py) and
+Wikipedia. A 429/503 response is retried after the upstream's Retry-After
+(capped), else the next `backoff` step. When attempts run out, `Throttled` is
+raised carrying the last response, so the error-dict reports the real status.
+"""
+
+from collections.abc import Sequence
+
+import httpx2
+from tenacity import AsyncRetrying, RetryCallState, retry_if_exception_type, stop_after_attempt
+
+from .clients import get_client
+
+THROTTLE_STATUSES = frozenset({429, 503})
 
 
-def _should_retry(exc: BaseException) -> bool:
-    if isinstance(exc, (httpx.TimeoutException, httpx.ConnectError)):
-        return True
-    return isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code >= 500
+class Throttled(Exception):
+    """A 429/503 that outlasted every retry; `.response` is the last one."""
 
-_retry = retry(
-    retry=retry_if_exception(_should_retry),
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=4),
-    reraise=True,
-)
+    def __init__(self, response: httpx2.Response) -> None:
+        super().__init__(f"{response.status_code} {response.reason_phrase} from "
+                         f"{response.request.url} (throttled; retries exhausted)")
+        self.response = response
 
-def _error_dict(url: str, exc: Exception) -> dict:
-    status = getattr(getattr(exc, "response", None), "status_code", 0)
-    return {"error": True, "source": url, "status": status, "message": str(exc)}
 
-@_retry
-async def _get(url: str, **kwargs) -> httpx.Response:
-    resp = await get_client().get(url, **kwargs)
-    resp.raise_for_status()
-    return resp
-
-@_retry
-async def _post(url: str, **kwargs) -> httpx.Response:
-    resp = await get_client().post(url, **kwargs)
-    resp.raise_for_status()
-    return resp
-
-async def resilient_get(url: str, **kwargs) -> dict:
+def _retry_after(response: httpx2.Response, fallback: float, max_wait: float) -> float:
     try:
-        return (await _get(url, **kwargs)).json()
-    except Exception as exc:
-        return _error_dict(url, exc)
+        return min(float(response.headers.get("retry-after", "")), max_wait)
+    except ValueError:  # absent, or an HTTP-date
+        return fallback
 
-async def resilient_post(url: str, data=None, json=None, **kwargs) -> dict:
-    try:
-        return (await _post(url, data=data, json=json, **kwargs)).json()
-    except Exception as exc:
-        return _error_dict(url, exc)
+
+def _waiter(backoff: Sequence[float], max_wait: float):
+    def wait(state: RetryCallState) -> float:
+        fallback = backoff[min(state.attempt_number, len(backoff)) - 1]
+        exc = state.outcome.exception() if state.outcome else None
+        if isinstance(exc, Throttled):
+            return _retry_after(exc.response, fallback, max_wait)
+        return fallback
+    return wait
+
+
+async def get_with_retry(url: str, *, backoff: Sequence[float] = (2.0, 5.0),
+                         max_wait: float = 20.0,
+                         retry_on: tuple[type[BaseException], ...] = (),
+                         **kwargs) -> httpx2.Response:
+    """GET `url`, retrying up to len(backoff) times on 429/503 and on any
+    `retry_on` exception. Returns the first non-throttled response (any status);
+    raises `Throttled` or the last exception once retries are exhausted."""
+    async for attempt in AsyncRetrying(retry=retry_if_exception_type((Throttled, *retry_on)),
+                                       stop=stop_after_attempt(len(backoff) + 1),
+                                       wait=_waiter(backoff, max_wait), reraise=True):
+        with attempt:
+            r = await get_client().get(url, **kwargs)
+            if r.status_code in THROTTLE_STATUSES:
+                raise Throttled(r)
+    return r

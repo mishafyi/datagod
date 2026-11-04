@@ -2,7 +2,7 @@
 name: eonet
 description: "NASA EONET — global natural-event tracker: open wildfires, severe storms, volcanoes, floods, sea ice, with coordinates and source links. Use for currently-burning wildfires and other ongoing natural events worldwide."
 keywords: "NASA EONET, wildfires, natural events, volcanoes, severe storms, floods, natural disasters, event tracker"
-routes: "/eonet/events, /eonet/categories"
+routes: "/eonet/categories, /eonet/events"
 ---
 
 # EONET

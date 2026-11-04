@@ -1,9 +1,20 @@
-"""BLS — Employment, wages, CPI, occupational data."""
+"""BLS — Employment, wages, CPI, occupational data.
 
-from . import UpstreamJSON, safe_get, safe_post
+Keyless calls use the v1 API. With BLS_API_KEY set they use v2, the version
+that honors `registrationkey` (v1 silently ignores it, so the key bought
+nothing): 500 queries/day, 50 series and 20 years per query instead of v1's
+25/day, 25 series and 10 years.
+
+BLS answers failures with HTTP 200 and status REQUEST_NOT_PROCESSED (daily
+threshold reached, invalid key, too many years); `_checked` turns those into
+the error-dict so the envelope reports them.
+"""
+
 from ..config import cfg
+from . import UpstreamJSON, error_dict, safe_get, safe_post
 
-BASE = "https://api.bls.gov/publicAPI/v1/timeseries/data"
+BASE_V1 = "https://api.bls.gov/publicAPI/v1/timeseries/data"
+BASE_V2 = "https://api.bls.gov/publicAPI/v2/timeseries/data"
 
 SERIES = {
     "unemployment": "LNS14000000",
@@ -14,6 +25,17 @@ SERIES = {
 }
 
 
+def _base() -> str:
+    return BASE_V2 if cfg.BLS_API_KEY else BASE_V1
+
+
+def _checked(data: UpstreamJSON) -> UpstreamJSON:
+    if isinstance(data, dict) and data.get("status") == "REQUEST_NOT_PROCESSED":
+        message = " ".join(str(m) for m in data.get("message") or []) or "REQUEST_NOT_PROCESSED"
+        return error_dict("bls", 429 if "threshold" in message.lower() else 400, message)
+    return data
+
+
 async def series(series_id: str, start_year: int,
                  end_year: int) -> UpstreamJSON:
     """Get time series data. Use SERIES dict for common IDs."""
@@ -21,7 +43,7 @@ async def series(series_id: str, start_year: int,
     params: dict = {"startyear": str(start_year), "endyear": str(end_year)}
     if cfg.BLS_API_KEY:
         params["registrationkey"] = cfg.BLS_API_KEY
-    return await safe_get(f"{BASE}/{series_id}", "bls", params=params)
+    return _checked(await safe_get(f"{_base()}/{series_id}", "bls", params=params))
 
 
 async def multiple(series_ids: list[str], start_year: int,
@@ -32,4 +54,4 @@ async def multiple(series_ids: list[str], start_year: int,
                      "endyear": str(end_year)}
     if cfg.BLS_API_KEY:
         payload["registrationkey"] = cfg.BLS_API_KEY
-    return await safe_post(BASE + "/", "bls", json=payload)
+    return _checked(await safe_post(_base() + "/", "bls", json=payload))
