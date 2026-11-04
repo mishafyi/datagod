@@ -42,8 +42,13 @@ async def info(ticker: str) -> UpstreamJSON:
     """Full ticker info: ~140 fields incl. mcap, P/E, EPS, beta, margins, ROE, analyst targets."""
     def _do() -> dict:
         data = yf.Ticker(ticker).info
-        if not data:
-            raise ValueError(f"No data for ticker '{ticker}'")
+        # Every real quote (equity, ETF, index, FX, crypto) carries a name. Without one
+        # Yahoo gave nothing: an unknown symbol, or a throttled session (its crumb
+        # fetch 429s, then quoteSummary answers 401 "Invalid Crumb" and yfinance
+        # returns a 1-key dict instead of raising).
+        if not data or not (data.get("shortName") or data.get("longName")):
+            raise ValueError(f"Yahoo returned no quote for '{ticker}' — unknown symbol, "
+                             "or Yahoo is throttling this server (retry later)")
         return data
     return await _run(_do)
 

@@ -127,7 +127,7 @@ API_TAGS = [
     {"name": "Scholar", "description": "Google Scholar via the vendored sort-google-scholar — citation-ranked paper search. Brittle: Google blocks scraping (CAPTCHA/429)."},
     {"name": "Trending", "description": "NewsNow (self-hosted) — ~50 trending/hot boards: Hacker News, GitHub trending, Product Hunt, plus Weibo/Zhihu/Douyin hot searches and CN finance wires. Ranked title+URL items."},
     {"name": "World Bank", "description": "World Bank Open Data — development indicators for every country (GDP, population, poverty, trade)."},
-    {"name": "IMF", "description": "IMF SDMX-JSON — macroeconomic time series (IFS, DOT, BOP…). Upstream is slow and flaky."},
+    {"name": "IMF", "description": "IMF's own SDMX API (api.imf.org) — World Economic Outlook forecasts, CPI, balance of payments, trade, fiscal monitor; SDMX-JSON."},
     {"name": "Eurostat", "description": "Eurostat — official EU statistics (JSON-stat); dimension filters pass through."},
     {"name": "ECB", "description": "ECB Data Portal — euro-area exchange rates, inflation, and interest rates via SDMX."},
     {"name": "Comtrade", "description": "UN Comtrade — global goods-trade flows (keyless public preview, ≤500 records, rate-limited)."},
@@ -1002,18 +1002,22 @@ async def worldbank_indicator(indicator: str,
 
 # ── IMF ──────────────────────────────────────────────────────────
 
-@app.get("/imf/structure/{dataset}", tags=["IMF"], summary="IMF dataset metadata (dimensions + code lists)")
+@app.get("/imf/structure/{dataset}", tags=["IMF"], summary="IMF dataflow structure (dimensions + code lists)")
 async def imf_structure(dataset: str):
-    """Dimensions and code lists for an IMF dataset code (e.g. WEO, BOP)."""
+    """Dimension order and codelists for an IMF dataflow (e.g. WEO, CPI, BOP) — the
+    codes a series key may use. Large (WEO ~2 MB)."""
     return await imf.structure(dataset)
 
 
-@app.get("/imf/{dataset}/{key}", tags=["IMF"], summary="IMF time series (via DBnomics; latest vintage)")
-async def imf_series(dataset: str, key: str, limit: int = 100):
-    """Series from an IMF dataset, e.g. /imf/WEO/USA.NGDP_RPCH (US real GDP
-    growth, %, incl. IMF forecast years). Transport is DBnomics — the IMF's
-    own legacy SDMX host was decommissioned in 2026."""
-    return await imf.series(dataset, key, limit)
+@app.get("/imf/{dataset}/{key}", tags=["IMF"], summary="IMF time series (IMF SDMX API, current release)")
+async def imf_series(dataset: str, key: str,
+                     start_period: str = Query("", description="YYYY, YYYY-MM or YYYY-Qn lower bound"),
+                     end_period: str = Query("", description="YYYY, YYYY-MM or YYYY-Qn upper bound")):
+    """Series from an IMF dataflow, e.g. /imf/WEO/USA.NGDP_RPCH.A (US real GDP growth,
+    %, incl. IMF forecast years). Key = dimension codes in dataflow order joined by
+    ".", "+" for several (USA+CHN), empty for all; trailing dimensions may be omitted.
+    SDMX-JSON: values under dataSets[0].series, labels under structure.dimensions."""
+    return await imf.series(dataset, key, start_period, end_period)
 
 
 # ── Eurostat ─────────────────────────────────────────────────────
@@ -1054,7 +1058,7 @@ async def ucdp_gedevents(country: str = Query("", description="Gleditsch-Ward nu
                          start_date: str = Query("", description="YYYY-MM-DD lower bound"),
                          end_date: str = Query("", description="YYYY-MM-DD upper bound"),
                          pagesize: int = Query(10, le=1000), page: int = Query(0, ge=0),
-                         version: str = "24.1"):
+                         version: str = Query("26.1", description="GED release; 26.1 = events through 2025")):
     """Organized-violence events with locations, actors, and fatality estimates."""
     return await ucdp.gedevents(country, start_date, end_date, pagesize, page, version)
 

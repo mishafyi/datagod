@@ -13,10 +13,11 @@ BASE = "https://ucdpapi.pcr.uu.se/api"
 
 async def gedevents(country: str = "", start_date: str = "", end_date: str = "",
                     pagesize: int = 10, page: int = 0,
-                    version: str = "24.1") -> UpstreamJSON:
+                    version: str = "26.1") -> UpstreamJSON:
     """GED conflict events. `country` = Gleditsch-Ward numeric id(s),
     comma-separated (e.g. 369 = Ukraine, 365 = Russia); dates YYYY-MM-DD;
-    pagesize max 1000; page is 0-based. `version` pins the dataset release."""
+    pagesize max 1000; page is 0-based. `version` pins the dataset release —
+    26.1 (GED through 2025) is the latest per ucdp.uu.se/apidocs (checked 2026-11-04)."""
     params: dict = {"pagesize": pagesize, "page": page}
     if country:
         params["Country"] = country
