@@ -45,6 +45,11 @@ All responses follow:
 
 Pull from `data` and ignore the upstream envelope. Datagod's `ResponseEnvelopeMiddleware` then wraps the whole thing in its own envelope (`{meta, data, error}`).
 
+**Failures come back as HTTP 200** with the real status in the body — e.g. an unknown ticker is
+`{"data": null, "status": {"rCode": 400, "bCodeMessage": [{"code": 1001, "errorMessage": "Symbol not exists."}]}}`.
+The client turns any `rCode` other than 200 into the error-dict (`upstream_status` = rCode, message =
+the `errorMessage`s), so DataGod answers 400 with `meta.status: "error"` instead of a fake success.
+
 ## Field parsing gotchas
 
 - **`MarketCap`** is a string with commas: `"5,553,872,968,719"`. Strip commas + cast to int.
@@ -71,14 +76,14 @@ curl -sH 'User-Agent: Mozilla/5.0' \
 
 Discoverable via DevTools → Network on `nasdaq.com`:
 
-- `/api/quote/{TICKER}/financials?frequency=A` — annual income statement, balance sheet, cash flow
+- `/api/company/{TICKER}/financials?frequency=1` — income statement, balance sheet, cash flow. `frequency` is **`1` (annual) or `2` (quarterly) only**; `A`/`Q` answer rCode 400 "The value 'A' is not valid." (the DataGod route accepts `annual`/`A`/`1` and `quarterly`/`Q`/`2` and maps them)
 - `/api/company/{TICKER}/insider-trades?limit=N`
 - `/api/company/{TICKER}/earnings-surprise?limit=N`
 - `/api/calendar/earnings?date=YYYY-MM-DD`
-- `/api/calendar/ipo?date=YYYY-MM-DD`
+- `/api/ipo/calendar?date=YYYY-MM` — a **month** (priced/upcoming/filed/withdrawn); a full `YYYY-MM-DD` is rCode 400, so the client trims it to the month
 - `/api/screener/stocks?tableonly=true&limit=N` — full stock screener output
 
-Not currently wired into datagod.
+All of these are wired into datagod (`/nasdaq/financials`, `/nasdaq/insider-trades`, `/nasdaq/earnings-surprise`, `/nasdaq/calendar/earnings`, `/nasdaq/calendar/ipo`, `/nasdaq/screener`).
 
 ## Rate limits
 

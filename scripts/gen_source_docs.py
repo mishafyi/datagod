@@ -36,19 +36,19 @@ SOURCE_FILE = {
     "USAspending": "USASPENDING.md",
 }
 
-# Curated upstream quirks per source — verified against the client code 2026-06-11.
+# Curated upstream quirks per source — verified against the client code 2026-11-04.
 # This is where the audit corrections live (BLS v1, Census key, FEMA grants, Congress votes).
 QUIRKS = {
     "FRED": "- Requires a real `FRED_API_KEY` (no DEMO_KEY fallback).\n- Response is the FRED observations envelope; `value` fields are strings.\n- Handy series IDs: `GDP`, `UNRATE`, `CPIAUCSL`, `FEDFUNDS`, `DGS10`, `M2SL`, `SP500`.",
-    "BLS": "- Uses the BLS public API **v1** (`api.bls.gov/publicAPI/v1/timeseries/data`) — not v2. `BLS_API_KEY` is optional (raises limits).\n- The client accepts shortcut series IDs: `unemployment`, `cpi`, `nonfarm_employment`, `ppi`, `hourly_earnings`.\n- Data is under `Results.series[].data`.",
-    "Census": "- **Requires a valid `CENSUS_API_KEY`** (free signup: https://api.census.gov/data/key_signup.html). A missing or invalid key 302-redirects to an HTML `invalid_key.html` page → JSON parse error → 502.\n- The client sends `cfg.CENSUS_API_KEY` as `key=`. Uses ACS 1-year (`acs/acs1`).\n- Response is a 2-D array: a header row followed by data rows.",
+    "BLS": "- Keyless calls use the public API **v1** (`api.bls.gov/publicAPI/v1/timeseries/data`); with `BLS_API_KEY` set the client switches to **v2**, the only version that honors `registrationkey` (v1 silently ignores it) — 500 queries/day, 50 series and 20 years per query instead of 25/day, 25 series, 10 years.\n- BLS reports failures as HTTP 200 + `status: REQUEST_NOT_PROCESSED`; the client returns those as an error (429 for the daily threshold, else 400).\n- The client accepts shortcut series IDs: `unemployment`, `cpi`, `nonfarm_employment`, `ppi`, `hourly_earnings`.\n- Data is under `Results.series[].data`.",
+    "Census": "- **Requires a valid `CENSUS_API_KEY`** (free signup: https://api.census.gov/data/key_signup.html). A missing or invalid key 302-redirects to an HTML `invalid_key.html` page → JSON parse error → 502.\n- The client sends `cfg.CENSUS_API_KEY` as `key=`. Defaults to ACS 5-year (`acs/acs5`, supports tracts); `dataset=acs1` for 1-year (65k+ population geographies).\n- Response is a 2-D array: a header row followed by data rows.",
     "Treasury": "- No key (Treasury Fiscal Data API).\n- Datasets: debt → `debt_to_penny` (v2), rates → `avg_interest_rates` (v2), exchange → `rates_of_exchange` (v1).\n- Newest-first (`sort=-record_date`); paginate via `page[size]`.",
-    "FEC": "- `FEC_API_KEY` with a `DEMO_KEY` fallback (low limits).\n- Base `api.open.fec.gov/v1`: `candidates/`, `schedules/schedule_a/` (contributions), `candidates/totals/`.\n- Results under `results`; paginated.",
-    "Congress": "- `CONGRESS_API_KEY` with a `DEMO_KEY` fallback.\n- Base `api.congress.gov/v3`. **The votes endpoint is `house-vote/{congress}` (House only).**",
+    "FEC": "- `FEC_API_KEY` with a `DEMO_KEY` fallback (low limits).\n- `/fec/candidates?name=` is FEC's candidate-name search (`q`).\n- Base `api.open.fec.gov/v1`: `candidates/`, `schedules/schedule_a/` (contributions), `candidates/totals/`.\n- Results under `results`; paginated.",
+    "Congress": "- `CONGRESS_API_KEY` with a `DEMO_KEY` fallback.\n- Base `api.congress.gov/v3`. **The votes endpoint is `house-vote/{congress}` (House only)**; `congress_session` defaults to the Congress now in session (119th for 2025–2026).",
     "FDA": "- No key (openFDA). Base `api.fda.gov`.\n- Datasets: `drug/event.json` (adverse events), `drug/enforcement.json` (drug recalls), `food/enforcement.json` (food recalls).\n- `search=` uses Lucene-style queries; results under `results`.",
     "Clinical Trials": "- No key. Base `clinicaltrials.gov/api/v2`: `studies` and `studies/{nct}`.\n- Filters: `query.cond` (condition), `query.intr` (intervention), `filter.overallStatus`.",
     "EIA": "- `EIA_API_KEY` with a `DEMO_KEY` fallback. Base `api.eia.gov/v2`.\n- `/` lists datasets; gas → `petroleum/pri/gnd`; electricity → `electricity/retail-sales`; generic `{route}/data/` takes `frequency`, `data[0]`, `sort[0][...]`, `length`.",
-    "FEMA": "- No key (OpenFEMA).\n- Datasets: disasters → `DisasterDeclarationsSummaries`, grants → `HazardMitigationGrantProgramDisasterSummaries`, flood-claims → `FimaNfipClaims`.",
+    "FEMA": "- No key (OpenFEMA).\n- Datasets: disasters → `DisasterDeclarationsSummaries`, grants → `HazardMitigationGrantProgramDisasterSummaries` **v3**, flood-claims → `NfipClaims` **v3** (`FimaNfipClaims` v2 is gone — 404; HMGP v2 was frozen 2026-08-31 and deprecated 2026-10-15).\n- `state`/`declared_since` are sent as an OData `$filter` with quotes escaped.",
     "Federal Register": "- No key. Base `federalregister.gov/api/v1`: `documents.json`, `documents/{n}.json`.\n- Filters: `conditions[type][]` (RULE | PRORULE | NOTICE | PRESDOCU), `conditions[agencies][]`, `conditions[term]`, `order=newest`.",
     "USAspending": "- No key. Base `api.usaspending.gov/api/v2`.\n- `agencies` → `references/toptier_agencies/`; `search` → POST `search/spending_by_award/`; `by-agency` → POST `spending/`.",
 }

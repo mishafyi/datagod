@@ -23,7 +23,8 @@ US labor statistics series by ID. Use for: unemployment rate, nonfarm payroll em
 
 ## Quirks & notes
 
-- Uses the BLS public API **v1** (`api.bls.gov/publicAPI/v1/timeseries/data`) — not v2. `BLS_API_KEY` is optional (raises limits).
+- Keyless calls use the public API **v1** (`api.bls.gov/publicAPI/v1/timeseries/data`); with `BLS_API_KEY` set the client switches to **v2**, the only version that honors `registrationkey` (v1 silently ignores it) — 500 queries/day, 50 series and 20 years per query instead of 25/day, 25 series, 10 years.
+- BLS reports failures as HTTP 200 + `status: REQUEST_NOT_PROCESSED`; the client returns those as an error (429 for the daily threshold, else 400).
 - The client accepts shortcut series IDs: `unemployment`, `cpi`, `nonfarm_employment`, `ppi`, `hourly_earnings`.
 - Data is under `Results.series[].data`.
 

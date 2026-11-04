@@ -15,7 +15,7 @@ Federal campaign finance and elections (FEC) — candidates (presidential, Senat
 
 Search federal candidates (President, Senate, House) by office and state. Campaign finance.
 
-**Params:** `office` (query, string) · `state` (query, string) · `limit` (query, integer, default 10, max 100) · `page` (query, integer, default 1)
+**Params:** `office` (query, string) · `state` (query, string) · `limit` (query, integer, default 10, max 100) · `page` (query, integer, default 1) · `name` (query, string)
 
 ### `GET /fec/contributions`
 
@@ -32,6 +32,7 @@ Candidate financial totals (money raised / receipts), ranked, by office and elec
 ## Quirks & notes
 
 - `FEC_API_KEY` with a `DEMO_KEY` fallback (low limits).
+- `/fec/candidates?name=` is FEC's candidate-name search (`q`).
 - Base `api.open.fec.gov/v1`: `candidates/`, `schedules/schedule_a/` (contributions), `candidates/totals/`.
 - Results under `results`; paginated.
 

@@ -33,11 +33,11 @@ Members of Congress (representatives and senators), with party and state.
 
 Roll-call votes by chamber and session.
 
-**Params:** `congress_session` (query, integer, default 118) · `limit` (query, integer, default 10, max 250) · `offset` (query, integer, default 0)
+**Params:** `congress_session` (query, integer) · `limit` (query, integer, default 10, max 250) · `offset` (query, integer, default 0)
 
 ## Quirks & notes
 
 - `CONGRESS_API_KEY` with a `DEMO_KEY` fallback.
-- Base `api.congress.gov/v3`. **The votes endpoint is `house-vote/{congress}` (House only).**
+- Base `api.congress.gov/v3`. **The votes endpoint is `house-vote/{congress}` (House only)**; `congress_session` defaults to the Congress now in session (119th for 2025–2026).
 
 > Endpoint params are generated from the live OpenAPI schema (`/openapi.json`); the Quirks section is curated. Regenerate with `python -m scripts.gen_source_docs`.
