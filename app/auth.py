@@ -33,6 +33,12 @@ class UnauthorizedError(Exception):
     """Raised when a request lacks a valid API key; rendered as a 401 error envelope."""
 
 
+def _matches(provided: str, expected: str) -> bool:
+    """Constant-time comparison. Compares UTF-8 bytes: ``compare_digest`` raises
+    TypeError on non-ASCII ``str``, which turned a bad header into a 500."""
+    return secrets.compare_digest(provided.encode(), expected.encode())
+
+
 async def require_api_key(
     request: Request,
     provided_key: str | None = Security(API_KEY_HEADER),
@@ -49,7 +55,7 @@ async def require_api_key(
     expected = cfg.DATAGOD_API_KEY
     if not expected:
         raise UnauthorizedError("Server API key not configured")
-    if provided_key is None or not secrets.compare_digest(provided_key, expected):
+    if provided_key is None or not _matches(provided_key, expected):
         raise UnauthorizedError("Invalid or missing API key")
 
 
@@ -65,8 +71,8 @@ def require_docs_auth(credentials: HTTPBasicCredentials = Depends(DOCS_BASIC)) -
     expected_password = cfg.DATAGOD_DOCS_PASSWORD or cfg.DATAGOD_API_KEY
     if not expected_password:
         raise HTTPException(status_code=503, detail="Docs authentication is not configured")
-    user_ok = secrets.compare_digest(credentials.username, expected_user)
-    pass_ok = secrets.compare_digest(credentials.password, expected_password)
+    user_ok = _matches(credentials.username, expected_user)
+    pass_ok = _matches(credentials.password, expected_password)
     if not (user_ok and pass_ok):
         raise HTTPException(
             status_code=401,
