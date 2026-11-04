@@ -13,9 +13,10 @@ pytestmark = pytest.mark.anyio
 
 def test_redact_masks_credential_query_params():
     text = ("400 from https://x/api?series_id=GDP&api_key=abc123&file_type=json"
-            " https://y/?key=k1&registrationkey=r2&token=t3")
+            " https://y/?key=k1&registrationkey=r2&token=t3"
+            " https://query2.finance.yahoo.com/v7/finance/options/AAPL?crumb=c4")
     out = redact(text)
-    for secret in ("abc123", "k1", "r2", "t3"):
+    for secret in ("abc123", "k1", "r2", "t3", "c4"):
         assert secret not in out
     assert "api_key=***" in out and "series_id=GDP" in out
 

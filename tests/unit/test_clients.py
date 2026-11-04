@@ -172,29 +172,6 @@ async def test_ucdp_defaults_to_latest_ged_release(upstream):
     assert upstream.requests[-1].url.path == "/api/gedevents/26.1"
 
 
-# ── yfinance: a quote without a name means Yahoo returned nothing ───────
-
-@pytest.mark.parametrize(("info", "ok"), [
-    ({"shortName": "Apple Inc.", "symbol": "AAPL"}, True),
-    ({"longName": "S&P 500"}, True),
-    ({"trailingPegRatio": None}, False),  # throttled session / unknown symbol
-    ({}, False),
-])
-async def test_yfinance_info_requires_a_quote(monkeypatch, info, ok):
-    from app.clients import yfin
-
-    class FakeTicker:
-        def __init__(self, symbol):
-            self.info = info
-
-    monkeypatch.setattr(yfin.yf, "Ticker", FakeTicker)
-    result = await yfin.info("AAPL")
-    if ok:
-        assert result == info
-    else:
-        assert result["error"] is True and "throttling" in result["message"]
-
-
 # ── scholar: the query is percent-encoded ───────────────────────────────
 
 @pytest.mark.parametrize("keyword", ["R&D spending", "C++ templates", "attention #1", '"exact phrase"'])

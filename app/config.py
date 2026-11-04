@@ -77,9 +77,10 @@ _SECRET_SETTINGS = (
     "CONGRESS_API_KEY", "EIA_API_KEY", "CENSUS_API_KEY", "BLS_API_KEY",
     "SAM_API_KEY", "DATAGOV_API_KEY", "SMITHSONIAN_API_KEY", "UCDP_ACCESS_TOKEN",
 )
-# Query parameters that carry credentials (api_key=, key=, registrationkey=, …).
+# Query parameters that carry credentials (api_key=, key=, registrationkey=, …;
+# crumb= is Yahoo's session token, which yfinance puts on its request URLs).
 _SECRET_PARAM = re.compile(
-    r"(?i)\b(api_key|apikey|key|registrationkey|token|access_token)=[^&#\s'\"]+")
+    r"(?i)\b(api_key|apikey|key|registrationkey|token|access_token|crumb)=[^&#\s'\"]+")
 
 
 def redact(text: str) -> str:
