@@ -5,7 +5,10 @@ pass/fail table.
     .venv/bin/python tests/test_all_endpoints.py
 
 PASS = HTTP 200 + meta.status "success". FAIL = anything else (unless expected).
-JEFS (2026-06-11) and Wilson (2026-07-02) are disabled on the API and skipped here.
+JEFS (2026-06-11) is disabled on the API and skipped here. Wilson is live but
+needs the mounted data/wilson.db, so an error there is expected without it.
+A last "Contract" group checks error handling end to end (status codes and
+meta.status for bad input, SSRF refusal, framework errors).
 Target host: $DATAGOD_BASE_URL, defaulting to http://localhost:8000.
 """
 
@@ -63,6 +66,20 @@ def hit(method: str, path: str, group: str, expect_error: bool = False, timeout:
 
 def skip(group: str, label: str, note: str) -> None:
     rows.append((group, label, "—", "SKIP", note))
+
+
+def expect(method: str, path: str, group: str, status: int, note: str, **kwargs) -> None:
+    """PASS when the route answers `status` with an error envelope (negative checks)."""
+    label = f"{method} {path.split('?')[0]}"
+    headers = {**HEADERS, **kwargs.pop("headers", {})}
+    try:
+        r = httpx.request(method, BASE + path, headers=headers, timeout=45, **kwargs)
+        mstatus = (r.json().get("meta") or {}).get("status")
+        ok = r.status_code == status and mstatus == "error"
+        rows.append((group, label, r.status_code, "PASS" if ok else "FAIL",
+                     note if ok else f"want {status}+error, got meta.status={mstatus}"))
+    except Exception as exc:
+        rows.append((group, label, "ERR", "FAIL", str(exc)[:64]))
 
 
 # ── Health ──
@@ -182,9 +199,33 @@ hit("GET", f"/smithsonian/object/{sid}", "Smithsonian") if sid else skip(
 hit("GET", "/smithsonian/category/art_design/search?q=painting&rows=2", "Smithsonian")
 hit("GET", "/smithsonian/terms/culture", "Smithsonian")
 hit("GET", "/smithsonian/stats", "Smithsonian")
-# ── Wilson Center (disabled on the API 2026-07-02 — routes commented out in main.py) ──
-skip("Wilson", "GET /wilson/documents", "Wilson disabled on the API (2026-07-02)")
-skip("Wilson", "GET /wilson/document/{slug}", "Wilson disabled on the API (2026-07-02)")
+# ── Wilson Center (local mirror — errors unless data/wilson.db is mounted) ──
+wd = hit("GET", "/wilson/documents?q=cuba&items_per_page=2", "Wilson", expect_error=True)
+wslug = find(wd, "slug")
+hit("GET", f"/wilson/document/{wslug}", "Wilson") if wslug else skip(
+    "Wilson", "GET /wilson/document/{slug}", "no slug (local index not mounted?)")
+# ── Declassified / intel archives (CIA + Vault read the Wayback mirror, which throttles) ──
+hit("GET", "/cia/collections", "Archives")
+hit("GET", "/cia/collection/stargate", "Archives", expect_error=True, timeout=120)
+hit("GET", "/cia/document/cia-rdp96-00788r001700210016-5", "Archives", expect_error=True, timeout=120)
+hit("GET", "/vault/subjects", "Archives")
+hit("GET", "/vault/page/cointel-pro", "Archives", expect_error=True, timeout=120)
+fr_s = hit("GET", "/frus/search?q=covert+action+Chile", "Archives")
+fr_hit = next((x for x in ((fr_s or {}).get("data") or {}).get("results", [])
+               if x.get("volume") and x.get("doc")), None) if isinstance(fr_s, dict) else None
+hit("GET", f"/frus/document/{fr_hit['volume']}/{fr_hit['doc']}", "Archives") if fr_hit else skip(
+    "Archives", "GET /frus/document/{volume}/{doc}", "no volume/doc from search")
+tna_s = hit("GET", "/tna/search?q=KGB+defector&per_page=2", "Archives")
+tna_id = find(tna_s, "id")
+hit("GET", f"/tna/record/{tna_id}", "Archives") if tna_id else skip(
+    "Archives", "GET /tna/record/{record_id}", "no id from search")
+hit("GET", "/fas/sections", "Archives")
+fas_i = hit("GET", "/fas/index/nsa", "Archives")
+fas_link = next((link["path"] for link in ((fas_i or {}).get("data") or {}).get("links", [])
+                 if link["path"].lower().endswith((".html", ".htm")) and not link.get("is_index")),
+                None) if isinstance(fas_i, dict) else None
+hit("GET", f"/fas/page/{fas_link}", "Archives") if fas_link else skip(
+    "Archives", "GET /fas/page/{path}", "no content link from index")
 # ── arXiv ──
 hit("GET", "/arxiv/search?query=electron&max_results=2", "arXiv")
 hit("GET", "/arxiv/2301.00001", "arXiv")
@@ -237,6 +278,14 @@ hit("GET", "/cross-reference/company/apple", "CrossRef", timeout=90)
 hit("GET", "/cross-reference/politician/pelosi", "CrossRef", timeout=90)
 # ── Admin ──
 hit("POST", "/admin/clear-cache", "Admin")
+# ── Contract: error handling end to end ──
+expect("GET", "/house-disclosures/pdf?path=http://169.254.169.254/latest/meta-data/", "Contract", 400,
+       "SSRF refused")
+expect("GET", "/fred/GDP?limit=abc", "Contract", 422, "validation error is an error envelope")
+expect("GET", "/no/such/route", "Contract", 404, "unknown route is an error envelope")
+expect("GET", "/nasdaq/quote/NOTATICKERX", "Contract", 400, "Nasdaq in-body rCode surfaced")
+expect("GET", "/nasdaq/financials/NVDA?frequency=weekly", "Contract", 400, "bad frequency refused")
+expect("GET", "/fred", "Contract", 401, "missing key", headers={"X-API-Key": ""})
 
 # ── Report ──
 icons = {"PASS": "✓", "FAIL": "✗", "EXP-ERR": "~", "SKIP": "-"}

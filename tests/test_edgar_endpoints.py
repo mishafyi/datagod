@@ -123,17 +123,19 @@ async def test_edgar_concept():
             log_test("/edgar/concept/{cik}/{concept}", f"AAPL/InvalidConcept", "PASS",
                     f"Properly errored")
 
-        # Taxonomy parameter tests
-        for taxonomy in ["us-gaap", "dei"]:
+        # Taxonomy parameter tests — a concept exists in one taxonomy only; SEC's 404
+        # for the wrong one must pass through as 404.
+        for concept, taxonomy, expected in [("Revenues", "us-gaap", 200),
+                                            ("EntityCommonStockSharesOutstanding", "dei", 200),
+                                            ("Revenues", "dei", 404)]:
+            label = f"AAPL/{concept}?taxonomy={taxonomy}"
             try:
-                resp = await client.get(f"{BASE_URL}/edgar/concept/AAPL/Revenues?taxonomy={taxonomy}")
-                has_data = resp.status_code == 200 and "data" in resp.json()
-                status = "PASS" if resp.status_code == 200 and has_data else "FAIL"
-                log_test("/edgar/concept/{cik}/{concept}", f"AAPL/Revenues?taxonomy={taxonomy}", status,
-                        f"Status: {resp.status_code}, Has data: {has_data}")
+                resp = await client.get(f"{BASE_URL}/edgar/concept/AAPL/{concept}?taxonomy={taxonomy}")
+                status = "PASS" if resp.status_code == expected and "data" in resp.json() else "FAIL"
+                log_test("/edgar/concept/{cik}/{concept}", label, status,
+                        f"Status: {resp.status_code} (want {expected})")
             except Exception as e:
-                log_test("/edgar/concept/{cik}/{concept}", f"AAPL/Revenues?taxonomy={taxonomy}", "FAIL",
-                        str(e)[:50])
+                log_test("/edgar/concept/{cik}/{concept}", label, "FAIL", str(e)[:50])
 
 
 async def test_edgar_frames():
@@ -141,29 +143,33 @@ async def test_edgar_frames():
     print("\n=== Testing GET /edgar/frames/{concept} ===")
     async with httpx.AsyncClient(timeout=60, headers=HEADERS) as client:
 
-        # Valid frames tests
-        for concept in ["Revenues", "Assets", "NetIncomeLoss"]:
-            for period in ["CY2023", "CY2023Q4I"]:
-                try:
-                    resp = await client.get(f"{BASE_URL}/edgar/frames/{concept}?period={period}")
-                    has_data = resp.status_code == 200 and "data" in resp.json()
-                    status = "PASS" if resp.status_code == 200 and has_data else "FAIL"
-                    log_test("/edgar/frames/{concept}", f"{concept}?period={period}", status,
-                            f"Status: {resp.status_code}, Has data: {has_data}")
-                except Exception as e:
-                    log_test("/edgar/frames/{concept}", f"{concept}?period={period}", "FAIL", str(e)[:50])
-
-        # Unit parameter tests
-        for unit in ["USD", "shares", "USD-per-shares"]:
+        # Period tests. Balance-sheet (instant) concepts like Assets exist only for
+        # instant periods (the trailing "I"); a duration period is SEC's 404.
+        for concept, period, expected in [("Revenues", "CY2023", 200), ("Revenues", "CY2023Q4I", 200),
+                                          ("NetIncomeLoss", "CY2023", 200),
+                                          ("NetIncomeLoss", "CY2023Q4I", 200),
+                                          ("Assets", "CY2023Q4I", 200), ("Assets", "CY2023", 404)]:
+            label = f"{concept}?period={period}"
             try:
-                resp = await client.get(f"{BASE_URL}/edgar/frames/Revenues?unit={unit}&period=CY2023")
-                has_data = resp.status_code == 200 and "data" in resp.json()
-                status = "PASS" if resp.status_code == 200 and has_data else "FAIL"
-                log_test("/edgar/frames/{concept}", f"Revenues?unit={unit}&period=CY2023", status,
-                        f"Status: {resp.status_code}, Has data: {has_data}")
+                resp = await client.get(f"{BASE_URL}/edgar/frames/{concept}?period={period}")
+                status = "PASS" if resp.status_code == expected and "data" in resp.json() else "FAIL"
+                log_test("/edgar/frames/{concept}", label, status,
+                        f"Status: {resp.status_code} (want {expected})")
             except Exception as e:
-                log_test("/edgar/frames/{concept}", f"Revenues?unit={unit}&period=CY2023", "FAIL",
-                        str(e)[:50])
+                log_test("/edgar/frames/{concept}", label, "FAIL", str(e)[:50])
+
+        # Unit tests — each concept is reported in its own unit; a mismatched unit is a 404.
+        for query, expected in [("Revenues?unit=USD&period=CY2023", 200),
+                                ("EarningsPerShareBasic?unit=USD-per-shares&period=CY2023", 200),
+                                ("EntityCommonStockSharesOutstanding?taxonomy=dei&unit=shares&period=CY2023Q4I", 200),
+                                ("Revenues?unit=shares&period=CY2023", 404)]:
+            try:
+                resp = await client.get(f"{BASE_URL}/edgar/frames/{query}")
+                status = "PASS" if resp.status_code == expected and "data" in resp.json() else "FAIL"
+                log_test("/edgar/frames/{concept}", query, status,
+                        f"Status: {resp.status_code} (want {expected})")
+            except Exception as e:
+                log_test("/edgar/frames/{concept}", query, "FAIL", str(e)[:50])
 
         # Invalid period test
         try:
