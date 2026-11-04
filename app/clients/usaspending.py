@@ -21,6 +21,7 @@ async def search_awards(keywords: list[str], start_date: str = "", end_date: str
                         order: str = "desc",
                         award_type_codes: list[str] | str | None = None) -> UpstreamJSON:
     """Search spending by award."""
+    codes: list[str] | None
     if isinstance(award_type_codes, str):
         codes = [c.strip() for c in award_type_codes.split(",") if c.strip()]
     else:

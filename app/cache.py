@@ -1,4 +1,5 @@
-import functools, time
+import functools
+import time
 
 TTL = {
     "fred": 86400 * 30, "edgar": 86400, "usaspending": 3600 * 4,
@@ -23,16 +24,19 @@ def clear_cache():
 
 def cached(ttl_seconds: int):
     def decorator(fn):
+        # Module-qualified: fred.search and arxiv.search must not share entries.
+        name = f"{fn.__module__}.{fn.__qualname__}"
+
         @functools.wraps(fn)
         async def wrapper(*args, **kwargs):
-            key = f"{fn.__name__}:{args}:{sorted(kwargs.items())}"
-            if key in _cache:
-                ts, val = _cache[key]
-                if time.time() - ts < ttl_seconds:
-                    return val
-                del _cache[key]
+            key = f"{name}:{args!r}:{sorted(kwargs.items())!r}"
+            hit = _cache.get(key)
+            if hit is not None and time.monotonic() - hit[0] < ttl_seconds:
+                return hit[1]
             result = await fn(*args, **kwargs)
-            _cache[key] = (time.time(), result)
+            # Never cache the error-dict: one upstream blip would stick for the TTL.
+            if not (isinstance(result, dict) and result.get("error") is True):
+                _cache[key] = (time.monotonic(), result)
             return result
         return wrapper
     return decorator

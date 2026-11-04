@@ -1,8 +1,19 @@
-"""OpenFEMA — Disaster declarations, assistance, flood claims."""
+"""OpenFEMA — Disaster declarations, assistance, flood claims.
+
+Dataset versions move independently (see /api/open/v1/OpenFemaDataSets):
+NFIP claims are `NfipClaims` v3 (the old `FimaNfipClaims` v2 now 404s) and the
+HMGP disaster summaries are v3 (v2 was frozen 2026-08-31, deprecated 2026-10-15).
+"""
 
 from . import UpstreamJSON, safe_get
 
-BASE = "https://www.fema.gov/api/open/v2"
+API = "https://www.fema.gov/api/open"
+BASE = f"{API}/v2"
+
+
+def _quoted(value: str) -> str:
+    """An OData string literal: single quotes doubled, so input can't end the literal."""
+    return "'" + value.replace("'", "''") + "'"
 
 
 async def disasters(top: int = 10, state: str = "",
@@ -16,9 +27,9 @@ async def disasters(top: int = 10, state: str = "",
     params: dict = {"$top": top, "$orderby": "declarationDate desc"}
     clauses: list[str] = []
     if state:
-        clauses.append(f"state eq '{state}'")
+        clauses.append(f"state eq {_quoted(state)}")
     if declared_since:
-        clauses.append(f"declarationDate ge '{declared_since}'")
+        clauses.append(f"declarationDate ge {_quoted(declared_since)}")
     if clauses:
         params["$filter"] = " and ".join(clauses)
     return await safe_get(f"{BASE}/DisasterDeclarationsSummaries", "fema", params=params)
@@ -27,7 +38,7 @@ async def disasters(top: int = 10, state: str = "",
 async def grants(top: int = 10) -> UpstreamJSON:
     """Hazard mitigation grants, most-recent first."""
     return await safe_get(
-        f"{BASE}/HazardMitigationGrantProgramDisasterSummaries", "fema",
+        f"{API}/v3/HazardMitigationGrantProgramDisasterSummaries", "fema",
         params={"$top": top, "$orderby": "declarationDate desc"},
     )
 
@@ -35,6 +46,6 @@ async def grants(top: int = 10) -> UpstreamJSON:
 async def flood_claims(top: int = 10) -> UpstreamJSON:
     """NFIP flood insurance claims, most-recent first."""
     return await safe_get(
-        f"{BASE}/FimaNfipClaims", "fema",
+        f"{API}/v3/NfipClaims", "fema",
         params={"$top": top, "$orderby": "dateOfLoss desc"},
     )

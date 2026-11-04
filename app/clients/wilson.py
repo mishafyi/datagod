@@ -1,7 +1,8 @@
 """Wilson Center Digital Archive — served from a LOCAL mirror, not the live API.
 
-Currently DISABLED: the /wilson routes are commented out in app/main.py
-(2026-07-02) because data/wilson.db is not distributed with the repo.
+The /wilson routes are enabled (re-enabled 2026-08-27). data/wilson.db is not
+distributed with the repo or image — the deployment mounts it — and without it
+every call returns the error-dict with a build hint (upstream_status 503).
 
 The live site (digitalarchive.wilsoncenter.org) is no longer queried. This client reads
 a SQLite + FTS5 index (data/wilson.db) built by scripts/build_wilson_index.py from a
@@ -17,7 +18,7 @@ import re
 import sqlite3
 from pathlib import Path
 
-from . import UpstreamJSON
+from . import UpstreamJSON, error_dict
 
 DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "wilson.db"
 MIRROR_REL = "data/digitalarchive wilsoncenter"
@@ -25,7 +26,7 @@ _BUILD_HINT = "Local index missing — build it: .venv/bin/python scripts/build_
 
 
 def _err(status: int, message: str) -> dict:
-    return {"error": True, "source": "wilson", "upstream_status": status, "message": message}
+    return error_dict("wilson", status, message)
 
 
 def _connect() -> sqlite3.Connection:
@@ -48,6 +49,8 @@ def _thin(r: sqlite3.Row) -> dict:
 def _search(q: str, page: int, items_per_page: int) -> UpstreamJSON:
     if not DB_PATH.exists():
         return _err(503, _BUILD_HINT)
+    # SQLite reads a negative LIMIT as "no limit": clamp, or -1 dumps every row.
+    page, items_per_page = max(page, 1), min(max(items_per_page, 1), 100)
     db = _connect()
     try:
         offset = (page - 1) * items_per_page
@@ -71,7 +74,7 @@ def _search(q: str, page: int, items_per_page: int) -> UpstreamJSON:
                 "FROM documents WHERE slug=?", (slug,)).fetchone()
             if r:
                 rows.append(_thin(r))
-        pages = math.ceil(total / items_per_page) if items_per_page else 0
+        pages = math.ceil(total / items_per_page)
         return {"list": rows,
                 "pagination": {"page": page, "itemsPerPage": items_per_page,
                                "totalItems": total, "totalPages": pages}}

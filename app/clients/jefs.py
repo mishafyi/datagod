@@ -27,8 +27,6 @@ explicitly supply real credentials at registration.
 """
 
 import asyncio
-from typing import Any
-from urllib.parse import urlencode
 
 import httpx
 

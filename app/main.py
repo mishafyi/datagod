@@ -1,5 +1,5 @@
 """
-DataGod — one API over 40 free US-government, global, markets, research, media, and trending data sources.
+DataGod — one API over 41 free US-government, global, markets, research, media, and trending data sources.
 
 One API, all the data. Free.
 """
@@ -56,10 +56,10 @@ from .clients import (
     worldbank,
     yfin,
 )
-from .middleware import ResponseEnvelopeMiddleware
+from .middleware import ResponseEnvelopeMiddleware, envelope
 
 API_DESCRIPTION = """\
-**DataGod** unifies 40 free US-government, global, markets, research, media, and trending
+**DataGod** unifies 41 free US-government, global, markets, research, media, and trending
 data sources (plus a cross-reference aggregator) behind one HTTP API. Routes are
 thin pass-throughs — each returns the upstream's JSON unchanged, wrapped in a
 standard envelope.
@@ -191,32 +191,49 @@ async def unauthorized_handler(request: Request, exc: UnauthorizedError) -> JSON
     )
 
 
+@app.exception_handler(Exception)
+async def unhandled_handler(request: Request, exc: Exception) -> JSONResponse:
+    """A bug in a route or parser: answer 500 in the standard envelope (not plain
+    text). This runs outside ResponseEnvelopeMiddleware, so it builds the envelope
+    itself; the traceback is still logged by the server."""
+    data = {"error": True, "source": "datagod", "upstream_status": 500,
+            "message": f"Internal error ({type(exc).__name__})"}
+    wrapped, _ = envelope(request.url.path, data, 500)
+    return JSONResponse(status_code=500, content=wrapped)
+
+
 # ── Health ───────────────────────────────────────────────────────
+
+SOURCE_MAP = {
+    "economy": ["/fred", "/bls", "/treasury"],
+    "economy_global": ["/worldbank", "/imf", "/eurostat", "/ecb", "/comtrade"],
+    "markets": ["/edgar", "/nasdaq", "/yfinance"],
+    "spending": ["/usaspending"],
+    "politics": ["/fec", "/congress", "/house-disclosures"],
+    "demographics": ["/census"],
+    "health": ["/fda", "/clinical-trials"],
+    "energy": ["/eia"],
+    "disasters": ["/fema"],
+    "conflicts_disasters": ["/ucdp", "/usgs", "/nws", "/eonet"],
+    "regulations": ["/federal-register"],
+    "history": ["/wilson"],
+    "museums": ["/smithsonian"],
+    "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna", "/vault", "/fas"],
+    "research": ["/arxiv", "/scholar"],
+    "reference": ["/wikipedia"],
+    "video": ["/nasa", "/archive", "/commons"],
+    "trending": ["/trending"],
+}
+
 
 @app.get("/", tags=["Health"], summary="API index: sources and endpoint map")
 async def root():
     return {
         "name": "DataGod",
         "version": "1.0.0",
-        "sources": 35,
+        "sources": sum(len(paths) for paths in SOURCE_MAP.values()),
         "endpoints": {
-            "economy": ["/fred", "/bls", "/treasury"],
-            "economy_global": ["/worldbank", "/imf", "/eurostat", "/ecb", "/comtrade"],
-            "markets": ["/edgar", "/nasdaq", "/yfinance"],
-            "spending": ["/usaspending"],
-            "politics": ["/fec", "/congress", "/house-disclosures"],
-            "demographics": ["/census"],
-            "health": ["/fda", "/clinical-trials"],
-            "energy": ["/eia"],
-            "disasters": ["/fema"],
-            "conflicts_disasters": ["/ucdp", "/usgs", "/nws", "/eonet"],
-            "regulations": ["/federal-register"],
-            "history": ["/wilson"],
-            "museums": ["/smithsonian"],
-            "archives": ["/nara", "/nsarchive", "/cia", "/frus", "/tna", "/vault", "/fas"],
-            "reference": ["/wikipedia"],
-            "video": ["/nasa", "/archive", "/commons"],
-            "trending": ["/trending"],
+            **SOURCE_MAP,
             "cross_reference": ["/cross-reference/company", "/cross-reference/politician"],
         },
     }
@@ -362,8 +379,9 @@ async def nasdaq_dividends(ticker: str, asset_class: str = "stocks"):
 
 
 @app.get("/nasdaq/financials/{ticker}", tags=["Nasdaq"], summary="Income statement, balance sheet, cash flow")
-async def nasdaq_financials(ticker: str, frequency: str = "A"):
-    """Financial statements. frequency: 'A' annual, 'Q' quarterly."""
+async def nasdaq_financials(ticker: str, frequency: str = Query(
+        "annual", description="annual (also A or 1) or quarterly (also Q or 2)")):
+    """Financial statements, annual or quarterly."""
     return await nasdaq.financials(ticker, frequency)
 
 
@@ -385,9 +403,9 @@ async def nasdaq_calendar_earnings(date: str):
     return await nasdaq.calendar_earnings(date)
 
 
-@app.get("/nasdaq/calendar/ipo", tags=["Nasdaq"], summary="IPOs priced/expected on a date")
-async def nasdaq_calendar_ipo(date: str):
-    """IPOs priced/expected on a given day (YYYY-MM-DD, required)."""
+@app.get("/nasdaq/calendar/ipo", tags=["Nasdaq"], summary="IPOs priced/upcoming/filed in a month")
+async def nasdaq_calendar_ipo(date: str = Query(..., description="YYYY-MM (a YYYY-MM-DD is trimmed to its month)")):
+    """IPOs priced, upcoming, filed and withdrawn in one month (required)."""
     return await nasdaq.calendar_ipo(date)
 
 
@@ -465,8 +483,9 @@ async def usaspending_search(q: str, start_date: str = "", end_date: str = "",
                               limit: int = Query(10, le=100), page: int = Query(1, ge=1),
                               sort: str = "Award Amount", order: str = "desc",
                               award_type_codes: str = ""):
-    """Search federal awards by keyword. award_type_codes: CSV (e.g. 'A,B,C,D,02,03,04,05');
-    empty => contracts + grants default."""
+    """Search federal awards by keyword. award_type_codes: CSV of ONE award group —
+    contracts 'A,B,C,D' (the default when empty) or grants '02,03,04,05'; USAspending
+    rejects mixing groups in one query."""
     return await usaspending.search_awards([q], start_date=start_date, end_date=end_date,
                                            limit=limit, page=page, sort=sort, order=order,
                                            award_type_codes=award_type_codes)
@@ -541,9 +560,10 @@ async def treasury_exchange(limit: int = Query(5, le=100)):
 
 @app.get("/fec/candidates", tags=["FEC"], summary="Search federal candidates")
 async def fec_candidates(office: str = "", state: str = "", limit: int = Query(10, le=100),
-                          page: int = Query(1, ge=1)):
+                          page: int = Query(1, ge=1),
+                          name: str = Query("", description="Candidate name search, e.g. pelosi")):
     """Search candidates. office: P, S, H."""
-    return await fec.candidates(office, state, limit, page)
+    return await fec.candidates(office, state, limit, page, name)
 
 
 @app.get("/fec/contributions", tags=["FEC"], summary="Campaign contributions")
@@ -579,8 +599,9 @@ async def congress_members(limit: int = Query(10, le=250), offset: int = Query(0
 
 
 @app.get("/congress/votes", tags=["Congress"], summary="Recent House roll-call votes")
-async def congress_votes(congress_session: int = 118, limit: int = Query(10, le=250),
-                          offset: int = Query(0, ge=0)):
+async def congress_votes(congress_session: int | None = Query(
+                              None, ge=1, description="Congress number; default: the one in session"),
+                          limit: int = Query(10, le=250), offset: int = Query(0, ge=0)):
     return await congress.votes(congress_session, limit, offset)
 
 
@@ -905,12 +926,12 @@ async def smithsonian_stats():
 # Serves the LOCAL SQLite mirror (data/wilson.db, 228 MB), which is not in the
 # repo or image: the deployment mounts it via the Coolify volume
 # /data/datagod → /app/data. Rebuild locally with scripts/build_wilson_index.py
-# (see docs/WILSON_DIGITAL_ARCHIVE_API.md). Without the DB the routes return a
-# 503 envelope with a build hint.
+# (see docs/WILSON_DIGITAL_ARCHIVE_API.md). Without the DB the routes return an
+# error envelope with a build hint (data.upstream_status 503, HTTP 502).
 
 @app.get("/wilson/documents", tags=["Wilson Center"], summary="Search the Wilson Center mirror")
-async def wilson_documents(q: str = "", page: int = 1,
-                           items_per_page: int = Query(10, le=100)):
+async def wilson_documents(q: str = "", page: int = Query(1, ge=1),
+                           items_per_page: int = Query(10, ge=1, le=100)):
     """Full-text search the local Wilson Center mirror (16,756 declassified documents)."""
     return await wilson.search_documents(q, page, items_per_page)
 
@@ -1077,7 +1098,7 @@ async def eonet_categories():
 
 # ── Wikipedia ────────────────────────────────────────────────────
 
-@app.get("/wikipedia/summary/{title}", tags=["Wikipedia"], summary="Page summary (lead section)")
+@app.get("/wikipedia/summary/{title:path}", tags=["Wikipedia"], summary="Page summary (lead section)")
 async def wikipedia_summary(title: str):
     """Lead-section summary. Use underscores in the title, e.g. Albert_Einstein."""
     return await wikipedia.summary(title)
@@ -1095,7 +1116,7 @@ async def wikipedia_search(q: str, limit: int = Query(10, ge=1, le=50)):
     return await wikipedia.search(q, limit)
 
 
-@app.get("/wikipedia/pageviews/{title}", tags=["Wikipedia"], summary="Daily pageview counts for an article")
+@app.get("/wikipedia/pageviews/{title:path}", tags=["Wikipedia"], summary="Daily pageview counts for an article")
 async def wikipedia_pageviews(title: str,
                               start: str = Query(..., description="YYYYMMDD"),
                               end: str = Query(..., description="YYYYMMDD")):
