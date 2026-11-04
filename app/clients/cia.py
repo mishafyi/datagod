@@ -23,8 +23,8 @@ import re
 
 from selectolax.parser import HTMLParser
 
-from . import UpstreamJSON
-from ._wayback import WAYBACK, fetch_capture
+from . import UpstreamJSON, clean_text as _clean, error_dict
+from ._wayback import fetch_capture, unwrap as _unwrap
 
 ORIGIN = "https://www.cia.gov/readingroom"
 BODY_CAP = 40000  # generous: the DESK owns the final context slice; a Bay of Pigs volume measured pinned at the old 16K cap
@@ -49,17 +49,7 @@ COLLECTIONS = {
 
 
 def _err(status: int, message: str) -> dict:
-    return {"error": True, "source": "cia", "upstream_status": status, "message": message}
-
-
-def _clean(s: str | None) -> str | None:
-    return re.sub(r"\s+", " ", s).strip() if s else None
-
-
-def _unwrap(archived_href: str) -> str:
-    """Original URL from a wayback-rewritten href (/web/{ts}(id_)?/{original})."""
-    m = re.match(r"^(?:https?://web\.archive\.org)?/web/[^/]+/(https?://.+)$", archived_href)
-    return m.group(1) if m else archived_href
+    return error_dict("cia", status, message)
 
 
 async def _wb_get(path: str):
@@ -75,7 +65,7 @@ def _doc_links(t: HTMLParser) -> list[dict]:
     seen: set[str] = set()
     out: list[dict] = []
     for a in t.css("a[href*='/readingroom/document/']"):
-        href = _unwrap(a.attributes.get("href", ""))
+        href = _unwrap(a.attributes.get("href") or "")
         m = re.search(r"/readingroom/document/([^/?#]+)", href)
         title = _clean(a.text())
         if not m or m.group(1) in seen or not title:
@@ -94,19 +84,20 @@ async def document(doc_path: str) -> UpstreamJSON:
     if err:
         return err
     t = HTMLParser(html)
-    title = _clean(t.css_first("h1").text()) if t.css_first("h1") else None
+    h1 = t.css_first("h1")
+    title = _clean(h1.text()) if h1 else None
     meta: dict[str, str] = {}
     for f in t.css(".field"):
         label = f.css_first(".field-label")
         item = f.css_first(".field-item")
         if label and item:
-            key = _clean(label.text()).rstrip(": ").lower().replace(" ", "_")
+            key = (_clean(label.text()) or "").rstrip(": ").lower().replace(" ", "_")
             val = _clean(item.text(separator=" "))
             if key and val and len(val) < 500:
                 meta[key] = val
     pdf_original = pdf_archived = None
     for a in t.css("a[href]"):
-        href = a.attributes.get("href", "")
+        href = a.attributes.get("href") or ""
         if ".pdf" in href.lower():
             pdf_archived = href if href.startswith("http") else f"https://web.archive.org{href}"
             pdf_original = _unwrap(href)
@@ -133,7 +124,8 @@ async def collection(slug: str, page: int = 0) -> UpstreamJSON:
     if err:
         return err
     t = HTMLParser(html)
-    title = _clean(t.css_first("h1").text()) if t.css_first("h1") else None
+    h1 = t.css_first("h1")
+    title = _clean(h1.text()) if h1 else None
     desc = t.css_first(".field-name-body, .field--name-body")
     return {
         "slug": slug,

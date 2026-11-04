@@ -15,8 +15,8 @@ import re
 
 from selectolax.parser import HTMLParser
 
-from . import UpstreamJSON
-from ._wayback import fetch_capture
+from . import UpstreamJSON, clean_text as _clean, error_dict
+from ._wayback import fetch_capture, unwrap as _unwrap
 
 ORIGIN = "https://vault.fbi.gov"
 BODY_CAP = 16000
@@ -40,16 +40,7 @@ SUBJECTS = {
 
 
 def _err(status: int, message: str) -> dict:
-    return {"error": True, "source": "vault", "upstream_status": status, "message": message}
-
-
-def _clean(s: str | None) -> str | None:
-    return re.sub(r"\s+", " ", s).strip() if s else None
-
-
-def _unwrap(href: str) -> str:
-    m = re.match(r"^(?:https?://web\.archive\.org)?/web/[^/]+/(https?://.+)$", href)
-    return m.group(1) if m else href
+    return error_dict("vault", status, message)
 
 
 def _entries(t: HTMLParser, kind: str) -> list[dict]:
@@ -57,7 +48,7 @@ def _entries(t: HTMLParser, kind: str) -> list[dict]:
     out: list[dict] = []
     seen: set[str] = set()
     for a in t.css(f"a.contenttype-{kind}"):
-        href = _unwrap(a.attributes.get("href", ""))
+        href = _unwrap(a.attributes.get("href") or "")
         title = _clean(a.text())
         m = re.match(rf"^{re.escape(ORIGIN)}/(.+?)/?$", href)
         if not m or not title or m.group(1) in seen:
@@ -72,15 +63,15 @@ async def page(path: str) -> UpstreamJSON:
     title, description text, sub-folders, file pages, and any PDF links."""
     url = f"{ORIGIN}/{path.strip('/')}"
     html, snapshot, err = await fetch_capture(url)
-    if err:
-        return _err(err["upstream_status"], err["message"])
+    if err or html is None:
+        return _err((err or {}).get("upstream_status", 0), (err or {}).get("message", "No capture"))
     t = HTMLParser(html)
     h1 = t.css_first("h1")
     desc = t.css_first("#content .documentDescription, #content .description, #content p")
     pdfs: list[dict] = []
     seen: set[str] = set()
     for a in t.css("a[href]"):
-        href = _unwrap(a.attributes.get("href", ""))
+        href = _unwrap(a.attributes.get("href") or "")
         if ("/at_download/" in href or href.lower().endswith(".pdf")) and href not in seen:
             seen.add(href)
             pdfs.append({"title": _clean(a.text()) or href.rsplit("/", 1)[-1], "url": href})

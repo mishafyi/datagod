@@ -21,17 +21,13 @@ Quirks honored here (see docs/ARXIV_API.md):
 
 import feedparser
 
-from . import RateLimiter, UpstreamJSON, get_client
+from . import RateLimiter, UpstreamJSON, _error, get_client
 
 BASE = "https://export.arxiv.org/api/query"
 _SORT_BY = frozenset({"relevance", "lastUpdatedDate", "submittedDate"})
 _SORT_ORDER = frozenset({"ascending", "descending"})
 # arXiv legacy-API Terms of Use: <=1 request / 3 seconds, single connection.
 _limiter = RateLimiter(rate=1, period=3.0)
-
-
-def _err(status: int, message: str) -> dict:
-    return {"error": True, "source": "arxiv", "upstream_status": status, "message": message}
 
 
 def _bare_id(entry_id: str) -> str:
@@ -88,7 +84,7 @@ async def _query(params: dict) -> UpstreamJSON:
         r.raise_for_status()
         return _build(r.text)
     except Exception as exc:
-        return _err(getattr(getattr(exc, "response", None), "status_code", 0), str(exc))
+        return _error("arxiv", exc)
 
 
 async def search(query: str, start: int = 0, max_results: int = 10,

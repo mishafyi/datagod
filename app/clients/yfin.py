@@ -11,13 +11,11 @@ from typing import Any
 import pandas as pd
 import yfinance as yf
 
-from . import UpstreamJSON
+from . import UpstreamJSON, _error as _base_error
 
 
 def _error(exc: BaseException) -> dict:
-    upstream_status = getattr(getattr(exc, "response", None), "status_code", 0)
-    return {"error": True, "source": "yfinance",
-            "upstream_status": upstream_status, "message": str(exc)}
+    return _base_error("yfinance", exc)
 
 
 def _df_to_records(obj: Any) -> list[dict]:

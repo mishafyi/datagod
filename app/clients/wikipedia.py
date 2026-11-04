@@ -7,10 +7,10 @@ in a row meets it — so every call waits one out (Retry-After, else BACKOFF)
 before it gives up.
 """
 
-import asyncio
 from urllib.parse import quote
 
-from . import UpstreamJSON, _error, get_client, safe_get
+from ..resilience import get_with_retry
+from . import UpstreamJSON, _error, error_dict, json_or_error
 
 REST_BASE = "https://en.wikipedia.org/api/rest_v1"
 ACTION_BASE = "https://en.wikipedia.org/w/api.php"
@@ -21,28 +21,15 @@ BACKOFF = (2.0, 5.0)
 MAX_WAIT = 20.0
 
 
-def _retry_after(r, fallback: float) -> float:
-    try:
-        return min(float(r.headers.get("retry-after", "")), MAX_WAIT)
-    except ValueError:
-        return fallback
-
-
 async def _get(url: str, params: dict | None) -> UpstreamJSON:
-    """safe_get with the polite User-Agent, waiting out a 429/503 before each retry."""
-    for wait in BACKOFF:
-        try:
-            r = await get_client().get(url, headers=HEADERS, params=params)
-        except Exception as exc:
-            return _error("wikipedia", exc)
-        if r.status_code not in (429, 503):
-            try:
-                r.raise_for_status()
-                return r.json()
-            except Exception as exc:
-                return _error("wikipedia", exc)
-        await asyncio.sleep(_retry_after(r, wait))
-    return await safe_get(url, "wikipedia", headers=HEADERS, params=params)
+    """GET with the polite User-Agent, waiting out a 429/503 before each retry."""
+    try:
+        r = await get_with_retry(url, backoff=BACKOFF, max_wait=MAX_WAIT,
+                                 headers=HEADERS, params=params)
+        r.raise_for_status()
+    except Exception as exc:
+        return _error("wikipedia", exc)
+    return json_or_error(r, "wikipedia")
 
 
 async def summary(title: str) -> UpstreamJSON:
@@ -71,8 +58,7 @@ async def article(title: str) -> UpstreamJSON:
     if isinstance(data, dict) and not data.get("error"):
         pages = data.get("query", {}).get("pages", [])
         if not pages or pages[0].get("missing") or pages[0].get("invalid"):
-            return {"error": True, "source": "wikipedia", "upstream_status": 404,
-                    "message": f"No English Wikipedia article titled {title!r}"}
+            return error_dict("wikipedia", 404, f"No English Wikipedia article titled {title!r}")
     return data
 
 

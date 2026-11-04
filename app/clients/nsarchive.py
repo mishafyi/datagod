@@ -16,7 +16,7 @@ import re
 
 from selectolax.parser import HTMLParser
 
-from . import UpstreamJSON, get_client
+from . import UpstreamJSON, _error, error_dict, get_client
 
 BASE = "https://nsarchive.gwu.edu"
 HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -38,7 +38,7 @@ SEARCHED_FIELDS = {
 
 
 def _err(status: int, message: str) -> dict:
-    return {"error": True, "source": "nsarchive", "upstream_status": status, "message": message}
+    return error_dict("nsarchive", status, message)
 
 
 def _txt(node) -> str | None:
@@ -95,7 +95,7 @@ def _parse_document(html: str, doc_id: str) -> UpstreamJSON:
     pdf = None
     media = t.css_first(".field--name-field-media-file a[href]")
     if media:
-        h = media.attributes.get("href", "")
+        h = media.attributes.get("href") or ""
         pdf = f"{BASE}{h}" if h.startswith("/") else h
     if not pdf:  # some docs embed the PDF (iframe/object) instead of a field link
         for n in t.css("a[href], iframe[src], embed[src]"):
@@ -147,7 +147,7 @@ async def search(q: str = "", page: int = 1, field_date_min: str = "",
         r.raise_for_status()
         return _parse_listing(r.text, page)
     except Exception as exc:
-        return _err(getattr(getattr(exc, "response", None), "status_code", 0), str(exc))
+        return _error("nsarchive", exc)
 
 
 async def document(doc_id: str) -> UpstreamJSON:
@@ -157,4 +157,4 @@ async def document(doc_id: str) -> UpstreamJSON:
         r.raise_for_status()
         return _parse_document(r.text, doc_id)
     except Exception as exc:
-        return _err(getattr(getattr(exc, "response", None), "status_code", 0), str(exc))
+        return _error("nsarchive", exc)

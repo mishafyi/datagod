@@ -23,20 +23,18 @@ so the event loop stays free. See docs/SCHOLAR_API.md.
 import asyncio
 import re
 from typing import Any
+from urllib.parse import urlencode
 
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from . import UpstreamJSON
+from . import UpstreamJSON, _error as _base_error
 
 SOURCE = "scholar"
 
-# Google Scholar search URL. {} placeholders are start-offset and url-encoded
-# keyword; trailing params restrict to the main article index (as_sdt=0,5).
-GSCHOLAR_URL = "https://scholar.google.com/scholar?start={}&q={}&hl=en&as_sdt=0,5"
-STARTYEAR_URL = "&as_ylo={}"
-ENDYEAR_URL = "&as_yhi={}"
+# Google Scholar search URL; as_sdt=0,5 restricts to the main article index.
+GSCHOLAR_URL = "https://scholar.google.com/scholar"
 
 # Phrases Google embeds in the page when it serves a robot / CAPTCHA wall.
 ROBOT_KW = ("unusual traffic from your computer network", "not a robot",
@@ -61,9 +59,7 @@ class BlockedError(RuntimeError):
 
 def _error(exc: BaseException) -> dict:
     """Build the repo's standard error-dict from an exception."""
-    upstream_status = getattr(getattr(exc, "response", None), "status_code", 0)
-    return {"error": True, "source": SOURCE,
-            "upstream_status": upstream_status, "message": str(exc)}
+    return _base_error(SOURCE, exc)
 
 
 def _get_citations(content: str) -> int:
@@ -96,13 +92,15 @@ def _get_pdf_link(div: Any) -> str:
 
 def _build_url(keyword: str, start: int, start_year: int | None,
                end_year: int | None) -> str:
-    """Compose the Scholar search URL for one page (offset `start`)."""
-    url = GSCHOLAR_URL
+    """Compose the Scholar search URL for one page (offset `start`). The query
+    is percent-encoded (upstream only swapped spaces for '+', so 'R&D' split
+    the query and 'C++' arrived as 'C  ')."""
+    params: dict[str, str | int] = {"start": start, "q": keyword, "hl": "en", "as_sdt": "0,5"}
     if start_year is not None:
-        url = url + STARTYEAR_URL.format(start_year)
+        params["as_ylo"] = start_year
     if end_year is not None:
-        url = url + ENDYEAR_URL.format(end_year)
-    return url.format(str(start), keyword.replace(" ", "+"))
+        params["as_yhi"] = end_year
+    return f"{GSCHOLAR_URL}?{urlencode(params)}"
 
 
 def _parse_div(div: Any, fallback_url: str) -> dict[str, Any]:
@@ -161,7 +159,7 @@ def _scrape(keyword: str, nresults: int, sort_by: str,
             )
 
         soup = BeautifulSoup(page.content, "html.parser", from_encoding="utf-8")
-        divs = soup.findAll("div", {"class": "gs_or"})
+        divs = soup.find_all("div", {"class": "gs_or"})
         for div in divs:
             records.append(_parse_div(div, url))
             if len(records) >= nresults:
