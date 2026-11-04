@@ -57,11 +57,10 @@ Returns the standard envelope — read the payload from `data`:
 No key (or a wrong one) returns `401`; an upstream failure returns `meta.status: "error"` with the message in `error` (HTTP 4xx passed through, 5xx/timeout → 502).
 """
 
-# NOTE: JEFS (2026-06-11) and Wilson Center (2026-07-02) routes are disabled in
-# app/main.py, so both auto-drop from the route-driven Sources section +
-# endpoints.csv. Their entries in the dicts below are kept for easy re-enable
-# (they don't render while the routes are off). If you re-enable one, also
-# restore its row in the QUICK_INDEX table here.
+# NOTE: JEFS (2026-06-11) routes are disabled in app/main.py, so it auto-drops
+# from the route-driven Sources section + endpoints.csv. Its entries in the
+# dicts below are kept for easy re-enable (they don't render while the routes
+# are off). If you re-enable it, also add its row to the QUICK_INDEX table here.
 QUICK_INDEX = """\
 ## Which source for which information
 
@@ -98,6 +97,17 @@ QUICK_INDEX = """\
 | Public-domain space/science video & imagery | NASA Images | `GET /nasa/search` |
 | Archival / public-domain footage (newsreels, Prelinger) | Internet Archive | `GET /archive/search` |
 | CC-licensed video files with direct URLs | Commons | `GET /commons/search` |
+| Cross-country development indicators: GDP, population, poverty | World Bank | `GET /worldbank/{indicator}` (e.g. `NY.GDP.MKTP.CD`) |
+| IMF forecasts (World Economic Outlook), monthly CPI, balance of payments | IMF | `GET /imf/WEO/USA.NGDP_RPCH.A` |
+| Official EU statistics: population, HICP inflation, unemployment | Eurostat | `GET /eurostat/{dataset}` (e.g. `tps00001?geo=DE`) |
+| Euro exchange rates and euro-area monetary data | ECB | `GET /ecb/EXR/D.USD.EUR.SP00.A` |
+| Goods trade between two countries (imports/exports by HS code) | Comtrade | `GET /comtrade?reporterCode=842&partnerCode=156` |
+| Armed-conflict events and fatalities worldwide | UCDP | `GET /ucdp/gedevents` (needs `UCDP_ACCESS_TOKEN`) |
+| Earthquakes worldwide | USGS | `GET /usgs/earthquakes` |
+| Active US weather alerts | NWS | `GET /nws/alerts?area=CA` |
+| Ongoing wildfires, storms, volcanoes worldwide | EONET | `GET /eonet/events?category=wildfires` |
+| Encyclopedic background, whole article text, pageviews | Wikipedia | `GET /wikipedia/summary/{title}` |
+| What's trending now: Hacker News, GitHub, Weibo, Zhihu… | Trending | `GET /trending/{source_id}` (ids: `GET /trending`) |
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 """
 
@@ -181,6 +191,49 @@ DESCRIPTIONS = {
     "/archive/search": "Search the Internet Archive (archive.org) — archival films, newsreels, public-domain footage (prelinger, newsreels collections), old TV and movies. Free-text q is scoped to mediatype:movies unless q sets mediatype:. Returns identifier/title/year/licenseurl/mediatype per doc; license is PER ITEM — check licenseurl.",
     "/archive/item/{identifier}": "One Internet Archive item's full metadata incl. files[] with direct download paths — fetch a file as https://archive.org/download/{identifier}/{file.name}; license in metadata.licenseurl.",
     "/commons/search": "Search Wikimedia Commons video files — free/CC-licensed clips (nature, cities, events, science). Each page carries imageinfo[0].url (direct file URL), size, mime, and extmetadata with LicenseShortName (CC-BY / CC-BY-SA / PD) and Artist — credit per file.",
+    "/fred/series/{series_id}": "Metadata for one FRED series — title, units, frequency, seasonal adjustment, observation date range, last update. Use to confirm what a series ID measures before fetching its observations.",
+    "/edgar/submissions/{filename}": "Older filings of large filers (1,000+ filings): a submissions overflow file named in /edgar/company's filings.files[] (e.g. CIK0000320193-submissions-001.json).",
+    "/edgar/document/{cik}/{accession}/{document}": "Raw bytes of one filing document from the EDGAR archives (10-K / 10-Q HTML, exhibits, XBRL). accession is dashless; document is primaryDocument from /edgar/company. Use to read the actual filing text.",
+    "/edgar/cik/{ticker}": "Resolve a stock ticker to its zero-padded SEC CIK (AAPL → 0000320193).",
+    "/nasdaq/financials/{ticker}": "Income statement, balance sheet, cash flow and financial ratios from Nasdaq.com, annual or quarterly (frequency=annual|quarterly).",
+    "/nasdaq/insider-trades/{ticker}": "Recent insider (Form 4) buys and sells: insider name, relationship, shares traded, price, date.",
+    "/nasdaq/earnings-surprise/{ticker}": "Reported vs consensus EPS by quarter — earnings beats and misses (surprise %).",
+    "/nasdaq/calendar/earnings": "Companies reporting earnings on a date (YYYY-MM-DD): time (pre-market / after-hours), EPS forecast, market cap.",
+    "/nasdaq/calendar/ipo": "IPO calendar for a month (YYYY-MM): priced, upcoming, filed and withdrawn IPOs with price ranges and share counts.",
+    "/nasdaq/screener": "Stock screener table: listed stocks with price, change, market cap, sector, industry, country.",
+    "/yfinance/earnings/{ticker}": "Earnings dates past and upcoming with EPS estimate, reported EPS and surprise %, plus the next-earnings calendar (date, EPS and revenue estimate ranges).",
+    "/bls/batch": "Several BLS series in one POST (series_ids, start_year, end_year) — e.g. CPI + unemployment + payrolls together.",
+    "/house-disclosures/pdf": "Download one House financial-disclosure or periodic-transaction-report (PTR) PDF by its pdf_url from the member/candidate search (disclosures-clerk.house.gov paths only).",
+    "/cia/collections": "Curated list of famous CIA FOIA Reading Room collections: STARGATE remote viewing, UFOs, Bay of Pigs, President's Daily Brief, Vietnam histories, Berlin Tunnel, Soviet Navy, Warsaw Pact, Rosenberg atomic spies.",
+    "/cia/collection/{slug}": "One CIA Reading Room collection: its description and declassified document list, paged (page=0,1,…). Read from the Wayback Machine mirror.",
+    "/cia/document/{doc_path}": "One declassified CIA document by CREST path (e.g. cia-rdp96-00788r001700210016-5): title, metadata (document type, release date, classification), body text, original + archived PDF URLs.",
+    "/frus/search": "Full-text search of Foreign Relations of the United States (FRUS), the State Department's official documentary record: declassified cables, memos, meeting minutes, covert-action volumes (Iran 1953, Guatemala, Congo, Chile). 10 results per page via start.",
+    "/frus/document/{volume}/{doc}": "One FRUS document by volume id and number (e.g. frus1969-76v21 / 7): title, archival source note, full text.",
+    "/tna/search": "Search the UK National Archives Discovery catalog (32M+ record descriptions): MI5 (KV), SOE (HS), Cabinet / JIC (CAB), Ministry of Defence (DEFE), Prime Minister (PREM) files; narrow with series=.",
+    "/tna/record/{record_id}": "Full Discovery record by id: reference, title, covering dates, scope and content, closure status, held by, digitised-copy availability.",
+    "/fas/sections": "Curated index of the FAS Intelligence Resource Program (irp.fas.org): NSA, CIA, DIA, agency pages, collection programs, official documents, DoD directives, congressional oversight, foreign services.",
+    "/fas/index/{path}": "Links on one IRP index page (e.g. nsa, cia, doddir): documents, PDFs and sub-indexes below it, navigation filtered out.",
+    "/fas/page/{path}": "Full text of one IRP content page (often a mirrored primary document) plus its PDF links. Non-HTML files (PDF, xlsx) answer 415 with the direct URL.",
+    "/vault/subjects": "Curated list of famous FBI Vault subjects: COINTELPRO, Roswell, Majestic 12, unusual phenomena (UFO files), Watergate, VENONA, Rosenberg case, Alger Hiss, Martin Luther King Jr., the KKK.",
+    "/vault/page/{path}": "One FBI Vault page (subject, folder or file) via the Wayback mirror: title, description, sub-folders, file pages and PDF links — walk subject → folders → files.",
+    "/trending": "The trending boards available: Hacker News, Product Hunt, GitHub trending, V2EX, Weibo, Zhihu, Douyin, Baidu, Bilibili, Toutiao, CN finance wires and more.",
+    "/trending/{source_id}": "Current hot list for one board — ranked titles + URLs (rank = position), with board metrics in extra.info (HN points, GitHub stars, Zhihu heat). latest=false accepts NewsNow's cache.",
+    "/worldbank/countries": "All countries and aggregates with ISO codes, region, income level, capital and coordinates — for choosing country codes.",
+    "/worldbank/{indicator}": "One World Bank indicator across countries and years, e.g. NY.GDP.MKTP.CD (GDP, current US$), SP.POP.TOTL (population), SI.POV.DDAY (extreme poverty). Response is [paging, rows].",
+    "/imf/structure/{dataset}": "Dimension order and codelists for an IMF dataflow (WEO, CPI, BOP, IMTS, FM…) — the country and indicator codes a series key may use. Large (~2 MB for WEO).",
+    "/imf/{dataset}/{key}": "IMF time series from the current release, e.g. WEO/USA.NGDP_RPCH.A (US real GDP growth incl. IMF forecasts ~5 years ahead), WEO/USA+CHN.PCPIPCH (inflation), CPI/USA.CPI._T.IX.M (monthly CPI index). SDMX-JSON.",
+    "/eurostat/{dataset}": "One Eurostat dataset (JSON-stat) with dimension filters as query params, e.g. tps00001?geo=DE&time=2024 (population), prc_hicp_manr (HICP inflation), une_rt_m (unemployment).",
+    "/ecb/{flow_ref}/{key}": "One ECB SDMX series, e.g. EXR/D.USD.EUR.SP00.A (daily USD/EUR reference rate); wildcard key positions work (D..EUR.SP00.A = every currency against EUR).",
+    "/comtrade": "Annual goods-trade flows by reporter, partner, HS commodity and direction, e.g. reporterCode=842 (USA) partnerCode=156 (China) cmdCode=TOTAL flowCode=M. Keyless preview: ≤500 records.",
+    "/ucdp/gedevents": "Georeferenced organized-violence events (UCDP GED 26.1, through 2025): date, location, actors, best/low/high fatality estimates; filter by country (Gleditsch-Ward id) and dates. Needs UCDP_ACCESS_TOKEN.",
+    "/usgs/earthquakes": "Worldwide earthquakes as GeoJSON: magnitude, place, time, depth, coordinates; filter by date range and minimum magnitude, order by time or magnitude.",
+    "/nws/alerts": "Active US weather alerts (warnings, watches, advisories) — tornado, flood, hurricane, heat, winter storm, fire weather — by state/marine area and severity.",
+    "/eonet/events": "Ongoing natural events worldwide from NASA EONET — wildfires, severe storms, volcanoes, floods, sea and lake ice — with coordinates and source links; filter by category, status and last N days.",
+    "/eonet/categories": "EONET event categories (the ids /eonet/events?category= takes): wildfires, severeStorms, volcanoes, floods, seaLakeIce, …",
+    "/wikipedia/summary/{title}": "Lead-section summary of a Wikipedia article (extract, short description, thumbnail). Use for a quick definition or background on any topic.",
+    "/wikipedia/article/{title}": "The whole Wikipedia article as plain text (section headings kept), redirects followed.",
+    "/wikipedia/search": "Full-text search of English Wikipedia: article titles and snippets matching a query.",
+    "/wikipedia/pageviews/{title}": "Daily pageview counts for an article between two dates — public attention and popularity over time.",
     "/cross-reference/company/{name}": "Aggregate a company across EDGAR + USAspending + FEC in one call: SEC filings + federal contracts + political contributions.",
     "/cross-reference/politician/{last_name}": "Aggregate a politician across House disclosures + FEC: stock trades + campaign finance.",
     "/admin/clear-cache": "Clear the in-memory cache (operational endpoint).",
@@ -217,6 +270,22 @@ SOURCE_DESC = {
     "NASA Images": "Public-domain space and science media (NASA Image and Video Library, images.nasa.gov) — videos, images, and audio of launches, missions (Apollo, Artemis, ISS, Mars rovers), astronauts, planets, and Earth observation, with direct downloadable mp4 renditions per asset. Everything is public domain (credit 'NASA'). Use for keyless space/science footage.",
     "Internet Archive": "Archival video and film (Internet Archive, archive.org) — newsreels, public-domain footage (prelinger archives), historical broadcasts, old movies and TV, searchable by keyword with per-item file lists and direct download paths. License is per item (licenseurl) — the public-domain collections are the harvest target. Use for historical or public-domain footage.",
     "Commons": "Free-licensed video files (Wikimedia Commons) — CC-BY / CC-BY-SA / public-domain clips of nature, cities, events, science, and people, each with a direct file URL, size, mime type, and per-file license + author metadata (extmetadata). Use for reusable CC video clips; credit per file.",
+    "CIA": "Declassified CIA documents (CIA FOIA Electronic Reading Room, read through the Wayback Machine mirror because cia.gov blocks server clients) — famous collections (STARGATE, UFOs, Bay of Pigs, President's Daily Brief, Vietnam, Berlin Tunnel, Soviet Navy, Warsaw Pact) and single documents by CREST number with body text and PDF. No full-text search: browse collections or arrive with a document number from NSArchive, NARA or FRUS.",
+    "FRUS": "Foreign Relations of the United States (history.state.gov) — the official State Department documentary record of US foreign policy: 500+ volumes of declassified cables, memos, meeting minutes and covert-action documents (Iran 1953, Guatemala, Congo, Chile, the intelligence community). Full-text search plus single documents with archival source notes.",
+    "TNA": "UK National Archives (Discovery catalog, 32M+ record descriptions) — British government records including declassified intelligence and military files: MI5 Security Service (KV), Special Operations Executive (HS), Cabinet Office / JIC (CAB), Ministry of Defence (DEFE), Prime Minister's Office (PREM), Foreign Office (FO). Use for UK historical and intelligence records.",
+    "Vault": "FBI Vault (vault.fbi.gov, via the Wayback mirror) — the FBI's FOIA library of released files on famous subjects: COINTELPRO, Roswell and UFOs, Majestic 12, Watergate, VENONA, the Rosenbergs, Alger Hiss, Martin Luther King Jr., the KKK. Browse subject → folders → files → PDFs.",
+    "FAS": "FAS Intelligence Resource Program (irp.fas.org) — the Federation of American Scientists' mirror of US intelligence and military documents: NSA, CIA and DIA agency pages, surveillance and collection programs, official documents, DoD directives, congressional oversight, foreign intelligence services. Full-text pages plus PDF links.",
+    "Trending": "What's trending right now (self-hosted NewsNow, ~50 boards) — Hacker News, Product Hunt, GitHub trending, V2EX, plus Chinese hot lists (Weibo, Zhihu, Douyin, Baidu, Bilibili, Toutiao) and CN finance wires (Wallstreetcn, CLS, Xueqiu). Ranked titles and URLs. Use for current tech, social and news buzz.",
+    "World Bank": "World Bank Open Data — 16K+ development indicators for every country and aggregate: GDP, population, poverty, trade, education, health, energy. Use for cross-country macro/development comparisons and long historical series.",
+    "IMF": "IMF macroeconomic data from the IMF's own SDMX API — World Economic Outlook (WEO) history and forecasts (real GDP growth, inflation, unemployment, government debt, current account by country, ~5 years ahead), monthly CPI, balance of payments, trade (IMTS), Fiscal Monitor. Use for IMF projections and cross-country macro series.",
+    "Eurostat": "Eurostat — official EU statistics: population, GDP, inflation (HICP), unemployment, energy, trade for EU members and aggregates. Use for any EU/euro-area country statistic.",
+    "ECB": "ECB Data Portal — euro-area statistics via SDMX: EXR daily reference exchange rates (USD/EUR and all pairs), ICP inflation, interest rates, money supply. Use for euro FX rates and euro-area monetary data.",
+    "Comtrade": "UN Comtrade — global goods-trade flows between countries: annual imports/exports by HS commodity code, reporter and partner country. Use for bilateral trade values and commodity-level trade.",
+    "UCDP": "UCDP — Uppsala Conflict Data Program georeferenced event dataset (GED): individual organized-violence events worldwide with location, date, actors, and fatality estimates. Use for armed-conflict and political-violence data.",
+    "USGS": "USGS Earthquake Hazards — worldwide earthquake catalog: magnitude, place, time, coordinates, depth for recent and historical quakes. Use for any earthquake query, global.",
+    "NWS": "US National Weather Service — active weather alerts (warnings, watches, advisories) by state: severe storms, floods, heat, fire weather. Use for current US weather hazards.",
+    "EONET": "NASA EONET — global natural-event tracker: open wildfires, severe storms, volcanoes, floods, sea ice, with coordinates and source links. Use for currently-burning wildfires and other ongoing natural events worldwide.",
+    "Wikipedia": "Wikipedia — page summaries (lead section + thumbnail), whole articles as plain text, full-text article search, and daily pageview counts (attention/popularity over time). Use for encyclopedic lookups, background research, and gauging public attention on a topic.",
     "Cross-Reference": "Aggregators that combine several sources in one call — a company profile (SEC filings + federal contracts + political contributions) or a politician profile (House stock disclosures + campaign finance). Use to cross-reference a company or politician across sources at once.",
     "Admin": "Operational endpoints (cache management). Not a data source.",
 }
@@ -234,6 +303,22 @@ SOURCE_DOC = {
     "arXiv": "docs/ARXIV_API.md", "Scholar": "docs/SCHOLAR_API.md",
     "NASA Images": "docs/NASA_IMAGES_API.md", "Internet Archive": "docs/INTERNET_ARCHIVE_API.md",
     "Commons": "docs/COMMONS_API.md",
+    "World Bank": "docs/WORLDBANK.md",
+    "IMF": "docs/IMF.md",
+    "Eurostat": "docs/EUROSTAT.md",
+    "ECB": "docs/ECB.md",
+    "Comtrade": "docs/COMTRADE.md",
+    "UCDP": "docs/UCDP.md",
+    "USGS": "docs/USGS.md",
+    "NWS": "docs/NWS.md",
+    "EONET": "docs/EONET.md",
+    "Wikipedia": "docs/WIKIPEDIA.md",
+    "CIA": "docs/CIA_API.md",
+    "Vault": "docs/VAULT_API.md",
+    "FRUS": "docs/FRUS_API.md",
+    "TNA": "docs/TNA_API.md",
+    "FAS": "docs/FAS_API.md",
+    "Trending": "docs/NEWSNOW_API.md",
 }
 
 # Literal search terms per source — the grep/recall index. Include the obvious
@@ -263,6 +348,22 @@ SOURCE_KEYWORDS = {
     "Wilson Center": "Cold War, diplomacy, international relations, foreign policy, declassified documents, primary sources, history, digital archive, telegrams",
     "arXiv": "arxiv, preprints, scientific papers, research papers, academic papers, physics, math, computer science, machine learning, AI, quantitative biology, economics, statistics, scholarly articles, abstracts, PDF",
     "Scholar": "google scholar, citations, cited by, academic papers, scholarly papers, research papers, citation count, most cited, bibliometrics, literature search",
+    "CIA": "CIA, declassified, FOIA, reading room, CREST, intelligence, STARGATE, remote viewing, UFOs, Bay of Pigs, President's Daily Brief, Cold War, espionage, covert action",
+    "FRUS": "FRUS, Foreign Relations of the United States, State Department, diplomacy, diplomatic cables, foreign policy, declassified, covert action, history.state.gov, Office of the Historian",
+    "TNA": "UK National Archives, Discovery, Kew, British government records, MI5, KV, SOE, HS, Cabinet Office, JIC, CAB, DEFE, PREM, Foreign Office, declassified, UK intelligence",
+    "Vault": "FBI, FBI Vault, FOIA, FBI files, COINTELPRO, Roswell, UFO, Majestic 12, Watergate, VENONA, Rosenberg, Martin Luther King, KKK, declassified",
+    "FAS": "FAS, Federation of American Scientists, Intelligence Resource Program, IRP, NSA, CIA, DIA, surveillance, intelligence programs, DoD directives, military, congressional oversight",
+    "Trending": "trending, hot list, Hacker News, Product Hunt, GitHub trending, Weibo, Zhihu, Douyin, Baidu, Bilibili, Toutiao, news, social media, buzz, viral, NewsNow",
+    "World Bank": "World Bank, GDP by country, development indicators, population, poverty, global economy, country comparison, NY.GDP.MKTP.CD, SP.POP.TOTL",
+    "IMF": "IMF, International Monetary Fund, World Economic Outlook, WEO, forecasts, projections, real GDP growth, inflation, unemployment, government debt, current account, CPI, balance of payments, SDMX",
+    "Eurostat": "Eurostat, EU statistics, Europe GDP, HICP, EU population, unemployment Europe, JSON-stat, EU27",
+    "ECB": "ECB, euro exchange rate, USD/EUR, reference rate, euro area, inflation ICP, SDMX, European Central Bank",
+    "Comtrade": "UN Comtrade, trade flows, imports, exports, bilateral trade, HS code, trade statistics, world trade",
+    "UCDP": "UCDP, armed conflict, war, political violence, conflict events, fatalities, Uppsala, GED, battle deaths",
+    "USGS": "USGS, earthquake, seismic, magnitude, quake catalog, GeoJSON, natural disasters",
+    "NWS": "NWS, weather alerts, warnings, watches, severe weather, storm, flood, heat advisory, api.weather.gov",
+    "EONET": "NASA EONET, wildfires, natural events, volcanoes, severe storms, floods, natural disasters, event tracker",
+    "Wikipedia": "Wikipedia, page summary, article search, pageviews, popularity, attention, encyclopedia, Wikimedia",
     "Cross-Reference": "company profile, politician profile, aggregate, combined, cross-reference, multi-source",
     "NASA Images": "NASA, space, video, videos, footage, images, photos, audio, public domain, launches, rockets, Apollo, Artemis, ISS, Mars, astronauts, planets, Earth observation, mp4, downloadable media",
     "Internet Archive": "internet archive, archive.org, video, footage, films, movies, newsreels, prelinger, public domain, archival, historical broadcasts, old TV, download, mp4, license",

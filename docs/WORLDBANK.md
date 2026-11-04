@@ -2,7 +2,7 @@
 name: worldbank
 description: "World Bank Open Data — 16K+ development indicators for every country and aggregate: GDP, population, poverty, trade, education, health, energy. Use for cross-country macro/development comparisons and long historical series."
 keywords: "World Bank, GDP by country, development indicators, population, poverty, global economy, country comparison, NY.GDP.MKTP.CD, SP.POP.TOTL"
-routes: "/worldbank/{indicator}, /worldbank/countries"
+routes: "/worldbank/countries, /worldbank/{indicator}"
 ---
 
 # World Bank

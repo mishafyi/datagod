@@ -69,6 +69,17 @@ No key (or a wrong one) returns `401`; an upstream failure returns `meta.status:
 | Public-domain space/science video & imagery | NASA Images | `GET /nasa/search` |
 | Archival / public-domain footage (newsreels, Prelinger) | Internet Archive | `GET /archive/search` |
 | CC-licensed video files with direct URLs | Commons | `GET /commons/search` |
+| Cross-country development indicators: GDP, population, poverty | World Bank | `GET /worldbank/{indicator}` (e.g. `NY.GDP.MKTP.CD`) |
+| IMF forecasts (World Economic Outlook), monthly CPI, balance of payments | IMF | `GET /imf/WEO/USA.NGDP_RPCH.A` |
+| Official EU statistics: population, HICP inflation, unemployment | Eurostat | `GET /eurostat/{dataset}` (e.g. `tps00001?geo=DE`) |
+| Euro exchange rates and euro-area monetary data | ECB | `GET /ecb/EXR/D.USD.EUR.SP00.A` |
+| Goods trade between two countries (imports/exports by HS code) | Comtrade | `GET /comtrade?reporterCode=842&partnerCode=156` |
+| Armed-conflict events and fatalities worldwide | UCDP | `GET /ucdp/gedevents` (needs `UCDP_ACCESS_TOKEN`) |
+| Earthquakes worldwide | USGS | `GET /usgs/earthquakes` |
+| Active US weather alerts | NWS | `GET /nws/alerts?area=CA` |
+| Ongoing wildfires, storms, volcanoes worldwide | EONET | `GET /eonet/events?category=wildfires` |
+| Encyclopedic background, whole article text, pageviews | Wikipedia | `GET /wikipedia/summary/{title}` |
+| What's trending now: Hacker News, GitHub, Weibo, Zhihu… | Trending | `GET /trending/{source_id}` (ids: `GET /trending`) |
 | One company or politician across several sources | Cross-Reference | `GET /cross-reference/company/{name}` |
 
 
@@ -211,38 +222,38 @@ Declassified national-security documents (National Security Archive — a GWU NG
 
 ### CIA
 
-CIA FOIA Electronic Reading Room — declassified CIA documents read from the Wayback Machine mirror (cia.gov blocks server-side clients); curated collections + single-document fetch, no full-text search.
+Declassified CIA documents (CIA FOIA Electronic Reading Room, read through the Wayback Machine mirror because cia.gov blocks server clients) — famous collections (STARGATE, UFOs, Bay of Pigs, President's Daily Brief, Vietnam, Berlin Tunnel, Soviet Navy, Warsaw Pact) and single documents by CREST number with body text and PDF. No full-text search: browse collections or arrive with a document number from NSArchive, NARA or FRUS.
 
 - **Endpoints:** `/cia/collection/{slug}` · `/cia/collections` · `/cia/document/{doc_path}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/CIA_API.md` · **params:** `docs/endpoints.csv`
 
 ### FRUS
 
-Foreign Relations of the United States (history.state.gov) — the official documentary record of US foreign policy; full-text search + single documents.
+Foreign Relations of the United States (history.state.gov) — the official State Department documentary record of US foreign policy: 500+ volumes of declassified cables, memos, meeting minutes and covert-action documents (Iran 1953, Guatemala, Congo, Chile, the intelligence community). Full-text search plus single documents with archival source notes.
 
 - **Endpoints:** `/frus/document/{volume}/{doc}` · `/frus/search`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/FRUS_API.md` · **params:** `docs/endpoints.csv`
 
 ### TNA
 
-UK National Archives Discovery — catalog search of British government records.
+UK National Archives (Discovery catalog, 32M+ record descriptions) — British government records including declassified intelligence and military files: MI5 Security Service (KV), Special Operations Executive (HS), Cabinet Office / JIC (CAB), Ministry of Defence (DEFE), Prime Minister's Office (PREM), Foreign Office (FO). Use for UK historical and intelligence records.
 
 - **Endpoints:** `/tna/record/{record_id}` · `/tna/search`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/TNA_API.md` · **params:** `docs/endpoints.csv`
 
 ### Vault
 
-FBI Vault (vault.fbi.gov) — the FBI's FOIA library; curated famous subjects + page fetch.
+FBI Vault (vault.fbi.gov, via the Wayback mirror) — the FBI's FOIA library of released files on famous subjects: COINTELPRO, Roswell and UFOs, Majestic 12, Watergate, VENONA, the Rosenbergs, Alger Hiss, Martin Luther King Jr., the KKK. Browse subject → folders → files → PDFs.
 
 - **Endpoints:** `/vault/page/{path}` · `/vault/subjects`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/VAULT_API.md` · **params:** `docs/endpoints.csv`
 
 ### FAS
 
-FAS Intelligence Resource Program (irp.fas.org) — mirrored intelligence-community documents: agency pages, programs, official documents.
+FAS Intelligence Resource Program (irp.fas.org) — the Federation of American Scientists' mirror of US intelligence and military documents: NSA, CIA and DIA agency pages, surveillance and collection programs, official documents, DoD directives, congressional oversight, foreign intelligence services. Full-text pages plus PDF links.
 
 - **Endpoints:** `/fas/index/{path}` · `/fas/page/{path}` · `/fas/sections`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/FAS_API.md` · **params:** `docs/endpoints.csv`
 
 ### Smithsonian
 
@@ -274,80 +285,80 @@ Academic papers ranked by citations from Google Scholar (via the vendored sort-g
 
 ### Trending
 
-NewsNow (self-hosted) — ~50 trending/hot boards: Hacker News, GitHub trending, Product Hunt, plus Weibo/Zhihu/Douyin hot searches and CN finance wires. Ranked title+URL items.
+What's trending right now (self-hosted NewsNow, ~50 boards) — Hacker News, Product Hunt, GitHub trending, V2EX, plus Chinese hot lists (Weibo, Zhihu, Douyin, Baidu, Bilibili, Toutiao) and CN finance wires (Wallstreetcn, CLS, Xueqiu). Ranked titles and URLs. Use for current tech, social and news buzz.
 
 - **Endpoints:** `/trending` · `/trending/{source_id}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/NEWSNOW_API.md` · **params:** `docs/endpoints.csv`
 
 ### World Bank
 
-World Bank Open Data — development indicators for every country (GDP, population, poverty, trade).
+World Bank Open Data — 16K+ development indicators for every country and aggregate: GDP, population, poverty, trade, education, health, energy. Use for cross-country macro/development comparisons and long historical series.
 
 - **Endpoints:** `/worldbank/countries` · `/worldbank/{indicator}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/WORLDBANK.md` · **params:** `docs/endpoints.csv`
 
 ### IMF
 
-IMF SDMX-JSON — macroeconomic time series (IFS, DOT, BOP…). Upstream is slow and flaky.
+IMF macroeconomic data from the IMF's own SDMX API — World Economic Outlook (WEO) history and forecasts (real GDP growth, inflation, unemployment, government debt, current account by country, ~5 years ahead), monthly CPI, balance of payments, trade (IMTS), Fiscal Monitor. Use for IMF projections and cross-country macro series.
 
 - **Endpoints:** `/imf/structure/{dataset}` · `/imf/{dataset}/{key}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/IMF.md` · **params:** `docs/endpoints.csv`
 
 ### Eurostat
 
-Eurostat — official EU statistics (JSON-stat); dimension filters pass through.
+Eurostat — official EU statistics: population, GDP, inflation (HICP), unemployment, energy, trade for EU members and aggregates. Use for any EU/euro-area country statistic.
 
 - **Endpoints:** `/eurostat/{dataset}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/EUROSTAT.md` · **params:** `docs/endpoints.csv`
 
 ### ECB
 
-ECB Data Portal — euro-area exchange rates, inflation, and interest rates via SDMX.
+ECB Data Portal — euro-area statistics via SDMX: EXR daily reference exchange rates (USD/EUR and all pairs), ICP inflation, interest rates, money supply. Use for euro FX rates and euro-area monetary data.
 
 - **Endpoints:** `/ecb/{flow_ref}/{key}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/ECB.md` · **params:** `docs/endpoints.csv`
 
 ### Comtrade
 
-UN Comtrade — global goods-trade flows (keyless public preview, ≤500 records, rate-limited).
+UN Comtrade — global goods-trade flows between countries: annual imports/exports by HS commodity code, reporter and partner country. Use for bilateral trade values and commodity-level trade.
 
 - **Endpoints:** `/comtrade`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/COMTRADE.md` · **params:** `docs/endpoints.csv`
 
 ### UCDP
 
-Uppsala Conflict Data Program — georeferenced armed-conflict events worldwide.
+UCDP — Uppsala Conflict Data Program georeferenced event dataset (GED): individual organized-violence events worldwide with location, date, actors, and fatality estimates. Use for armed-conflict and political-violence data.
 
 - **Endpoints:** `/ucdp/gedevents`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/UCDP.md` · **params:** `docs/endpoints.csv`
 
 ### USGS
 
-USGS Earthquake Hazards — worldwide earthquake catalog (GeoJSON).
+USGS Earthquake Hazards — worldwide earthquake catalog: magnitude, place, time, coordinates, depth for recent and historical quakes. Use for any earthquake query, global.
 
 - **Endpoints:** `/usgs/earthquakes`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/USGS.md` · **params:** `docs/endpoints.csv`
 
 ### NWS
 
-US National Weather Service — active weather alerts (keyless, User-Agent required).
+US National Weather Service — active weather alerts (warnings, watches, advisories) by state: severe storms, floods, heat, fire weather. Use for current US weather hazards.
 
 - **Endpoints:** `/nws/alerts`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/NWS.md` · **params:** `docs/endpoints.csv`
 
 ### EONET
 
-NASA EONET — global natural events: wildfires, severe storms, volcanoes.
+NASA EONET — global natural-event tracker: open wildfires, severe storms, volcanoes, floods, sea ice, with coordinates and source links. Use for currently-burning wildfires and other ongoing natural events worldwide.
 
 - **Endpoints:** `/eonet/categories` · `/eonet/events`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/EONET.md` · **params:** `docs/endpoints.csv`
 
 ### Wikipedia
 
-Wikipedia — page summaries, whole articles as plain text, full-text search, and pageview statistics.
+Wikipedia — page summaries (lead section + thumbnail), whole articles as plain text, full-text article search, and daily pageview counts (attention/popularity over time). Use for encyclopedic lookups, background research, and gauging public attention on a topic.
 
 - **Endpoints:** `/wikipedia/article/{title}` · `/wikipedia/pageviews/{title}` · `/wikipedia/search` · `/wikipedia/summary/{title}`
-- **params:** `docs/endpoints.csv`
+- **Detail:** `docs/WIKIPEDIA.md` · **params:** `docs/endpoints.csv`
 
 ### NASA Images
 

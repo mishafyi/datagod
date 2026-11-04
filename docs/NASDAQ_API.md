@@ -2,7 +2,7 @@
 name: nasdaq
 description: "Stock-market quotes for stocks, shares, and equities (Nasdaq.com, unofficial) — price, quote, bid/ask, volume, market cap, sector, industry, P/E, 52-week range, dividends, and daily OHLCV price history by ticker/symbol. Use for a quick quote or price snapshot of a listed ticker."
 keywords: "stocks, shares, equities, stock price, quote, ticker, symbol, market cap, sector, industry, P/E ratio, 52-week range, bid, ask, volume, dividends, OHLC, price history, real-time quote"
-routes: "/nasdaq/dividends/{ticker}, /nasdaq/history/{ticker}, /nasdaq/price/{ticker}, /nasdaq/quote/{ticker}"
+routes: "/nasdaq/calendar/earnings, /nasdaq/calendar/ipo, /nasdaq/dividends/{ticker}, /nasdaq/earnings-surprise/{ticker}, /nasdaq/financials/{ticker}, /nasdaq/history/{ticker}, /nasdaq/insider-trades/{ticker}, /nasdaq/price/{ticker}, /nasdaq/quote/{ticker}, /nasdaq/screener"
 ---
 
 # Nasdaq.com API Reference
@@ -55,6 +55,7 @@ the `errorMessage`s), so DataGod answers 400 with `meta.status: "error"` instead
 - **`MarketCap`** is a string with commas: `"5,553,872,968,719"`. Strip commas + cast to int.
 - **Prices** are strings with dollar signs: `"$228.40"`. Strip + cast to float.
 - **`historical.tradesTable.rows`** is newest-first.
+- **History only answers windows that reach the present** (observed 2026-11-04): `fromdate=2026-01-01&todate=2026-11-03` returned all 211 sessions back to Jan 2, but every one-month window that ended before October — even `2026-09-01..2026-09-28` — returned `totalRecords: 0` with `rows: null`. For an older range, request it with `todate` = today and slice, or use `/yfinance/history`.
 
 ## Curl examples
 
@@ -69,7 +70,7 @@ curl -sH 'User-Agent: Mozilla/5.0' \
 
 # 30-day daily OHLCV
 curl -sH 'User-Agent: Mozilla/5.0' \
-  'https://api.nasdaq.com/api/quote/NVDA/historical?assetclass=stocks&fromdate=2026-04-15&todate=2026-05-15&limit=30'
+  'https://api.nasdaq.com/api/quote/NVDA/historical?assetclass=stocks&fromdate=2026-10-05&todate=2026-11-04&limit=30'  # todate must be recent
 ```
 
 ## Other endpoints worth knowing

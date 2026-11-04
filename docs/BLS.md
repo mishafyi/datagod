@@ -13,7 +13,7 @@ US labor statistics and jobs data (Bureau of Labor Statistics) — unemployment 
 
 ### `POST /bls/batch`
 
-BLS multi-series batch (POST, registrationkey added when set)
+Several BLS series in one POST (series_ids, start_year, end_year) — e.g. CPI + unemployment + payrolls together.
 
 ### `GET /bls/{series_id}`
 

@@ -2,7 +2,7 @@
 name: wikipedia
 description: "Wikipedia — page summaries (lead section + thumbnail), whole articles as plain text, full-text article search, and daily pageview counts (attention/popularity over time). Use for encyclopedic lookups, background research, and gauging public attention on a topic."
 keywords: "Wikipedia, page summary, article search, pageviews, popularity, attention, encyclopedia, Wikimedia"
-routes: "/wikipedia/summary/{title}, /wikipedia/article/{title}, /wikipedia/search, /wikipedia/pageviews/{title}"
+routes: "/wikipedia/article/{title}, /wikipedia/pageviews/{title}, /wikipedia/search, /wikipedia/summary/{title}"
 ---
 
 # Wikipedia

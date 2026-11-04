@@ -2,7 +2,7 @@
 name: yfinance
 description: "Deep data for stocks, shares, and equities (Yahoo Finance) by ticker/symbol — ~140 fundamental fields (market cap, P/E, EPS, beta, margins, ROE), full financial statements (income statement, balance sheet, cash flow), options chains (calls, puts, implied volatility), institutional and fund holders/ownership, analyst recommendations and price targets, dividends, earnings, news, and OHLCV price history. Use for thorough single-ticker stock analysis beyond a basic quote."
 keywords: "stocks, shares, equities, ticker, symbol, stock price, fundamentals, market cap, P/E, EPS, beta, profit margin, ROE, income statement, balance sheet, cash flow, financial statements, options, options chain, calls, puts, implied volatility, holders, ownership, institutional holders, analyst ratings, recommendations, price targets, dividends, earnings, news, OHLCV, history"
-routes: "/yfinance/dividends/{ticker}, /yfinance/financials/{ticker}, /yfinance/history/{ticker}, /yfinance/holders/{ticker}, /yfinance/info/{ticker}, /yfinance/news/{ticker}, /yfinance/options/{ticker}, /yfinance/recommendations/{ticker}"
+routes: "/yfinance/dividends/{ticker}, /yfinance/earnings/{ticker}, /yfinance/financials/{ticker}, /yfinance/history/{ticker}, /yfinance/holders/{ticker}, /yfinance/info/{ticker}, /yfinance/news/{ticker}, /yfinance/options/{ticker}, /yfinance/recommendations/{ticker}"
 ---
 
 # yfinance API Reference
@@ -50,7 +50,7 @@ Constraint: intraday intervals (`<1d`) only work for recent windows (`<60d`).
 - yfinance is **synchronous**; the client wraps each call in `asyncio.to_thread()` to avoid blocking the FastAPI event loop.
 - DataFrames are converted via `df.reset_index().to_dict(orient='records')` to JSON-serializable lists.
 - NaN values become JSON `null`.
-- yfinance is imported unmodified so upstream updates propagate via `pip install --upgrade yfinance`. The version pin in `requirements.txt` is `>=0.2.40`.
+- yfinance is imported unmodified so upstream updates propagate via `pip install --upgrade yfinance`. `requirements.txt` pins an exact version (1.8.0 since 2026-11-04 — 1.7.0's `news` failed with "YAHOO! FINANCE IS CURRENTLY DOWN!"); bump it when Yahoo changes break an endpoint, together with its `curl_cffi` floor.
 
 ## Curl examples
 
@@ -75,6 +75,8 @@ curl http://localhost:8000/yfinance/holders/NVDA
 ## Caveats
 
 - Yahoo rate-limits aggressively. yfinance has retries built in, but bursts can still trigger blocks.
+- **Throttling looks like empty data, not an error.** When Yahoo throttles a server, its crumb fetch gets 429 and quoteSummary then answers 401 "Invalid Crumb"; yfinance logs that and returns empty frames/lists (`recommendations`, `holders`, `options` expiries) instead of raising. An empty answer for a large-cap ticker means "retry later". `/yfinance/info` is guarded: a quote without `shortName`/`longName` (throttled, or an unknown symbol) is returned as an error, not as a 1-key "success".
+- `yf.config.debug.hide_exceptions = False` would surface those failures but also turns legitimate empties into errors (an ETF's `recommendations` → 401, its institutional holders → 404), so the default is kept.
 - `.info` makes multiple internal HTTP calls; expect 1–3 seconds per ticker.
 - `period=max` history can return 50+ years of daily bars; payload size matters.
 - For batch quotes across many tickers, yfinance has `yf.Tickers("AAPL MSFT TSLA")` — not currently exposed via the API.

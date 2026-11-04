@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Add/refresh the skill-style YAML frontmatter on the hand-written per-source docs
-(EDGAR, Nasdaq, yfinance, NARA, NSArchive, Smithsonian, Wilson, House FD, JEFS).
+(every doc in SOURCE_FILE below; the generated docs get theirs from gen_source_docs).
 
 Run from the project root:
 
@@ -15,7 +15,8 @@ from pathlib import Path
 
 from scripts.gen_api_guide import SOURCE_DESC, SOURCE_KEYWORDS, _grouped
 
-# tag -> existing hand-written doc filename.
+# tag -> existing hand-written doc filename. (arXiv, Scholar, NASA Images, Internet
+# Archive and Commons keep their own hand-written frontmatter — not listed.)
 SOURCE_FILE = {
     "EDGAR": "EDGAR_API.md",
     "Nasdaq": "NASDAQ_API.md",
@@ -26,11 +27,31 @@ SOURCE_FILE = {
     "Wilson Center": "WILSON_DIGITAL_ARCHIVE_API.md",
     "House Disclosures": "HOUSE_FD_API.md",
     "JEFS": "JEFS_API.md",
+    "CIA": "CIA_API.md",
+    "Vault": "VAULT_API.md",
+    "FRUS": "FRUS_API.md",
+    "TNA": "TNA_API.md",
+    "FAS": "FAS_API.md",
+    "Trending": "NEWSNOW_API.md",
+    "World Bank": "WORLDBANK.md",
+    "IMF": "IMF.md",
+    "Eurostat": "EUROSTAT.md",
+    "ECB": "ECB.md",
+    "Comtrade": "COMTRADE.md",
+    "UCDP": "UCDP.md",
+    "USGS": "USGS.md",
+    "NWS": "NWS.md",
+    "EONET": "EONET.md",
+    "Wikipedia": "WIKIPEDIA.md",
 }
 
 
+# Skill names that predate the tag-derived default and must not change.
+NAME = {"World Bank": "worldbank"}
+
+
 def frontmatter(tag: str, paths: list[str]) -> str:
-    name = tag.lower().replace(" ", "-")
+    name = NAME.get(tag, tag.lower().replace(" ", "-"))
     return (
         "---\n"
         f"name: {name}\n"
@@ -55,6 +76,9 @@ def main() -> None:
             if end != -1:
                 body = body[end + 5:].lstrip("\n")
         paths = [route for _m, route, _op in grouped.get(tag, [])]
+        if not paths:  # source disabled (e.g. JEFS): keep the doc's last frontmatter
+            print(f"skip {filename} (no live routes)")
+            continue
         path.write_text(frontmatter(tag, paths) + "\n" + body.lstrip("\n"))
         print(f"frontmatter -> {filename}")
 
