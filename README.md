@@ -91,7 +91,7 @@ DataGod stands on open source:
 
 - [`sort-google-scholar`](https://github.com/WittmannF/sort-google-scholar) by Fernando Marcos Wittmann (MIT) — the `/scholar` source is vendored and adapted from it (see `app/clients/scholar.py` for what was kept vs. dropped).
 - [yfinance](https://github.com/ranaroussi/yfinance) — powers every `/yfinance` endpoint, used unmodified.
-- The web stack: [FastAPI](https://github.com/fastapi/fastapi), [Starlette](https://github.com/encode/starlette), [Pydantic](https://github.com/pydantic/pydantic), [Uvicorn](https://github.com/encode/uvicorn), [HTTPX](https://github.com/encode/httpx).
+- The web stack: [FastAPI](https://github.com/fastapi/fastapi), [Starlette](https://github.com/encode/starlette), [Pydantic](https://github.com/pydantic/pydantic), [Uvicorn](https://github.com/encode/uvicorn), [HTTPX2](https://github.com/pydantic/httpx2).
 - Parsing & data: [pandas](https://github.com/pandas-dev/pandas), [selectolax](https://github.com/rushter/selectolax), [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/), [lxml](https://github.com/lxml/lxml), [feedparser](https://github.com/kurtmckee/feedparser), [Requests](https://github.com/psf/requests), [python-dotenv](https://github.com/theskumar/python-dotenv), [Tenacity](https://github.com/jd/tenacity).
 
 And thanks to the agencies and services that publish the free data this project merely passes through.

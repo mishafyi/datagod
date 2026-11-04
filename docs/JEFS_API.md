@@ -80,19 +80,19 @@ Session is a process-singleton. One DataGod server instance = one JEFS session a
 ## Usage example
 
 ```python
-import httpx
+import httpx2
 
 # 1. Register a session (opens browser — user solves reCAPTCHA + clicks "Enter Database")
-r = httpx.post("http://localhost:8000/jefs/register",
-               params={"name": "Real Name", "occupation": "Researcher",
-                       "email": "you@example.com", "phone": "(202) 555-0100",
-                       "address_line1": "123 Main St", "city": "Washington",
-                       "state": "DC", "postalcode": "20001"})
+r = httpx2.post("http://localhost:8000/jefs/register",
+                params={"name": "Real Name", "occupation": "Researcher",
+                        "email": "you@example.com", "phone": "(202) 555-0100",
+                        "address_line1": "123 Main St", "city": "Washington",
+                        "state": "DC", "postalcode": "20001"})
 print(r.json())  # {"registered": True, "cookies_captured": 4, "session_check": "..."}
 
 # 2. Search for disclosures
-r = httpx.get("http://localhost:8000/jefs/search",
-              params={"q": "John Roberts", "year": "2024"})
+r = httpx2.get("http://localhost:8000/jefs/search",
+               params={"q": "John Roberts", "year": "2024"})
 print(r.json()["data"]["count"], "results")
 ```
 

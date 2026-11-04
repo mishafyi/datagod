@@ -12,11 +12,11 @@ DataGod is a FastAPI service that unifies 41 free data sources behind one HTTP A
 # Run the server (auto-reload during dev)
 .venv/bin/uvicorn app.main:app --reload --port 8000
 
-# Install deps (requirements-dev.txt adds pytest + httpx2 on top). Make the venv with the
+# Install deps (requirements-dev.txt adds pytest on top). Make the venv with the
 # Dockerfile's Python (python3.15 -m venv .venv); 3.12 is the floor (numpy 2.5).
 .venv/bin/pip install -r requirements-dev.txt
 
-# Offline unit tests — no network, no server (upstreams faked with httpx.MockTransport)
+# Offline unit tests — no network, no server (upstreams faked with httpx2.MockTransport)
 .venv/bin/python -m pytest
 
 # Docker
@@ -41,10 +41,10 @@ open http://localhost:8000/docs   # HTTP Basic prompt: user "datagod", password 
 ```
 
 Two kinds of tests (no linter or type-checker is configured):
-- `tests/unit/` — the **offline pytest suite** (`pytest.ini` collects only this directory). Fakes every upstream with `httpx.MockTransport` (`upstream` fixture in `conftest.py`) and drives the real app through `TestClient` (`api` fixture). Covers the envelope/status contract, auth, credential redaction, the SSRF guard, the retry policy, and per-client regressions. Add a test here for every client fix.
+- `tests/unit/` — the **offline pytest suite** (`pytest.ini` collects only this directory). Fakes every upstream with `httpx2.MockTransport` (`upstream` fixture in `conftest.py`) and drives the real app through `TestClient` (`api` fixture). Covers the envelope/status contract, auth, credential redaction, the SSRF guard, the retry policy, and per-client regressions. Add a test here for every client fix.
 - The `tests/*.py` scripts are **live** — they hit real upstreams, run at import time, and are run with `python tests/<file>.py`, never by pytest:
 - `tests/test_all_endpoints.py` — calls every endpoint over HTTP (needs a running server + `DATAGOD_API_KEY`) and runs a **content check** on each payload (row counts, a title, the latest value), so PASS means real information came back. Verdicts: PASS, NO-DATA (200 + success but empty/reshaped — a failure), FAIL, and the environment-caused CONFIG (missing key/setting), LIMIT (upstream quota), BLOCKED (upstream refuses this network), EXP-ERR, SKIP; exit 1 only on FAIL/NO-DATA. Ends with a "Contract" group of negative checks (SSRF refusal, 422/404 envelopes, Nasdaq in-body errors, missing key). JEFS is skipped (disabled); Wilson is CONFIG unless `data/wilson.db` is mounted. When an upstream changes its response shape, the check for that endpoint turns NO-DATA — update the check with the client.
-- `tests/test_edgar_endpoints.py` — hits the running server with httpx, prints a pass/fail table, writes `tests/reports/edgar_test_results.json`.
+- `tests/test_edgar_endpoints.py` — hits the running server with httpx2, prints a pass/fail table, writes `tests/reports/edgar_test_results.json`.
 - `tests/test_nsarchive_search.py` — calls the `nsarchive` client directly against the live Virtual Reading Room (no server needed) and verifies its search behavior: the `search_api_fulltext` GET defaults to **OR** (the site's "Search Tips" wrongly say AND), while explicit `AND`/`OR`/`NOT`/parentheses/`*`/`"phrase"` and `field_date[max]` bounds all work; `sort_by` is ignored (always newest-first). See `docs/NSARCHIVE_API.md`.
 - `tests/test_arxiv.py` / `tests/test_scholar.py` / `tests/test_intel_archives.py` — call those clients directly against the live upstreams (no server needed).
 
@@ -138,7 +138,7 @@ When adding a new API client, **write a new `docs/<SOURCE>_API.md`** alongside t
 
 - `app/main.py` — Every route is declared here, grouped by source under `# ── X ──` section comments. Each route has `tags=["X"]` so Swagger UI groups them in collapsible sections. Routes are 1–3 lines: validate query params, `await client.fn(...)`, return the result.
 - `app/clients/` — One module per upstream API. Each defines a `BASE` URL and a few async functions.
-- `app/clients/__init__.py` — Provides `get_client()` (shared `httpx.AsyncClient`, 30s timeout, process singleton), `safe_get` / `safe_post` helpers that wrap try/except + `raise_for_status` + json() + error-dict, `error_dict(source, status, message)` and `_error(source, exc)` (the only sanctioned ways to build the error-dict — see the contract below), `json_or_error(response, source)`, `clean_text()` (whitespace collapse for scrapers), `RateLimiter` (sliding window: EDGAR 10/s, arXiv 1 per 3s — deliberately not aiolimiter, whose bucket allows ~2x bursts), and the `UpstreamJSON = dict | list` type alias.
+- `app/clients/__init__.py` — Provides `get_client()` (shared `httpx2.AsyncClient`, 30s timeout, redirects not followed, process singleton), `safe_get` / `safe_post` helpers that wrap try/except + `raise_for_status` + json() + error-dict, `error_dict(source, status, message)` and `_error(source, exc)` (the only sanctioned ways to build the error-dict — see the contract below), `json_or_error(response, source)`, `clean_text()` (whitespace collapse for scrapers), `RateLimiter` (sliding window: EDGAR 10/s, arXiv 1 per 3s — deliberately not aiolimiter, whose bucket allows ~2x bursts), and the `UpstreamJSON = dict | list` type alias.
 - `app/clients/cross_reference.py` — Aggregates multiple upstreams (used by `/cross-reference/*` routes) via `asyncio.gather`. Clients return the error-dict rather than raising, so a failed source is detected by its payload: it goes into the response's `errors` map, is left out of `source_count`, and its slot holds None / []. Company names resolve to a CIK through `edgar.resolve_company` (ticker, CIK, or SEC title match); revenue is the newest full-year fact across the ASC 606 and legacy revenue tags; FEC is searched by name (`q`).
 - `app/clients/yfin.py` — yfinance wrapper. yfinance is synchronous; each call is dispatched via `asyncio.to_thread()` to keep the event loop free. DataFrames are converted to records-orientation lists.
 - `app/config.py` — Loads `.env` at import time and exposes a `cfg` singleton with API keys. Blank values count as unset (`_env`), so `FEC_API_KEY=` falls back to DEMO_KEY. `redact(text)` masks credential query params (`api_key=`, `key=`, `registrationkey=`, `token=`…) and every configured secret value.
@@ -163,7 +163,7 @@ async def some_endpoint(arg: str) -> UpstreamJSON:
 
 `safe_get` returns either the upstream JSON or `{"error": True, "source": "<src>", "upstream_status": <int>, "message": "<str>"}`. `upstream_status` is the HTTP status from the failed upstream call, `0` for connection/parse/timeout errors, or set explicitly (e.g. EDGAR's `_by_cik` sets it to `404` for unknown tickers).
 
-**Build error dicts only with `error_dict(source, status, message)` or `_error(source, exc)`** — never hand-format `str(exc)`. httpx exception text contains the full request URL, and FRED, EIA, FEC, Congress, Census, Smithsonian and BLS take their key as a query parameter: hand-formatted messages leaked those keys to API callers until 2026-11-04. Both helpers `redact()`, and `_error` also quotes the start of the upstream's own JSON/text error body (e.g. FRED's "The value for variable api_key is not registered"). The middleware redacts again as a safety net.
+**Build error dicts only with `error_dict(source, status, message)` or `_error(source, exc)`** — never hand-format `str(exc)`. httpx2 exception text contains the full request URL, and FRED, EIA, FEC, Congress, Census, Smithsonian and BLS take their key as a query parameter: hand-formatted messages leaked those keys to API callers until 2026-11-04. Both helpers `redact()`, and `_error` also quotes the start of the upstream's own JSON/text error body (e.g. FRED's "The value for variable api_key is not registered"). The middleware redacts again as a safety net.
 
 Upstreams that report failure **inside a 200** must be translated to the error-dict in the client, or the envelope says `success`: Nasdaq (`status.rCode` ≠ 200 → `upstream_status` = rCode), BLS (`status: REQUEST_NOT_PROCESSED` → 429 for the daily threshold, else 400), Census (302 to a key-error page), Wikipedia `/article` (missing page → 404).
 
@@ -210,8 +210,8 @@ Upstreams that report failure **inside a 200** must be translated to the error-d
 
 - **No transformation of upstream responses.** Every client returns whatever the source returned. The envelope wrapping is the only mutation.
 - **Async only.** Every client function is `async`; sync libraries (yfinance, pandas) go through `asyncio.to_thread()`.
-- **One shared httpx client.** Don't create per-request clients — reuse `get_client()` so connection pooling works.
-- **Exact dependency pins.** `requirements.txt` is a full freeze of the runtime tree (all at their latest releases as of 2026-11-04, on Python 3.15 / `python:3.15-slim`). Regenerate it the way its header says — a clean venv on the Dockerfile's Python, the top-level packages, `pip freeze` — never by loosening pins. Starlette's TestClient prefers `httpx2` (dev-only); the app still uses `httpx`.
+- **One shared HTTP client (httpx2).** Don't create per-request clients — reuse `get_client()` so connection pooling works. The app uses `httpx2` (Pydantic's maintained successor of httpx; same API, `import httpx2`; httpx itself is no longer a dependency). Like httpx it does **not** follow redirects by default — the House-PDF SSRF guard and Census's key-error detection rely on that. On Linux it verifies TLS against the **OS CA store** (the image's Debian `ca-certificates`), not certifi; `SSL_CERT_FILE` / `SSL_CERT_DIR` override it (e.g. for a TLS-intercepting proxy).
+- **Exact dependency pins.** `requirements.txt` is a full freeze of the runtime tree (all at their latest releases as of 2026-11-04, on Python 3.15 / `python:3.15-slim`). Regenerate it the way its header says — a clean venv on the Dockerfile's Python, the top-level packages, `pip freeze` — never by loosening pins.
 - **HTML parsing uses selectolax's Lexbor engine** (`from selectolax.lexbor import LexborHTMLParser`). selectolax 1.0 removed the old Modest `selectolax.parser` module; outputs were verified identical across every scraper before the switch.
 - **Tag every route.** All `@app.get(...)` decorators include `tags=["X"]` so Swagger UI groups them in collapsible sections.
 - **HTTP semantics matter.** Don't return 200 with `error: true` body and call it done. The middleware translates `upstream_status` into proper HTTP codes; if you bypass the helper you bypass the codes.
